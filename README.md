@@ -1,5 +1,6 @@
 ![nhl_setup](../../assets/images/nhl_setup.gif)
 ### History
+* V2025.10.0 - October 6, 2025
 * V1.6.3 - May 14, 2022
 * V1.4.0 - September 25, 2020
 * V1.3.0 - Wx version - May 10, 2020
@@ -9,6 +10,11 @@
 * V1.0.0 - Initial release - March 14, 2020
   
 ### Latest Changes
+
+#### V2025.10.0
+Move to dedicated repository
+Remove Coyotes and replace with Mammoth.  Rename the seasoncountdown board to season_countdown.
+Generate 32 and 64 bit binaries and attach to this release.
 
 #### V1.6.3
 Fix for goal animations being set to an empty dictionary
