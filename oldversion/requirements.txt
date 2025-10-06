@@ -1,0 +1,6 @@
+fastjsonschema==2.14.4
+printtools==1.2
+PyInstaller
+prompt_toolkit==3.0.2
+questionary==1.5.2
+regex
