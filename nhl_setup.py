@@ -2,7 +2,7 @@ import questionary
 from questionary import Validator, ValidationError, prompt
 from styles import custom_style_dope
 from validate_json import validateConf
-from print import *
+from printtools import *
 import argparse
 import functools
 import regex

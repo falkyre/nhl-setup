@@ -181,4 +181,4 @@ cython_debug/
 .cursorindexingignore
 #Testing config files
 config/*
-nhl_setup.*
+
