@@ -106,7 +106,7 @@ def load_config(confdir,simple=False):
                 jloaded = True
             else:
                 path = get_file("{0}/{1}".format(confdir,filename[fileindex]))
-
+                
             if os.path.isfile(path):
                 try:
                     j = json.load(open(path))
@@ -1207,7 +1207,7 @@ def main():
     if not os.path.exists(f"{app_path}/{args.confdir}"):
         # Get current working directory
         setup_cwd = os.getcwd()
-        print("Directory {0}/{1} does not exist.  Are you running in the right directory?".format(setup_cwd,args.confdir),RED)
+        print("Directory {0}/{1} does not exist.  Are you running in the right directory?".format(setup_cwd,f"{app_path}/{args.confdir}"),RED)
         sys.exit(os.EX_OSFILE)
 
     #Check to see if the user wants to validate an existing config.json against the schema
@@ -1243,7 +1243,7 @@ def main():
     #Check to see if there was a team name on the command line, if so, create a new config.json from
     #config.json.sample
     if args.team != None:
-        default_config = load_config(args.confdir,True)
+        default_config = load_config(f"{app_path}/{args.confdir}",True)
         # Make sure that the argument for the team supplied is valid
         if args.team[0] in TEAMS:
             default_config['preferences']['teams'] = args.team
@@ -1252,9 +1252,9 @@ def main():
             print("Your team {0} is not in {1}.  Check the spelling and try again".format(args.team[0],TEAMS),RED)
         sys.exit(os.EX_CONFIG)
     else:
-        default_config = load_config(args.confdir)
+        default_config = load_config(f"{app_path}/{args.confdir}")
 
-
+    
     if questionary.confirm("Do you see a net,stick and horn?",style=custom_style_dope,qmark='🥅🏒🚨').skip_if(args.simple,default=True).ask():
         qmark = '🥅'
         qmarksave = '🥅🏒🚨'
@@ -1264,7 +1264,8 @@ def main():
 
     if questionary.confirm("Do you want a simple default setup with one team selection (Y)?",style=custom_style_dope,qmark=qmark).skip_if(args.simple,default=True).ask():
         #Load the config.json.sample
-        default_config = load_config(args.confdir,True)
+        #default_config = load_config(f"{app_path}/{args.confdir}",True)
+        print(default_config)
         selected_teams = get_default_value(default_config,['preferences','teams'],"string")
         preferences_teams = []
 
@@ -1318,8 +1319,8 @@ def main():
 
 
     #Prepare to output to config.json file
-    if questionary.confirm("Save {}/config.json file?".format(args.confdir),qmark=qmarksave,style=custom_style_dope).ask():
-        save_config(nhl_config,args.confdir)
+    if questionary.confirm("Save {}/config.json file?".format(f"{app_path}/{args.confdir}"),qmark=qmarksave,style=custom_style_dope).ask():
+        save_config(nhl_config,f"{app_path}/{args.confdir}")
 
 if __name__ == '__main__':
     main()
