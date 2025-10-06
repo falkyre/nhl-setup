@@ -1265,7 +1265,7 @@ def main():
     if questionary.confirm("Do you want a simple default setup with one team selection (Y)?",style=custom_style_dope,qmark=qmark).skip_if(args.simple,default=True).ask():
         #Load the config.json.sample
         #default_config = load_config(f"{app_path}/{args.confdir}",True)
-        print(default_config)
+        
         selected_teams = get_default_value(default_config,['preferences','teams'],"string")
         preferences_teams = []
 
