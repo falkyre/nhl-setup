@@ -16,7 +16,7 @@ jobs:
       - name: Build on 32-bit ARM
         uses: pguyot/arm-runner-action@v2
         with:
-          image: raspios_lite:latest
+          base_image: raspios_lite:latest
           commands: |
             apt-get update
             apt-get install -y python3-venv
@@ -44,7 +44,7 @@ jobs:
       - name: Build on 64-bit ARM
         uses: pguyot/arm-runner-action@v2
         with:
-          image: raspios_lite_arm64:latest
+          base_image: raspios_lite_arm64:latest
           commands: |
             apt-get update
             apt-get install -y python3-venv
