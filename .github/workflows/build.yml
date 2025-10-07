@@ -7,7 +7,7 @@ on:
 
 jobs:
   build_32bit:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     name: Build 32-bit binary
     steps:
       - name: Checkout
@@ -35,7 +35,7 @@ jobs:
           path: dist/nhl_setup.32
 
   build_64bit:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     name: Build 64-bit binary
     steps:
       - name: Checkout
