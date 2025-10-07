@@ -1,0 +1,83 @@
+name: Build NHL Setup Binaries
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build_32bit:
+    runs-on: ubuntu-latest
+    name: Build 32-bit binary
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build on 32-bit ARM
+        uses: pguyot/arm-runner-action@v2
+        with:
+          image: raspios_lite:latest
+          commands: |
+            apt-get update
+            apt-get install -y python3-venv
+            python3 -m venv .venv
+            source .venv/bin/activate
+            pip install -r requirements.txt
+            pip install pyinstaller
+            SITE_PACKAGES=$(python -c "import site; print(site.getsitepackages()[0])")
+            pyinstaller --onefile --add-data "$SITE_PACKAGES/pyfiglet:./pyfiglet" nhl_setup.py -n nhl_setup.32
+          cpu: armv7
+
+      - name: Upload 32-bit artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nhl_setup.32
+          path: dist/nhl_setup.32
+
+  build_64bit:
+    runs-on: ubuntu-latest
+    name: Build 64-bit binary
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build on 64-bit ARM
+        uses: pguyot/arm-runner-action@v2
+        with:
+          image: raspios_lite_arm64:latest
+          commands: |
+            apt-get update
+            apt-get install -y python3-venv
+            python3 -m venv .venv
+            source .venv/bin/activate
+            pip install -r requirements.txt
+            pip install pyinstaller
+            SITE_PACKAGES=$(python -c "import site; print(site.getsitepackages()[0])")
+            pyinstaller --onefile --add-data "$SITE_PACKAGES/pyfiglet:./pyfiglet" nhl_setup.py -n nhl_setup.64
+          cpu: arm64
+
+      - name: Upload 64-bit artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nhl_setup.64
+          path: dist/nhl_setup.64
+
+  release:
+    needs: [build_32bit, build_64bit]
+    runs-on: ubuntu-latest
+    name: Upload to release
+    permissions:
+      contents: write
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Upload to latest release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/nhl_setup.32
+            dist/nhl_setup.64
