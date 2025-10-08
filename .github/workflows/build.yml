@@ -28,7 +28,7 @@ jobs:
             pyinstaller --onefile --add-data "$SITE_PACKAGES/pyfiglet:./pyfiglet" nhl_setup.py -n nhl_setup.32
           arch: arm7l
           cpu: coretx-a7
-          cpu_info: raspberrypi_3b
+          cpu_info: cpuinfo/raspberrypi_3b
 
       - name: Upload 32-bit artifact
         uses: actions/upload-artifact@v4
@@ -58,7 +58,7 @@ jobs:
             pyinstaller --onefile --add-data "$SITE_PACKAGES/pyfiglet:./pyfiglet" nhl_setup.py -n nhl_setup.64
           arch: aarch64
           cpu: cortex-a53
-          cpu_info: raspberrypi_zero2_w_arm64_w
+          cpu_info: cpuinfo/raspberrypi_zero2_w_arm64_w
 
       - name: Upload 64-bit artifact
         uses: actions/upload-artifact@v4
