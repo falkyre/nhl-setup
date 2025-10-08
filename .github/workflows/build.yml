@@ -19,13 +19,13 @@ jobs:
           base_image: raspios_lite:latest
           commands: |
             apt-get update
-            apt-get install -y python3-venv python3-pip
-            #python3 -m venv .venv
-            #source .venv/bin/activate
-            pip install -r requirements.txt
-            pip install pyinstaller
-            SITE_PACKAGES=$(python -c "import site; print(site.getsitepackages()[0])")
-            pyinstaller --onefile --add-data "$SITE_PACKAGES/pyfiglet:./pyfiglet" nhl_setup.py -n nhl_setup.32
+            apt-get install -y python3-full python3-venv python3-pip
+            cd /tmp
+            python3 -m venv .venv
+            /tmp/.venv/bin/pip install -r requirements.txt
+            SITE_PACKAGES=$(/tmp/.venv/bin/python -c "import site; print(site.getsitepackages()[0])")
+            /tmp/.venv/bin/pyinstaller --onefile --add-data "$SITE_PACKAGES/pyfiglet:./pyfiglet" nhl_setup.py -n nhl_setup.32
+            ls -la /tmp
           arch: arm7l
           cpu: cortex-a7
           cpu_info: cpuinfo/raspberrypi_3b
@@ -49,13 +49,13 @@ jobs:
           base_image: raspios_lite_arm64:latest
           commands: |
             apt-get update
-            apt-get install -y python3-venv python3-pip
-            #python3 -m venv .venv
-            #source .venv/bin/activate
-            pip install -r requirements.txt
-            pip install pyinstaller
-            SITE_PACKAGES=$(python -c "import site; print(site.getsitepackages()[0])")
-            pyinstaller --onefile --add-data "$SITE_PACKAGES/pyfiglet:./pyfiglet" nhl_setup.py -n nhl_setup.64
+            apt-get install -y python3-full python3-venv python3-pip
+            cd /tmp
+            python3 -m venv .venv
+            /tmp/.venv/bin/pip install -r requirements.txt
+            SITE_PACKAGES=$(/tmp/.venv/bin/python -c "import site; print(site.getsitepackages()[0])")
+            /tmp/.venv/bin/pyinstaller --onefile --add-data "$SITE_PACKAGES/pyfiglet:./pyfiglet" nhl_setup.py -n nhl_setup.64
+            ls -la /tmp
           arch: aarch64
           cpu: cortex-a53
           cpu_info: cpuinfo/raspberrypi_zero2_w_arm64
