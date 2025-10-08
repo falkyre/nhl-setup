@@ -19,9 +19,9 @@ jobs:
           base_image: raspios_lite:latest
           commands: |
             apt-get update
-            apt-get install -y python3-venv
-            python3 -m venv .venv
-            source .venv/bin/activate
+            #apt-get install -y python3-venv
+            #python3 -m venv .venv
+            #source .venv/bin/activate
             pip install -r requirements.txt
             pip install pyinstaller
             SITE_PACKAGES=$(python -c "import site; print(site.getsitepackages()[0])")
@@ -49,9 +49,9 @@ jobs:
           base_image: raspios_lite_arm64:latest
           commands: |
             apt-get update
-            apt-get install -y python3-venv
-            python3 -m venv .venv
-            source .venv/bin/activate
+            #apt-get install -y python3-venv
+            #python3 -m venv .venv
+            #source .venv/bin/activate
             pip install -r requirements.txt
             pip install pyinstaller
             SITE_PACKAGES=$(python -c "import site; print(site.getsitepackages()[0])")
