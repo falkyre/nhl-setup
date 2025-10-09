@@ -18,16 +18,12 @@ jobs:
         with:
           base_image: raspios_lite:latest
           commands: |
-            ls -la
-            pwd
             apt-get update
             apt-get install -y python3-venv python3-pip
-            cd /tmp
             python3 -m venv .venv
-            /tmp/.venv/bin/pip install -r requirements.txt
-            SITE_PACKAGES=$(/tmp/.venv/bin/python -c "import site; print(site.getsitepackages()[0])")
-            /tmp/.venv/bin/pyinstaller --onefile --add-data "$SITE_PACKAGES/pyfiglet:./pyfiglet" nhl_setup.py -n nhl_setup.32
-            ls -la /tmp
+            /nhl-setup/.venv/bin/pip install -r requirements.txt
+            SITE_PACKAGES=$(/nhl-setup/.venv/bin/python -c "import site; print(site.getsitepackages()[0])")
+            /nhl-setup/.venv/bin/pyinstaller --onefile --add-data "$SITE_PACKAGES/pyfiglet:./pyfiglet" nhl_setup.py -n nhl_setup.32
           cpu: cortex-a7
           cpu_info: cpuinfo/raspberrypi_3b
 
@@ -51,12 +47,10 @@ jobs:
           commands: |
             apt-get update
             apt-get install -y python3-venv python3-pip
-            cd /tmp
             python3 -m venv .venv
-            /tmp/.venv/bin/pip install -r requirements.txt
-            SITE_PACKAGES=$(/tmp/.venv/bin/python -c "import site; print(site.getsitepackages()[0])")
-            /tmp/.venv/bin/pyinstaller --onefile --add-data "$SITE_PACKAGES/pyfiglet:./pyfiglet" nhl_setup.py -n nhl_setup.64
-            ls -la /tmp
+            /nhl-setup/.venv/bin/pip install -r requirements.txt
+            SITE_PACKAGES=$(/nhl-setup/.venv/bin/python -c "import site; print(site.getsitepackages()[0])")
+            /nhl-setup/.venv/bin/pyinstaller --onefile --add-data "$SITE_PACKAGES/pyfiglet:./pyfiglet" nhl_setup.py -n nhl_setup.64
           cpu: cortex-a53
           cpu_info: cpuinfo/raspberrypi_zero2_w_arm64
 
