@@ -1,5 +1,6 @@
 ![nhl_setup](../../assets/images/nhl_setup.gif)
 ### History
+* V2025.10.1 - October 12, 2025
 * V2025.10.0 - October 6, 2025
 * V1.6.3 - May 14, 2022
 * V1.4.0 - September 25, 2020
@@ -10,6 +11,9 @@
 * V1.0.0 - Initial release - March 14, 2020
   
 ### Latest Changes
+
+#### V2025.10.1
+If you install board plugins using the new plugin system, the nhl_setup will read what plugins you installed and add them to the board selection list for the different states.
 
 #### V2025.10.0
 Move to dedicated repository
@@ -112,24 +116,30 @@ This will create a build and dist directory in the same directory as the nhl_set
 
 
 ##### Running as python script
-If you want to run this as pure python and not the app, you will need to install the following pip3 packages:
+If you want to run this as pure python and not the app, you will need to install the following pip3 packages installed in the nhlsb-venv:
 
 ```
-fastjsonschema==2.14.4
-printtools==1.2
-questionary==1.5.2
-regex==2020.4.4
-```
-As the RGB matrix library needs to run as the root user, you will need to install using sudo.  
-
-```
-sudo pip3 install printtools
-sudo pip3 install questionary
-sudo pip3 install regex
-sudo pip3 install fastjsonschema
+fastjsonschema
+printtools
+questionary
+regex
 ```
 
-If you run the python script from the src/nhl_setup directory you will need to give the full path of the config directory so it can find the config.json.  For example:
+Make sure the nhlsb-venv is activated:
+```
+cd $HOME
+source  nhlsb-venv/bin/activate
+```
+Then install the packages 
+
+```
+pip install printtools
+pip install questionary
+pip install regex
+pip install fastjsonschema
+```
+
+If you run the python script from the src/nhl_setup directory you will need to give the full path of the config directory so it can find the config.json.  For example (make sure you have your venv activated):
 
 ```
 python3 src/nhl_setup/nhl_setup.py /home/pi/source/nhl-led-scoreboard/config
