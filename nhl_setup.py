@@ -410,7 +410,7 @@ def states_settings(default_config,qmark,setup_type):
         if os.path.exists('plugins.lock.json'):
             with open('plugins.lock.json') as f:
                 plugins = json.load(f)
-                for plugin in plugins['plugins']:
+                for plugin in plugins['locked']:
                     plugins_board.append(plugin['name'])
         
         if len(plugins_board) > 0:
