@@ -405,6 +405,17 @@ def states_settings(default_config,qmark,setup_type):
     for astate in thestates:
         board_list = ['clock','weather','wxalert','wxforecast','scoreticker','seriesticker','standings','team_summary','stanley_cup_champions','christmas','season_countdown']
 
+        # Check for plugins
+        plugins_board = []
+        if os.path.exists('plugins.lock.json'):
+            with open('plugins.lock.json') as f:
+                plugins = json.load(f)
+                for plugin in plugins['plugins']:
+                    plugins_board.append(plugin['name'])
+        
+        if len(plugins_board) > 0:
+            board_list.extend(plugins_board)
+
         boards_selected = []
         board = None
         select_board = True
