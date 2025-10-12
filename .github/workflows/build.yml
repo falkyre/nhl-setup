@@ -51,6 +51,9 @@ jobs:
         uses: pguyot/arm-runner-action@v2
         with:
           base_image: raspios_lite_arm64:latest
+          copy_artifact_path: dist
+          copy_artifacts_on_fail: yes
+          optimize_image: no
           commands: |
             apt-get update
             apt-get install -y python3-venv python3-pip
