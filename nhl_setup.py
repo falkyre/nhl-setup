@@ -696,6 +696,14 @@ def weather(default_config,qmark):
                 'default': get_default_value(default_config,['boards','weather','forecast_enabled'],"bool") or True
                 },
                 {
+                'type': 'confirm',
+                'name': 'forecast_show_today',
+                'qmark': qmark,
+                "when": lambda x: x["forecast_enabled"],
+                'message': 'Show today forecast?',
+                'default': get_default_value(default_config,['boards','weather','forecast_show_today'],"bool") or True
+                },
+                {
                     'type': 'input',
                     'name': 'forecast_days',
                     'qmark': qmark,
