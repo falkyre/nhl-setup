@@ -13,6 +13,7 @@ import sys
 import shutil
 
 from time import sleep
+import fastjsonschema
 
 SCRIPT_VERSION = "2025.10.1"
 
@@ -29,6 +30,45 @@ BOARDS = ['clock','weather','wxalert','scoreticker','seriesticker','standings']
 SBIO = ['pushbutton','dimmer','screensaver']
 
 #Get path if frozen, required for newest PyInstaller so we don't get the /tmp
+
+
+def find_config_dir(confdir_arg="config"):
+    """
+    Determines the correct directory for configuration files.
+
+    This function is designed to work both when the script is run directly
+    and when it's a frozen executable created by PyInstaller. It will check
+    for the confdir from the path the script is run from, and from the
+    current working directory.
+
+    Args:
+        confdir_arg (str): The value of the 'confdir' command-line argument.
+
+    Returns:
+        str: The path to the configuration directory.
+    """
+    # Determine the base path of the application (script or frozen executable)
+    if getattr(sys, 'frozen', False):
+        app_path = os.path.dirname(sys.executable)
+    else:
+        app_path = os.path.dirname(os.path.abspath(__file__))
+
+    # Check for the directory relative to the application's path first.
+    app_relative_path = os.path.join(app_path, confdir_arg)
+    if os.path.isdir(app_relative_path):
+        if os.path.exists(os.path.join(app_relative_path, "config.json")) or \
+           os.path.exists(os.path.join(app_relative_path, "config.json.sample")):
+            return os.path.abspath(app_relative_path)
+
+    # If not found, check relative to the current working directory.
+    cwd_relative_path = os.path.join(os.getcwd(), confdir_arg)
+    if os.path.isdir(cwd_relative_path):
+        if os.path.exists(os.path.join(cwd_relative_path, "config.json")) or \
+           os.path.exists(os.path.join(cwd_relative_path, "config.json.sample")):
+            return os.path.abspath(cwd_relative_path)
+
+    # If still not found, return the application-relative path as the default.
+    return os.path.abspath(app_relative_path)
 
 
 def getVersion():
@@ -78,10 +118,6 @@ class RGBValidator(Validator):
                 cursor_position=len(document.text))  # Move cursor to end
 
 
-def get_file(path):
-    dir = os.path.dirname(os.path.dirname(__file__))
-    return os.path.join(dir, path)
-
 # Attempt to load a configuration file from config directory to use as defaults for prompts
 # If config.json exists (user already created one, or this app has already been ran) use it,
 # If no config.json exists, look for config.json.sample and if that doesn't exist, create a new config.json
@@ -105,7 +141,7 @@ def load_config(confdir,simple=False):
             if fileindex >= len(filename):
                 jloaded = True
             else:
-                path = get_file("{0}/{1}".format(confdir,filename[fileindex]))
+                path = os.path.join(confdir,filename[fileindex])
                 
             if os.path.isfile(path):
                 try:
@@ -129,20 +165,22 @@ def save_config(nhl_config,confdir):
         #os.makedirs(confdir)
         print("Directory {} does not exist.  Are you running in the right directory?".format(confdir),RED)
         sys.exit(os.EX_OSFILE)
+    
+    config_file = os.path.join(confdir, "config.json")
+    backup_file = os.path.join(confdir, "config.json.backup")
+
     try:
-        shutil.copyfile("{}/config.json".format(confdir),"{}/config.json.backup".format(confdir))
+        if os.path.exists(config_file):
+            shutil.copyfile(config_file, backup_file)
     except Exception as e:
-        print("Could not make backup of {0}/config.json. This is normal for first run".format(confdir),CYAN)
+        print("Could not make backup of {0}. This is normal for first run".format(config_file),CYAN)
         print("Message: {0}".format(e),YELLOW)
 
     try:
-        with open('{}/config.json'.format(confdir),'w') as f:
-            try:
-                f.write(savefile)
-            except Exception as e:
-                print("Could not write {0}/config.json. Error Message: {1}".format(confdir,e),RED)
+        with open(config_file,'w') as f:
+            f.write(savefile)
     except Exception as e:
-        print("Could not open {0} directory, unable to save config.json. Error Message: {1}".format(confdir,e),RED)
+        print("Could not write to {0}. Error Message: {1}".format(config_file,e),RED)
 
 
 def get_default_value(def_config,def_key,def_type):
@@ -1199,14 +1237,92 @@ def sbio_settings(default_config,qmark,setup_type):
 
     return sbio_config
 
-def main():
+def validate_and_fix_config(config_dir, conffile):
+    """
+    Validates the config file and fixes it if validation fails.
+    """
+    schemafile = os.path.join(config_dir, "config.schema.json")
+    if not os.path.exists(schemafile):
+        schemafile = os.path.join(config_dir, ".default", "config.schema.json")
 
-    # Check if we are running from a pyinstaller onefile
-    if getattr(sys, 'frozen', False):
-        app_path = os.path.dirname(sys.executable)
+    print("Now validating config......")
+    (valid,msg) = validateConf(conffile,schemafile)
+    if valid:
+        print("Your config.json passes validation and can be used with nhl led scoreboard",GREEN)
+        return True
     else:
-        # we are running in a normal Python environment
-        app_path = os.path.dirname(os.path.abspath(__file__))
+        print("Your config.json fails validation: error: [{0}]".format(msg),RED)
+        if isinstance(msg, fastjsonschema.JsonSchemaException):
+            config_data = load_config(config_dir)
+            if fix_json_validation(msg, conffile, schemafile, config_data):
+                print("Restarting validation...")
+                (valid,msg) = validateConf(conffile,schemafile)
+                if not valid:
+                    print("Validation failed again after fix. Please check your config file.", RED)
+                    return False
+                else:
+                    print("Validation passed after fix.", GREEN)
+                    return True
+            else:
+                return False
+        else:
+            return False
+
+def fix_json_validation(error, config_path, schema_path, config_data):
+    """
+    Fixes a JSON validation error by adding the missing property to the config file.
+    """
+    print(f"Attempting to fix validation error: {error}", YELLOW)
+    
+    # Extract the missing property name and path from the error message
+    match = re.search(r"data\.(.*) must contain \['(.*)'\] properties", error.message)
+    if not match:
+        match = re.search(r"data\.(.*) is a required property", error.message)
+        if not match:
+            print("Could not extract missing property from error message.", RED)
+            return False
+        missing_property_path = match.group(1).split('.')
+        missing_property = missing_property_path.pop()
+    else:
+        missing_property_path = match.group(1).split('.')
+        missing_property = match.group(2)
+
+    # Load the schema
+    try:
+        with open(schema_path) as f:
+            schema_data = json.load(f)
+    except FileNotFoundError:
+        print(f"Schema file not found at {schema_path}", RED)
+        return False
+    except json.JSONDecodeError:
+        print(f"Could not decode schema file at {schema_path}", RED)
+        return False
+
+    # Find the default value in the schema
+    try:
+        schema_node = schema_data
+        for key in missing_property_path:
+            schema_node = schema_node['properties'][key]
+        
+        default_value = schema_node['properties'][missing_property]['default']
+    except KeyError:
+        print(f"Could not find default value for {'.'.join(missing_property_path)}.{missing_property} in schema.", RED)
+        return False
+
+    # Update the config data
+    config_node = config_data
+    for key in missing_property_path:
+        config_node = config_node.setdefault(key, {})
+    
+    config_node[missing_property] = default_value
+
+    # Save the updated config data
+    save_config(config_data, os.path.dirname(config_path))
+    
+    print(f"Added missing property '{missing_property}' with default value '{default_value}' to {config_path}", GREEN)
+    return True
+
+def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument('confdir', nargs='?',default="config", type=str, help='Input dir for config.json (defaults to config)')
@@ -1214,7 +1330,10 @@ def main():
     parser.add_argument('--team','-t',nargs=1, action='store',type=str,help="Create simple config.json with defaults and one team")
     parser.add_argument('--simple','-s',action='store_true',help="Launch simple setup directly")
     parser.add_argument('--check','-c',action='store_true',help="Check config.json against schema, used to see if config is out of date")
+    
     args = parser.parse_args()
+
+    config_dir = find_config_dir(args.confdir)
 
     if not args.simple:
         print("NHL LED SCOREBOARD SETUP", SMSLANT,RED, BOLD)
@@ -1222,11 +1341,9 @@ def main():
         print(setupVersion,UNDERLINE,BLUE)
         mainVersion="nhl led scoreboard V{}".format(getVersion())
         print(mainVersion,UNDERLINE,GREEN,BOLD)
-        
-    if not os.path.exists(f"{app_path}/{args.confdir}"):
-        # Get current working directory
-        setup_cwd = os.getcwd()
-        print("Directory {0}/{1} does not exist.  Are you running in the right directory?".format(setup_cwd,f"{app_path}/{args.confdir}"),RED)
+         
+    if not os.path.exists(config_dir):
+        print("Directory {0} does not exist.  Are you running in the right directory?".format(config_dir),RED)
         sys.exit(os.EX_OSFILE)
 
     #Check to see if the user wants to validate an existing config.json against the schema
@@ -1236,42 +1353,34 @@ def main():
 
     #Check for existence of config/.default/firstrun file, if one exists, don't try to validate
 
-    firstrun = f"{app_path}/{args.confdir}/.default/firstrun"
+    if args.check:
+        conffile = os.path.join(config_dir, "config.json")
+        if not validate_and_fix_config(config_dir, conffile):
+            sys.exit(os.EX_CONFIG)
+        sys.exit(0)
+
+    firstrun = os.path.join(config_dir, ".default", "firstrun")
     if not args.simple:
         if not os.path.exists(firstrun):
-            conffile = f"{app_path}/{args.confdir}/config.json"
-            schemafile = f"{app_path}/{args.confdir}/config.schema.json"
-            if not os.path.exists(schemafile):
-                schemafile = f"{app_path}/{args.confdir}/.default/config.schema.json"
-
-            confpath = get_file(conffile)
-            schemapath = get_file(schemafile)
-            print("Now validating config......")
-            (valid,msg) = validateConf(confpath,schemapath)
-            if valid:
-                print("Your config.json passes validation and can be used with nhl led scoreboard",GREEN)
-            else:
-                print("Your config.json fails validation: error: [{0}]".format(msg),RED)
+            conffile = os.path.join(config_dir, "config.json")
+            if not validate_and_fix_config(config_dir, conffile):
                 sys.exit(os.EX_CONFIG)
-            
-            if args.check:
-                sys.exit(0)
         else:
             os.remove(firstrun)
 
     #Check to see if there was a team name on the command line, if so, create a new config.json from
     #config.json.sample
     if args.team != None:
-        default_config = load_config(f"{app_path}/{args.confdir}",True)
+        default_config = load_config(config_dir,True)
         # Make sure that the argument for the team supplied is valid
         if args.team[0] in TEAMS:
             default_config['preferences']['teams'] = args.team
-            save_config(default_config,args.confdir)
+            save_config(default_config,config_dir)
         else:
             print("Your team {0} is not in {1}.  Check the spelling and try again".format(args.team[0],TEAMS),RED)
         sys.exit(os.EX_CONFIG)
     else:
-        default_config = load_config(f"{app_path}/{args.confdir}")
+        default_config = load_config(config_dir)
 
     
     if questionary.confirm("Do you see a net,stick and horn?",style=custom_style_dope,qmark='🥅🏒🚨').skip_if(args.simple,default=True).ask():
@@ -1283,7 +1392,7 @@ def main():
 
     if questionary.confirm("Do you want a simple default setup with one team selection (Y)?",style=custom_style_dope,qmark=qmark).skip_if(args.simple,default=True).ask():
         #Load the config.json.sample
-        #default_config = load_config(f"{app_path}/{args.confdir}",True)
+        #default_config = load_config(config_dir,True)
         
         selected_teams = get_default_value(default_config,['preferences','teams'],"string")
         preferences_teams = []
@@ -1295,8 +1404,8 @@ def main():
 
         default_config['preferences']['teams'] = preferences_teams
 
-        if questionary.confirm("Save {}/config.json file?".format(args.confdir),qmark=qmarksave,style=custom_style_dope).skip_if(args.simple,default=True).ask():
-            save_config(default_config,args.confdir)
+        if questionary.confirm("Save {}/config.json file?".format(config_dir),qmark=qmarksave,style=custom_style_dope).skip_if(args.simple,default=True).ask():
+            save_config(default_config,config_dir)
         sys.exit(0)
     else:
         #Do full setup or by sections?
@@ -1338,8 +1447,8 @@ def main():
 
 
     #Prepare to output to config.json file
-    if questionary.confirm("Save {}/config.json file?".format(f"{app_path}/{args.confdir}"),qmark=qmarksave,style=custom_style_dope).ask():
-        save_config(nhl_config,f"{app_path}/{args.confdir}")
+    if questionary.confirm("Save {}/config.json file?".format(config_dir),qmark=qmarksave,style=custom_style_dope).ask():
+        save_config(nhl_config,config_dir)
 
 if __name__ == '__main__':
     main()

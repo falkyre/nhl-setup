@@ -27,7 +27,6 @@ def validateConf(confpath,schemapath):
     try:
         validator(conf)
     except fastjsonschema.JsonSchemaException as e:
-        msg = e.message
-        return False, msg
+        return False, e
     else:
         return True, "validate %s pass" % confpath

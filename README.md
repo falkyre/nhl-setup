@@ -1,6 +1,6 @@
 ![nhl_setup](../../assets/images/nhl_setup.gif)
 ### History
-* V2025.10.1 - October 13, 2025
+* V2025.10.1 - October 14, 2025
 * V2025.10.0 - October 6, 2025
 * V1.6.3 - May 14, 2022
 * V1.4.0 - September 25, 2020
@@ -13,7 +13,7 @@
 ### Latest Changes
 
 #### V2025.10.1
-If you install board plugins using the new plugin system, the nhl_setup will read what plugins you installed and add them to the board selection list for the different states.  Addition of the forecast_show_today option in the weather forecast section of config.
+If you install board plugins using the new plugin system, the nhl_setup will read what plugins you installed and add them to the board selection list for the different states.  Addition of the forecast_show_today option in the weather forecast section of config.  The nhl_setup will also add in missing required fields in the config.json if some have been added between scoreboard releases.
 
 #### V2025.10.0
 Move to dedicated repository
