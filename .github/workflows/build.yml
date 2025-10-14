@@ -76,7 +76,7 @@ jobs:
       - name: Build on 32-bit ARM
         uses: pguyot/arm-runner-action@v2
         with:
-          base_image: raspios_lite:2025-05-13
+          base_image: raspios_lite:2023-05-03
           copy_artifact_path: dist
           copy_artifacts_on_fail: yes
           optimize_image: no
@@ -106,7 +106,7 @@ jobs:
       - name: Build on 64-bit ARM
         uses: pguyot/arm-runner-action@v2
         with:
-          base_image: raspios_lite_arm64:2025-05-13
+          base_image: raspios_lite_arm64:2023-05-03
           copy_artifact_path: dist
           copy_artifacts_on_fail: yes
           optimize_image: no
