@@ -29,10 +29,6 @@ jobs:
             /nhl-setup/.venv/bin/pyinstaller --onefile --add-data "$SITE_PACKAGES/pyfiglet:./pyfiglet" nhl_setup.py -n nhl_setup.32
           cpu: cortex-a7
           cpu_info: cpuinfo/raspberrypi_3b
-      - name: Test multiple artifacts were copied
-        run: |
-          test -f dist/nhl_setup.32
-          ls -la dist
 
       - name: Upload 32-bit artifact
         uses: actions/upload-artifact@v4
@@ -70,8 +66,68 @@ jobs:
           name: nhl_setup.64
           path: dist/nhl_setup.64
 
+  build_32bit_bookworm:
+    runs-on: ubuntu-22.04
+    name: Build 32-bit binary (Bookworm)
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build on 32-bit ARM
+        uses: pguyot/arm-runner-action@v2
+        with:
+          base_image: raspios_lite:2025-05-13
+          copy_artifact_path: dist
+          copy_artifacts_on_fail: yes
+          optimize_image: no
+          commands: |
+            apt-get update
+            apt-get install -y python3-venv python3-pip
+            python3 -m venv .venv
+            /nhl-setup/.venv/bin/pip install -r requirements.txt
+            SITE_PACKAGES=$(/nhl-setup/.venv/bin/python -c "import site; print(site.getsitepackages()[0])")
+            /nhl-setup/.venv/bin/pyinstaller --onefile --add-data "$SITE_PACKAGES/pyfiglet:./pyfiglet" nhl_setup.py -n nhl_setup.bookworm.32
+          cpu: cortex-a7
+          cpu_info: cpuinfo/raspberrypi_3b
+
+      - name: Upload 32-bit artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nhl_setup.bookworm.32
+          path: dist/nhl_setup.bookworm.32
+
+  build_64bit_bookworm:
+    runs-on: ubuntu-22.04
+    name: Build 64-bit binary (Bookworm)
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build on 64-bit ARM
+        uses: pguyot/arm-runner-action@v2
+        with:
+          base_image: raspios_lite_arm64:2025-05-13
+          copy_artifact_path: dist
+          copy_artifacts_on_fail: yes
+          optimize_image: no
+          commands: |
+            apt-get update
+            apt-get install -y python3-venv python3-pip
+            python3 -m venv .venv
+            /nhl-setup/.venv/bin/pip install -r requirements.txt
+            SITE_PACKAGES=$(/nhl-setup/.venv/bin/python -c "import site; print(site.getsitepackages()[0])")
+            /nhl-setup/.venv/bin/pyinstaller --onefile --add-data "$SITE_PACKAGES/pyfiglet:./pyfiglet" nhl_setup.py -n nhl_setup.bookworm.64
+          cpu: cortex-a53
+          cpu_info: cpuinfo/raspberrypi_zero2_w_arm64
+
+      - name: Upload 64-bit artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nhl_setup.bookworm.64
+          path: dist/nhl_setup.bookworm.64
+
   release:
-    needs: [build_32bit, build_64bit]
+    needs: [build_32bit, build_64bit, build_32bit_bookworm, build_64bit_bookworm]
     runs-on: ubuntu-latest
     name: Upload to release
     permissions:
@@ -90,3 +146,5 @@ jobs:
           files: |
             dist/nhl_setup.32
             dist/nhl_setup.64
+            dist/nhl_setup.bookworm.32
+            dist/nhl_setup.bookworm.64
