@@ -1,0 +1,1474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NLS Control Hub</title>
+    <link rel="icon" type="image/x-icon" href="/assets/images/favicon.ico">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <link id="prism-light-theme" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism.min.css" rel="stylesheet" />
+    <link id="prism-dark-theme" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
+
+    <link href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/match-braces/prism-match-braces.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/prismjs-rainbow-braces@1.0.2/prism-rainbow-braces.css" rel="stylesheet" />
+
+
+    <style>
+        .form-text { font-size: 0.875em; }
+        .form-label { font-weight: 500; }
+        .accordion-item .accordion-item { border-left: 0; border-right: 0; }
+        .dropdown-item.active { font-weight: bold; }
+        
+        /* ============================================= */
+        /* MODIFIED: Logo Header CSS */
+        /* ============================================= */
+        .logo-header {
+            max-width: 300px;
+            width: 70%;
+            height: auto;
+            margin-bottom: 1rem;
+            /* Default (dark mode) style */
+            background-color: transparent;
+            padding: 0;
+            border-radius: 0;
+            transition: background-color 0.2s ease-in-out, padding 0.2s ease-in-out;
+        }
+        /* Light mode style */
+        [data-bs-theme="light"] .logo-header {
+            background-color: #ffffff;
+            padding: 1rem;
+            border-radius: 0.375rem;
+        }
+
+        /* NEW: CSS to toggle logos */
+        .logo-light { display: none; }
+        .logo-dark { display: inline-block; }
+        [data-bs-theme="light"] .logo-light { display: inline-block; }
+        [data-bs-theme="light"] .logo-dark { display: none; }
+        /* ============================================= */
+        
+        #load_from_server { margin-bottom: 0.5rem; }
+        @media (min-width: 768px) {
+            #load_from_server { margin-bottom: 0; }
+        }
+
+        /* Styles for the syntax highlighting block */
+        pre[class*="language-"] {
+            padding: 1rem;
+            border-radius: 0.375rem; /* Bootstrap's form-control border-radius */
+            font-family: monospace;
+            font-size: 0.9em;
+            max-height: 600px; /* ~30 rows */
+            overflow: auto;
+            white-space: pre-wrap; /* Wrap long lines */
+            word-break: break-all; /* Break long strings */
+        }
+        /* Make sure code block has correct background */
+        code[class*="language-"] {
+            background-color: transparent !important;
+            white-space: pre-wrap; 
+            word-break: break-all;
+        }
+    </style>
+
+    <script>
+        (function() {
+            // Get light/dark theme elements
+            const lightTheme = document.getElementById('prism-light-theme');
+            const darkTheme = document.getElementById('prism-dark-theme');
+
+            // Function to apply the correct theme
+            const applyTheme = (theme) => {
+                if (theme === 'dark') {
+                    document.documentElement.setAttribute('data-bs-theme', 'dark');
+                    if (lightTheme) lightTheme.disabled = true;
+                    if (darkTheme) darkTheme.disabled = false;
+                } else {
+                    document.documentElement.setAttribute('data-bs-theme', 'light');
+                    if (lightTheme) lightTheme.disabled = false;
+                    if (darkTheme) darkTheme.disabled = true;
+                }
+            };
+            
+            const savedTheme = localStorage.getItem('theme') || 'auto';
+            
+            if (savedTheme === 'light' || savedTheme === 'dark') {
+                applyTheme(savedTheme);
+            } else { 
+                // 'auto' mode: check system preference
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                applyTheme(prefersDark ? 'dark' : 'light');
+            }
+        })();
+    </script>
+
+</head>
+<body class="container my-4">
+
+    <div class="d-flex justify-content-end mb-2">
+        <div class="dropdown">
+            <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="theme-toggle-button" data-bs-toggle="dropdown" aria-expanded="false">
+                </button>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="theme-toggle-button">
+                <li><a class="dropdown-item" href="#" data-theme-value="light"><i class="bi bi-sun-fill me-2"></i> Light</a></li>
+                <li><a class="dropdown-item" href="#" data-theme-value="dark"><i class="bi bi-moon-stars-fill me-2"></i> Dark</a></li>
+                <li><a class="dropdown-item" href="#" data-theme-value="auto"><i class="bi bi-circle-half me-2"></i> Auto</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="text-center">
+        <a href="/">
+            <img src="/assets/images/logo-lite.svg" class="logo-header logo-light" alt="Scoreboard Logo">
+            <img src="/assets/images/logo.svg" class="logo-header logo-dark" alt="Scoreboard Logo">
+        </a>
+    </div>
+    <nav class="nav nav-pills flex-column flex-sm-row justify-content-center text-center nav-fill mb-4">
+        <a class="nav-link" id="nav-home" href="/">HOME</a>
+        <a class="nav-link" id="nav-config" href="/config">CONFIGURATOR</a>
+        <a class="nav-link" id="nav-plugins" href="/plugins">PLUGINS</a>
+        <a class="nav-link" id="nav-utilities" href="/utilities">UTILITIES</a>
+        <a class="nav-link" id="nav-supervisor" href="/supervisor" style="display: none;">SUPERVISOR</a>
+    </nav>
+    <p class="lead">Fill out the options below, or load the existing server config to edit.</p>
+    
+    <div class="mb-4">
+        <button id="load_from_server" class="btn btn-info">
+            <i class="bi bi-arrow-down-square-fill me-2"></i> Load Config From Server
+        </button>
+    </div>
+    
+    <form id="config-form">
+
+        <div class="accordion" id="mainAccordion">
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingGeneral">
+                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseGeneral" aria-expanded="true" aria-controls="collapseGeneral">
+                        <strong>General Settings</strong>
+                    </button>
+                </h2>
+                <div id="collapseGeneral" class="accordion-collapse collapse show" aria-labelledby="headingGeneral" data-bs-parent="#mainAccordion">
+                    <div class="accordion-body">
+                        
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="loglevel" class="form-label">Log Level</label>
+                                <select id="loglevel" class="form-select">
+                                    <option value="INFO">INFO</option>
+                                    <option value="DEBUG">DEBUG</option>
+                                    <option value="WARNING">WARNING</option>
+                                    <option value="ERROR">ERROR</option>
+                                    <option value="CRITICAL">CRITICAL</option>
+                                </select>
+                                <div class="form-text">Level of logs to show in output.</div>
+                            </div>
+                        </div>
+
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="debug" value="">
+                            <label class="form-check-label" for="debug">
+                                Debug Mode
+                            </label>
+                            <div class="form-text">Enable debug mode (shows console output).</div>
+                        </div>
+
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="live_mode" value="" checked>
+                            <label class="form-check-label" for="live_mode">
+                                Live Mode
+                            </label>
+                            <div class="form-text">Enable live game data for your favorite team.</div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingPreferences">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePreferences" aria-expanded="false" aria-controls="collapsePreferences">
+                        <strong>Preferences</strong>
+                    </button>
+                </h2>
+                <div id="collapsePreferences" class="accordion-collapse collapse" aria-labelledby="headingPreferences" data-bs-parent="#mainAccordion">
+                    <div class="accordion-body">
+                        
+                        <div class="mb-3">
+                            <label for="pref_teams" class="form-label">Preferred Teams</label>
+                            <select id="pref_teams" class="form-select" multiple size="10">
+                                <option value="Avalanche">Avalanche</option>
+                                <option value="Blackhawks">Blackhawks</option>
+                                <option value="Blue Jackets">Blue Jackets</option>
+                                <option value="Blues">Blues</option>
+                                <option value="Bruins">Bruins</option>
+                                <option value="Canadiens">Canadiens</option>
+                                <option value="Canucks">Canucks</option>
+                                <option value="Capitals">Capitals</option>
+                                <option value="Devils">Devils</option>
+                                <option value="Ducks">Ducks</option>
+                                <option value="Flames">Flames</option>
+                                <option value="Flyers">Flyers</option>
+                                <option value="Golden Knights">Golden Knights</option>
+                                <option value="Hurricanes">Hurricanes</option>
+                                <option value="Islanders">Islanders</option>
+                                <option value="Jets">Jets</option>
+                                <option value="Kings">Kings</option>
+                                <option value="Kraken">Kraken</option>
+                                <option value="Lightning">Lightning</option>
+                                <option value="Mammoth">Mammoth</option>
+                                <option value="Maple Leafs">Maple Leafs</option>
+                                <option value="Oilers">Oilers</option>
+                                <option value="Panthers">Panthers</option>
+                                <option value="Penguins">Penguins</option>
+                                <option value="Predators">Predators</option>
+                                <option value="Rangers">Rangers</option>
+                                <option value="Red Wings">Red Wings</option>
+                                <option value="Sabres">Sabres</option>
+                                <option value="Senators">Senators</option>
+                                <option value="Sharks">Sharks</option>
+                                <option value="Stars">Stars</option>
+                                <option value="Wild">Wild</option>
+                            </select>
+                            <div class="form-text">First team is favorite. Hold Ctrl (or Cmd on Mac) to select multiple teams.</div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="pref_location" class="form-label d-flex justify-content-between">
+                                    Location
+                                    <a href="#" id="autofill_location_btn" class="small">(Autofill Lat/Lon from IP)</a>
+                                </label>
+                                <input type="text" class="form-control" id="pref_location" placeholder="Winnipeg, MB">
+                                <div class="form-text">Used by dimmer and weather. E.g., "City,State" or "Lat,Long".</div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="pref_time_format" class="form-label">Time Format</label>
+                                <select id="pref_time_format" class="form-select">
+                                    <option value="12h">12h</option>
+                                    <option value="24h">24h</option>
+                                </select>
+                                <div class="form-text">Format for game start times.</div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="pref_end_of_day" class="form-label">End of Day (24h)</label>
+                                <input type="time" class="form-control" id="pref_end_of_day" value="12:00">
+                                <div class="form-text">When to stop showing *previous* day's games.</div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="pref_live_game_refresh" class="form-label">Live Refresh Rate (sec)</label>
+                                <input type="number" class="form-control" id="pref_live_game_refresh" value="15">
+                                <div class="form-text">API poll rate during live games (min 10).</div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="pref_sog_display" class="form-label">SOG Display Frequency</label>
+                                <input type="number" class="form-control" id="pref_sog_display" value="4">
+                                <div class="form-text">How often shots on goal are updated.</div>
+                            </div>
+                        </div>
+                        
+                        <div class_=("mb-3">
+                            <label class="form-label">Goal Animations</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="pref_goal_pref_team_only" value="">
+                                <label class="form-check-label" for="pref_goal_pref_team_only">
+                                    Preferred Team Only
+                                </label>
+                                <div class="form-text">If checked, only show goal animations for preferred teams.</div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingStates">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseStates" aria-expanded="false" aria-controls="collapseStates">
+                        <strong>States</strong>
+                    </button>
+                </h2>
+                <div id="collapseStates" class="accordion-collapse collapse" aria-labelledby="headingStates" data-bs-parent="#mainAccordion">
+                    <div class="accordion-body">
+                        <p class="form-text">For each state, select the boards you want to display. Hold Ctrl/Cmd to select multiple.</p>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="state_off_day" class="form-label">Off Day Boards</label>
+                                <select id="state_off_day" class="form-select" multiple size="8">
+                                    </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="state_scheduled" class="form-label">Scheduled Game Boards</label>
+                                <select id="state_scheduled" class="form-select" multiple size="8">
+                                    </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="state_intermission" class="form-label">Intermission Boards</label>
+                                <select id="state_intermission" class="form-select" multiple size="8">
+                                    </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="state_post_game" class="form-label">Post-Game Boards</label>
+                                <select id="state_post_game" class="form-select" multiple size="8">
+                                    </select>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingBoards">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseBoards" aria-expanded="false" aria-controls="collapseBoards">
+                        <strong>Board Settings</strong>
+                    </button>
+                </h2>
+                <div id="collapseBoards" class="accordion-collapse collapse" aria-labelledby="headingBoards" data-bs-parent="#mainAccordion">
+                    <div class="accordion-body">
+                        
+                        <div class="accordion" id="boardsAccordion">
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="headingBoardScoreticker">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseBoardScoreticker" aria-expanded="false" aria-controls="collapseBoardScoreticker">
+                                        Score Ticker
+                                    </button>
+                                </h2>
+                                <div id="collapseBoardScoreticker" class="accordion-collapse collapse" aria-labelledby="headingBoardScoreticker" data-bs-parent="#boardsAccordion">
+                                    <div class="accordion-body">
+                                        <div class="mb-3">
+                                            <label for="boards_scoreticker_rotation_rate" class="form-label">Rotation Rate (sec)</label>
+                                            <input type="number" class="form-control" id="boards_scoreticker_rotation_rate" value="5">
+                                            <div class="form-text">Duration each game is shown on screen.</div>
+                                        </div>
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="checkbox" id="boards_scoreticker_pref_teams_only" value="">
+                                            <label class="form-check-label" for="boards_scoreticker_pref_teams_only">
+                                                Preferred Teams Only
+                                            </label>
+                                            <div class="form-text">Show only games your preferred teams are playing.</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="headingBoardSeriesticker">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseBoardSeriesticker" aria-expanded="false" aria-controls="collapseBoardSeriesticker">
+                                        Series Ticker
+                                    </button>
+                                </h2>
+                                <div id="collapseBoardSeriesticker" class="accordion-collapse collapse" aria-labelledby="headingBoardSeriesticker" data-bs-parent="#boardsAccordion">
+                                    <div class="accordion-body">
+                                        <div class="mb-3">
+                                            <label for="boards_seriesticker_rotation_rate" class="form-label">Rotation Rate (sec)</label>
+                                            <input type="number" class="form-control" id="boards_seriesticker_rotation_rate" value="5">
+                                            <div class="form-text">Duration each series is shown on screen.</div>
+                                        </div>
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="checkbox" id="boards_seriesticker_pref_teams_only" value="">
+                                            <label class="form-check-label" for="boards_seriesticker_pref_teams_only">
+                                                Preferred Teams Only
+                                            </label>
+                                            <div class="form-text">Show only series your preferred teams are part of.</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="headingBoardStandings">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseBoardStandings" aria-expanded="false" aria-controls="collapseBoardStandings">
+                                        Standings
+                                    </button>
+                                </h2>
+                                <div id="collapseBoardStandings" class="accordion-collapse collapse" aria-labelledby="headingBoardStandings" data-bs-parent="#boardsAccordion">
+                                    <div class="accordion-body">
+                                        <div class="mb-3">
+                                            <label for="boards_standings_type" class="form-label">Standing Type</label>
+                                            <select id="boards_standings_type" class="form-select">
+                                                <option value="conference">Conference</option>
+                                                <option value="division">Division</option>
+                                                <option value="wild_card">Wild Card</option>
+                                            </select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="boards_standings_conference" class="form-label">Preferred Conference</label>
+                                            <select id="boards_standings_conference" class="form-select">
+                                                <option value="">-- None --</option>
+                                                <option value="eastern">Eastern</option>
+                                                <option value="western">Western</option>
+                                            </select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="boards_standings_division" class="form-label">Preferred Division</label>
+                                            <select id="boards_standings_division" class="form-select">
+                                                <option value="">-- None --</option>
+                                                <option value="central">Central</option>
+                                                <option value="atlantic">Atlantic</option>
+                                                <option value="metropolitan">Metropolitan</option>
+                                                <option value="pacific">Pacific</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="checkbox" id="boards_standings_pref_only" value="">
+                                            <label class="form-check-label" for="boards_standings_pref_only">
+                                                Preferred Standings Only
+                                            </label>
+                                            <div class="form-text">Only show the preferred division/conference.</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="headingBoardClock">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseBoardClock" aria-expanded="false" aria-controls="collapseBoardClock">
+                                        Clock
+                                    </button>
+                                </h2>
+                                <div id="collapseBoardClock" class="accordion-collapse collapse" aria-labelledby="headingBoardClock" data-bs-parent="#boardsAccordion">
+                                    <div class="accordion-body">
+                                        <div class="mb-3">
+                                            <label for="boards_clock_duration" class="form-label">Duration (sec)</label>
+                                            <input type="number" class="form-control" id="boards_clock_duration" value="60">
+                                            <div class="form-text">How long to show the clock.</div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="boards_clock_clock_rgb" class="form-label">Clock RGB</label>
+                                                <input type="text" class="form-control" id="boards_clock_clock_rgb" placeholder="255,255,255">
+                                                <div class="form-text">R,G,B for clock numbers (if team colors off).</div>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="boards_clock_date_rgb" class="form-label">Date RGB</label>
+                                                <input type="text" class="form-control" id="boards_clock_date_rgb" placeholder="200,200,200">
+                                                <div class="form-text">R,G,B for date/weather text (if team colors off).</div>
+                                            </div>
+                                        </div>
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="checkbox" id="boards_clock_pref_team_colors" value="">
+                                            <label class="form-check-label" for="boards_clock_pref_team_colors">
+                                                Use Preferred Team Colors
+                                            </label>
+                                        </div>
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="checkbox" id="boards_clock_flash_seconds" value="">
+                                            <label class="form-check-label" for="boards_clock_flash_seconds">
+                                                Flash Seconds (:)
+                                            </label>
+                                        </div>
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="checkbox" id="boards_clock_hide_indicator" value="">
+                                            <label class="form-check-label" for="boards_clock_hide_indicator">
+                                                Hide 'No Network' Indicator
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="headingBoardWeather">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseBoardWeather" aria-expanded="false" aria-controls="collapseBoardWeather">
+                                        Weather
+                                    </button>
+                                </h2>
+                                <div id="collapseBoardWeather" class="accordion-collapse collapse" aria-labelledby="headingBoardWeather" data-bs-parent="#boardsAccordion">
+                                    <div class="accordion-body">
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="checkbox" id="boards_weather_enabled" value="">
+                                            <label class="form-check-label" for="boards_weather_enabled">
+                                                Enable Weather
+                                            </label>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-4 mb-3">
+                                                <label for="boards_weather_data_feed" class="form-label">Data Feed</label>
+                                                <input type="text" class="form-control" id="boards_weather_data_feed" placeholder="EC">
+                                                <div class="form-text">e.g., EC or OWM.</div>
+                                            </div>
+                                            <div class="col-md-8 mb-3">
+                                                <label for="boards_weather_owm_apikey" class="form-label">OpenWeatherMap API Key</label>
+                                                <input type="text" class="form-control" id="boards_weather_owm_apikey">
+                                                <div class="form-text">Required if Data Feed is OWM.</div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-4 mb-3">
+                                                <label for="boards_weather_view" class="form-label">View</label>
+                                                <input type="text" class="form-control" id="boards_weather_view" value="full">
+                                                <div class="form-text">full or summary.</div>
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="boards_weather_units" class="form-label">Units</label>
+                                                <input type="text" class="form-control" id="boards_weather_units" value="metric">
+                                                <div class="form-text">metric or imperial.</div>
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="boards_weather_duration" class="form-label">Duration (sec)</label>
+                                                <input type="number" class="form-control" id="boards_weather_duration" value="30">
+                                                <div class="form-text">Time to flip through pages (min 30).</div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-4 mb-3">
+                                                <label for="boards_weather_update_freq" class="form-label">Update Freq (min)</label>
+                                                <input type="number" class="form-control" id="boards_weather_update_freq" value="5">
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="boards_weather_forecast_days" class="form-label">Forecast Days</label>
+                                                <input type="number" class="form-control" id="boards_weather_forecast_days" value="3">
+                                                <div class="form-text">Max 3.</div>
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="boards_weather_forecast_update" class="form-label">Forecast Update (hours)</label>
+                                                <input type="number" class="form-control" id="boards_weather_forecast_update" value="3">
+                                            </div>
+                                        </div>
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="checkbox" id="boards_weather_show_on_clock" value="">
+                                            <label class="form-check-label" for="boards_weather_show_on_clock">
+                                                Show on Clock
+                                            </label>
+                                            <div class="form-text">Add temp/humidity to clock board.</div>
+                                        </div>
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="checkbox" id="boards_weather_forecast_enabled" value="">
+                                            <label class="form-check-label" for="boards_weather_forecast_enabled">
+                                                Enable Forecast
+                                            </label>
+                                        </div>
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="checkbox" id="boards_weather_forecast_show_today" value="">
+                                            <label class="form-check-label" for="boards_weather_forecast_show_today">
+                                                Show Today in Forecast
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="headingBoardWxalert">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseBoardWxalert" aria-expanded="false" aria-controls="collapseBoardWxalert">
+                                        Weather Alert (wxalert)
+                                    </button>
+                                </h2>
+                                <div id="collapseBoardWxalert" class="accordion-collapse collapse" aria-labelledby="headingBoardWxalert" data-bs-parent="#boardsAccordion">
+                                    <div class="accordion-body">
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="checkbox" id="boards_wxalert_show_alerts" value="">
+                                            <label class="form-check-label" for="boards_wxalert_show_alerts">
+                                                Show Alerts
+                                            </label>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-4 mb-3">
+                                                <label for="boards_wxalert_alert_feed" class="form-label">Alert Feed</label>
+                                                <input type="text" class="form-control" id="boards_wxalert_alert_feed" placeholder="EC">
+                                                <div class="form-text">e.g., EC or NWS.</div>
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="boards_wxalert_update_freq" class="form-label">Update Freq (min)</label>
+                                                <input type="number" class="form-control" id="boards_wxalert_update_freq" value="5">
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="boards_wxalert_alert_duration" class="form-label">Alert Duration (sec)</label>
+                                                <input type="number" class="form-control" id="boards_wxalert_alert_duration" value="5">
+                                            </div>
+                                        </div>
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="checkbox" id="boards_wxalert_nws_show_expire" value="">
+                                            <label class="form-check-label" for="boards_wxalert_nws_show_expire">
+                                                NWS: Show Expire Time
+                                            </label>
+                                            <div class="form-text">If unchecked, shows effective time.</div>
+                                        </div>
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="checkbox" id="boards_wxalert_alert_title" value="">
+                                            <label class="form-check-label" for="boards_wxalert_alert_title">
+                                                Show Alert Title
+                                            </label>
+                                            <div class="form-text">Show WARNING/WATCH/ADVISORY on alert page.</div>
+                                        </div>
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="checkbox" id="boards_wxalert_scroll_alert" value="">
+                                            <label class="form-check-label" for="boards_wxalert_scroll_alert">
+                                                Scroll Alert Text
+                                            </label>
+                                        </div>
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="checkbox" id="boards_wxalert_show_on_clock" value="">
+                                            <label class="form-check-label" for="boards_wxalert_show_on_clock">
+                                                Show on Clock
+                                            </label>
+                                            <div class="form-text">Show "Fred" (alert color square) on clock.</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                        </div> 
+
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingSbio">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSbio" aria-expanded="false" aria-controls="collapseSbio">
+                        <strong>Scoreboard IO (sbio)</strong>
+                    </button>
+                </h2>
+                <div id="collapseSbio" class="accordion-collapse collapse" aria-labelledby="headingSbio" data-bs-parent="#mainAccordion">
+                    <div class="accordion-body">
+                        
+                        <div class="accordion" id="sbioAccordion">
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="headingSbioMqtt">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSbioMqtt" aria-expanded="false" aria-controls="collapseSbioMqtt">
+                                        MQTT
+                                    </button>
+                                </h2>
+                                <div id="collapseSbioMqtt" class="accordion-collapse collapse" aria-labelledby="headingSbioMqtt" data-bs-parent="#sbioAccordion">
+                                    <div class="accordion-body">
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="checkbox" id="sbio_mqtt_enabled" value="">
+                                            <label class="form-check-label" for="sbio_mqtt_enabled">
+                                                Enable MQTT
+                                            </label>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-8 mb-3">
+                                                <label for="sbio_mqtt_animations" class="form-label">Broker</label>
+                                                <input type="text" class="form-control" id="sbio_mqtt_animations" placeholder="192.168.1.100">
+                                                <div class="form-text">Hostname or IP address of MQTT server.</div>
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="sbio_mqtt_pin" class="form-label">Port</label>
+                                                <input type="number" class="form-control" id="sbio_mqtt_pin" value="1883">
+                                                <div class="form-text">MQTT server port.</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="headingSbioScreensaver">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSbioScreensaver" aria-expanded="false" aria-controls="collapseSbioScreensaver">
+                                        Screensaver
+                                    </button>
+                                </h2>
+                                <div id="collapseSbioScreensaver" class="accordion-collapse collapse" aria-labelledby="headingSbioScreensaver" data-bs-parent="#sbioAccordion">
+                                    <div class="accordion-body">
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="checkbox" id="sbio_screensaver_enabled" value="">
+                                            <label class="form-check-label" for="sbio_screensaver_enabled">
+                                                Enable Screensaver
+                                            </label>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="sbio_screensaver_start" class="form-label">Start Time (24h)</label>
+                                                <input type="time" class="form-control" id="sbio_screensaver_start" value="22:00">
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="sbio_screensaver_stop" class="form-label">Stop Time (24h)</label>
+                                                <input type="time" class="form-control" id="sbio_screensaver_stop" value="06:00">
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-4 mb-3">
+                                                <label for="sbio_screensaver_pin" class="form-label">Motion Sensor Pin</label>
+                                                <input type="number" class="form-control" id="sbio_screensaver_pin" value="24">
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="sbio_screensaver_delay" class="form-label">Motion Delay (sec)</label>
+                                                <input type="number" class="form-control" id="sbio_screensaver_delay" value="30">
+                                            </div>
+                                        </div>
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="checkbox" id="sbio_screensaver_animations" value="">
+                                            <label class="form-check-label" for="sbio_screensaver_animations">
+                                                Show Animations
+                                            </label>
+                                        </div>
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="checkbox" id="sbio_screensaver_data_updates" value="">
+                                            <label class="form-check-label" for="sbio_screensaver_data_updates">
+                                                Update Data While Active
+                                            </label>
+                                        </div>
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="checkbox" id="sbio_screensaver_motionsensor" value="">
+                                            <label class="form-check-label" for="sbio_screensaver_motionsensor">
+                                                Use Motion Sensor
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="headingSbioDimmer">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSbioDimmer" aria-expanded="false" aria-controls="collapseSbioDimmer">
+                                        Dimmer
+                                    </button>
+                                </h2>
+                                <div id="collapseSbioDimmer" class="accordion-collapse collapse" aria-labelledby="headingSbioDimmer" data-bs-parent="#sbioAccordion">
+                                    <div class="accordion-body">
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="checkbox" id="sbio_dimmer_enabled" value="">
+                                            <label class="form-check-label" for="sbio_dimmer_enabled">
+                                                Enable Dimmer
+                                            </label>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="sbio_dimmer_source" class="form-label">Source</label>
+                                                <select id="sbio_dimmer_source" class="form-select">
+                                                    <option value="software">Software (Sunrise/Sunset)</option>
+                                                    <option value="hardware">Hardware (Light Sensor)</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="sbio_dimmer_mode" class="form-label">Mode</label>
+                                                <select id="sbio_dimmer_mode" class="form-select">
+                                                    <option value="always">Always</option>
+                                                    <option value="off_day">Off Day Only</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="sbio_dimmer_sunrise_brightness" class="form-label">Sunrise/Day Brightness</label>
+                                                <input type="number" class="form-control" id="sbio_dimmer_sunrise_brightness" value="40">
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="sbio_dimmer_sunset_brightness" class="form-label">Sunset/Night Brightness</label>
+                                                <input type="number" class="form-control" id="sbio_dimmer_sunset_brightness" value="5">
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-4 mb-3">
+                                                <label for="sbio_dimmer_daytime" class="form-label">Daytime (Software)</label>
+                                                <input type="text" class="form-control" id="sbio_dimmer_daytime" value="8:30 AM">
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="sbio_dimmer_nighttime" class="form-label">Nighttime (Software)</label>
+                                                <input type="text" class="form-control" id="sbio_dimmer_nighttime" value="5:30 PM">
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="sbio_dimmer_offset" class="form-label">Sunrise/Sunset Offset (min)</label>
+                                                <input type="number" class="form-control" id="sbio_dimmer_offset" value="0">
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-4 mb-3">
+                                                <label for="sbio_dimmer_frequency" class="form-label">Check Freq (min)</label>
+                                                <input type="number" class="form-control" id="sbio_dimmer_frequency" value="5">
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="sbio_dimmer_light_level_lux" class="form-label">LUX Threshold (Hardware)</label>
+                                                <input type="number" class="form-control" id="sbio_dimmer_light_level_lux" value="10">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="headingSbioPushbutton">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSbioPushbutton" aria-expanded="false" aria-controls="collapseSbioPushbutton">
+                                        Pushbutton
+                                    </button>
+                                </h2>
+                                <div id="collapseSbioPushbutton" class="accordion-collapse collapse" aria-labelledby="headingSbioPushbutton" data-bs-parent="#sbioAccordion">
+                                    <div class="accordion-body">
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="checkbox" id="sbio_pushbutton_enabled" value="">
+                                            <label class="form-check-label" for="sbio_pushbutton_enabled">
+                                                Enable Pushbutton
+                                            </label>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="sbio_pushbutton_pin" class="form-label">GPIO Pin</label>
+                                                <input type="number" class="form-control" id="sbio_pushbutton_pin" value="25">
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="sbio_pushbutton_state_triggered1" class="form-label">Board on Press</label>
+                                                <input type="text" class="form-control" id="sbio_pushbutton_state_triggered1" value="clock">
+                                                <div class="form-text">e.g., clock, weather, standings.</div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="sbio_pushbutton_reboot_duration" class="form-label">Reboot Hold (sec)</label>
+                                                <input type="number" class="form-control" id="sbio_pushbutton_reboot_duration" value="2">
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="sbio_pushbutton_poweroff_duration" class="form-label">Poweroff Hold (sec)</label>
+                                                <input type="number" class="form-control" id="sbio_pushbutton_poweroff_duration" value="10">
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="sbio_pushbutton_state_triggered1_process" class="form-label">Process on Press (Optional)</label>
+                                            <input type="text" class="form-control" id="sbio_pushbutton_state_triggered1_process">
+                                            <div class="form-text">Full path to script to run on single press.</div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="sbio_pushbutton_reboot_override_process" class="form-label">Reboot Override (Optional)</label>
+                                            <input type="text" class="form-control" id="sbio_pushbutton_reboot_override_process">
+                                            <div class="form-text">Full path to script to run instead of /sbin/reboot.</div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="sbio_pushbutton_poweroff_override_process" class="form-label">Poweroff Override (Optional)</label>
+                                            <input type="text" class="form-control" id="sbio_pushbutton_poweroff_override_process">
+                                            <div class="form-text">Full path to script to run instead of /sbin/poweroff.</div>
+                                        </div>
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="checkbox" id="sbio_pushbutton_bonnet" value="">
+                                            <label class="form-check-label" for="sbio_pushbutton_bonnet">
+                                                Using Adafruit Bonnet (not HAT)
+                                            </label>
+                                        </div>
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="checkbox" id="sbio_pushbutton_display_reboot" value="">
+                                            <label class="form-check-label" for="sbio_pushbutton_display_reboot">
+                                                Display "REBOOT" on reboot
+                                            </label>
+                                        </div>
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="checkbox" id="sbio_pushbutton_display_halt" value="">
+                                            <label class="form-check-label" for="sbio_pushbutton_display_halt">
+                                                Display "! HALT !" on poweroff
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                        </div> 
+
+                    </div>
+                </div>
+            </div>
+
+        </div> </form>
+
+    <hr class="my-4">
+
+    <button id="generate_json" class="btn btn-primary btn-lg">Generate Config JSON</button>
+    <button id="save_to_server" class="btn btn-success btn-lg ms-2" style="display: none;">Save to Server</button>
+
+    <div id="output_section" style="display: none;">
+        <h3 class="mt-5">Generated <code>config.json</code></h3>
+        <p>Click "Generate" to populate this field, or "Load" to see the server's current config.</p>
+        
+        <pre class="match-braces rainbow-braces"><code id="json_output" class="language-json"></code></pre>
+    </div>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/match-braces/prism-match-braces.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs-rainbow-braces@1.0.2/prism-rainbow-braces.min.js"></script>
+
+
+    <script>
+        // --- Helper functions for GETTING data from form ---
+        function getMultiSelectValues(elementId) {
+            const select = document.getElementById(elementId);
+            return Array.from(select.selectedOptions).map(option => option.value);
+        }
+        function getInt(elementId) {
+            const val = document.getElementById(elementId).value;
+            return parseInt(val, 10) || 0;
+        }
+        function getBool(elementId) {
+            return document.getElementById(elementId).checked;
+        }
+        function getVal(elementId) {
+            return document.getElementById(elementId).value;
+        }
+    
+        // --- Attach click event to the generate button ---
+        document.getElementById('generate_json').addEventListener('click', () => {
+            let config = {};
+            const outputElement = document.getElementById('json_output'); // Get output element
+            
+            try {
+                // 1. General Settings
+                config.debug = getBool('debug');
+                config.loglevel = getVal('loglevel');
+                config.live_mode = getBool('live_mode');
+                
+                // 2. Preferences
+                config.preferences = {
+                    time_format: getVal('pref_time_format'),
+                    end_of_day: getVal('pref_end_of_day'),
+                    location: getVal('pref_location'),
+                    live_game_refresh_rate: getInt('pref_live_game_refresh'),
+                    teams: getMultiSelectValues('pref_teams'),
+                    sog_display_frequency: getInt('pref_sog_display'),
+                    goal_animations: {
+                        pref_team_only: getBool('pref_goal_pref_team_only')
+                    }
+                };
+                
+                // 3. States
+                config.states = {
+                    off_day: getMultiSelectValues('state_off_day'),
+                    scheduled: getMultiSelectValues('state_scheduled'),
+                    intermission: getMultiSelectValues('state_intermission'),
+                    post_game: getMultiSelectValues('state_post_game')
+                };
+                
+                // 4. Boards
+                config.boards = {
+                    scoreticker: {
+                        preferred_teams_only: getBool('boards_scoreticker_pref_teams_only'),
+                        rotation_rate: getInt('boards_scoreticker_rotation_rate')
+                    },
+                    seriesticker: {
+                        preferred_teams_only: getBool('boards_seriesticker_pref_teams_only'),
+                        rotation_rate: getInt('boards_seriesticker_rotation_rate')
+                    },
+                    standings: {
+                        preferred_standings_only: getBool('boards_standings_pref_only'),
+                        standing_type: getVal('boards_standings_type'),
+                        divisions: getVal('boards_standings_division'),
+                        conference: getVal('boards_standings_conference')
+                    },
+                    clock: {
+                        duration: getInt('boards_clock_duration'),
+                        hide_indicator: getBool('boards_clock_hide_indicator'),
+                        preferred_team_colors: getBool('boards_clock_pref_team_colors'),
+                        clock_rgb: getVal('boards_clock_clock_rgb'),
+                        date_rgb: getVal('boards_clock_date_rgb'),
+                        flash_seconds: getBool('boards_clock_flash_seconds')
+                    },
+                    weather: {
+                        enabled: getBool('boards_weather_enabled'),
+                        view: getVal('boards_weather_view'),
+                        units: getVal('boards_weather_units'),
+                        duration: getInt('boards_weather_duration'),
+                        data_feed: getVal('boards_weather_data_feed'),
+                        owm_apikey: getVal('boards_weather_owm_apikey'),
+                        update_freq: getInt('boards_weather_update_freq'),
+                        show_on_clock: getBool('boards_weather_show_on_clock'),
+                        forecast_enabled: getBool('boards_weather_forecast_enabled'),
+                        forecast_show_today: getBool('boards_weather_forecast_show_today'),
+                        forecast_days: getInt('boards_weather_forecast_days'),
+                        forecast_update: getInt('boards_weather_forecast_update')
+                    },
+                    wxalert: {
+                        alert_feed: getVal('boards_wxalert_alert_feed'),
+                        update_freq: getInt('boards_wxalert_update_freq'),
+                        nws_show_expire: getBool('boards_wxalert_nws_show_expire'),
+                        show_alerts: getBool('boards_wxalert_show_alerts'),
+                        alert_title: getBool('boards_wxalert_alert_title'),
+                        scroll_alert: getBool('boards_wxalert_scroll_alert'),
+                        show_on_clock: getBool('boards_wxalert_show_on_clock'),
+                        alert_duration: getInt('boards_wxalert_alert_duration')
+                    }
+                };
+                
+                // 5. SBIO
+                config.sbio = {
+                    mqtt: {
+                        enabled: getBool('sbio_mqtt_enabled'),
+                        animations: getVal('sbio_mqtt_animations'),
+                        pin: getInt('sbio_mqtt_pin')
+                    },
+                    screensaver: {
+                        enabled: getBool('sbio_screensaver_enabled'),
+                        animations: getBool('sbio_screensaver_animations'),
+                        start: getVal('sbio_screensaver_start'),
+                        stop: getVal('sbio_screensaver_stop'),
+                        data_updates: getBool('sbio_screensaver_data_updates'),
+                        motionsensor: getBool('sbio_screensaver_motionsensor'),
+                        pin: getInt('sbio_screensaver_pin'),
+                        delay: getInt('sbio_screensaver_delay')
+                    },
+                    dimmer: {
+                        enabled: getBool('sbio_dimmer_enabled'),
+                        source: getVal('sbio_dimmer_source'),
+                        frequency: getInt('sbio_dimmer_frequency'),
+                        light_level_lux: getInt('sbio_dimmer_light_level_lux'),
+                        mode: getVal('sbio_dimmer_mode'),
+                        daytime: getVal('sbio_dimmer_daytime'),
+                        nighttime: getVal('sbio_dimmer_nighttime'),
+                        offset: getInt('sbio_dimmer_offset'),
+                        sunset_brightness: getInt('sbio_dimmer_sunset_brightness'),
+                        sunrise_brightness: getInt('sbio_dimmer_sunrise_brightness')
+                    },
+                    pushbutton: {
+                        enabled: getBool('sbio_pushbutton_enabled'),
+                        bonnet: getBool('sbio_pushbutton_bonnet'),
+                        pin: getInt('sbio_pushbutton_pin'),
+                        reboot_duration: getInt('sbio_pushbutton_reboot_duration'),
+                        reboot_override_process: getVal('sbio_pushbutton_reboot_override_process'),
+                        display_reboot: getBool('sbio_pushbutton_display_reboot'),
+                        poweroff_duration: getInt('sbio_pushbutton_poweroff_duration'),
+                        poweroff_override_process: getVal('sbio_pushbutton_poweroff_override_process'),
+                        display_halt: getBool('sbio_pushbutton_display_halt'),
+                        state_triggered1: getVal('sbio_pushbutton_state_triggered1'),
+                        state_triggered1_process: getVal('sbio_pushbutton_state_triggered1_process')
+                    }
+                };
+            
+                // 6. Output
+                // MODIFIED: Use textContent and call Prism
+                outputElement.textContent = JSON.stringify(config, null, 2);
+                Prism.highlightElement(outputElement);
+
+                // Show the output section and save button
+                document.getElementById('output_section').style.display = 'block';
+                document.getElementById('save_to_server').style.display = 'inline-block';
+            
+            } catch (error) {
+                console.error("Error generating JSON:", error);
+                // MODIFIED: Use textContent
+                outputElement.textContent = "An error occurred. Please check the console (F12) for details.";
+                
+                // Show the output section even on error
+                document.getElementById('output_section').style.display = 'block';
+            }
+        });
+
+        /**
+         * Handles sending the config data to the Python server.
+         */
+        function saveToServer() {
+            // MODIFIED: Read from textContent
+            const jsonString = document.getElementById('json_output').textContent;
+
+            if (!jsonString || jsonString.trim().startsWith("An error occurred")) {
+                alert("Please click 'Generate Config JSON' first to create a configuration to save.");
+                return;
+            }
+
+            const saveButton = document.getElementById('save_to_server');
+            saveButton.textContent = 'Saving...';
+            saveButton.disabled = true;
+
+            fetch('/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: jsonString
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Success! ' + data.message);
+                } else {
+                    alert('Error saving config: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Save failed:', error);
+                alert('Save failed. Is the Python server running? Check the console for details.');
+            })
+            .finally(() => {
+                saveButton.textContent = 'Save to Server';
+                saveButton.disabled = false;
+            });
+        }
+        document.getElementById('save_to_server').addEventListener('click', saveToServer);
+
+    </script>
+
+
+    <script>
+        // --- Helper functions for SETTING data *into* the form ---
+        function setVal(elementId, value) {
+            if (value !== undefined) document.getElementById(elementId).value = value;
+        }
+        function setBool(elementId, value) {
+            if (value !== undefined) document.getElementById(elementId).checked = value;
+        }
+        function setMultiSelectValues(elementId, valuesArray) {
+            if (!valuesArray || !Array.isArray(valuesArray)) return;
+            const select = document.getElementById(elementId);
+            Array.from(select.options).forEach(option => {
+                option.selected = valuesArray.includes(option.value);
+            });
+        }
+
+        /**
+         * Main function to populate the entire form from a config object.
+         */
+        function populateForm(config) {
+            const outputElement = document.getElementById('json_output'); // Get output element
+            try {
+                // 1. General
+                setBool('debug', config.debug);
+                setVal('loglevel', config.loglevel);
+                setBool('live_mode', config.live_mode);
+
+                // 2. Preferences
+                if (config.preferences) {
+                    const prefs = config.preferences;
+                    setVal('pref_time_format', prefs.time_format);
+                    setVal('pref_end_of_day', prefs.end_of_day);
+                    setVal('pref_location', prefs.location);
+                    setVal('pref_live_game_refresh', prefs.live_game_refresh_rate);
+                    setMultiSelectValues('pref_teams', prefs.teams);
+                    setVal('pref_sog_display', prefs.sog_display_frequency);
+                    if (prefs.goal_animations) {
+                        setBool('pref_goal_pref_team_only', prefs.goal_animations.pref_team_only);
+                    }
+                }
+
+                // 3. States
+                if (config.states) {
+                    setMultiSelectValues('state_off_day', config.states.off_day);
+                    setMultiSelectValues('state_scheduled', config.states.scheduled);
+                    setMultiSelectValues('state_intermission', config.states.intermission);
+                    setMultiSelectValues('state_post_game', config.states.post_game);
+                }
+
+                // 4. Boards
+                if (config.boards) {
+                    const b = config.boards;
+                    if (b.scoreticker) {
+                        setBool('boards_scoreticker_pref_teams_only', b.scoreticker.preferred_teams_only);
+                        setVal('boards_scoreticker_rotation_rate', b.scoreticker.rotation_rate);
+                    }
+                    if (b.seriesticker) {
+                        setBool('boards_seriesticker_pref_teams_only', b.seriesticker.preferred_teams_only);
+                        setVal('boards_seriesticker_rotation_rate', b.seriesticker.rotation_rate);
+                    }
+                    if (b.standings) {
+                        setBool('boards_standings_pref_only', b.standings.preferred_standings_only);
+                        setVal('boards_standings_type', b.standings.standing_type);
+                        setVal('boards_standings_division', b.standings.divisions);
+                        setVal('boards_standings_conference', b.standings.conference);
+                    }
+                    if (b.clock) {
+                        setVal('boards_clock_duration', b.clock.duration);
+                        setBool('boards_clock_hide_indicator', b.clock.hide_indicator);
+                        setBool('boards_clock_pref_team_colors', b.clock.preferred_team_colors);
+                        setVal('boards_clock_clock_rgb', b.clock.clock_rgb);
+                        setVal('boards_clock_date_rgb', b.clock.date_rgb);
+                        setBool('boards_clock_flash_seconds', b.clock.flash_seconds);
+                    }
+                    if (b.weather) {
+                        setBool('boards_weather_enabled', b.weather.enabled);
+                        setVal('boards_weather_view', b.weather.view);
+                        setVal('boards_weather_units', b.weather.units);
+                        setVal('boards_weather_duration', b.weather.duration);
+                        setVal('boards_weather_data_feed', b.weather.data_feed);
+                        setVal('boards_weather_owm_apikey', b.weather.owm_apikey);
+                        setVal('boards_weather_update_freq', b.weather.update_freq);
+                        setBool('boards_weather_show_on_clock', b.weather.show_on_clock);
+                        setBool('boards_weather_forecast_enabled', b.weather.forecast_enabled);
+                        setBool('boards_weather_forecast_show_today', b.weather.forecast_show_today);
+                        setVal('boards_weather_forecast_days', b.weather.forecast_days);
+                        setVal('boards_weather_forecast_update', b.weather.forecast_update);
+                    }
+                    if (b.wxalert) {
+                        setVal('boards_wxalert_alert_feed', b.wxalert.alert_feed);
+                        setVal('boards_wxalert_update_freq', b.wxalert.update_freq);
+                        setBool('boards_wxalert_nws_show_expire', b.wxalert.nws_show_expire);
+                        setBool('boards_wxalert_show_alerts', b.wxalert.show_alerts);
+                        setBool('boards_wxalert_alert_title', b.wxalert.alert_title);
+                        setBool('boards_wxalert_scroll_alert', b.wxalert.scroll_alert);
+                        setBool('boards_wxalert_show_on_clock', b.wxalert.show_on_clock);
+                        setVal('boards_wxalert_alert_duration', b.wxalert.alert_duration);
+                    }
+                }
+
+                // 5. SBIO
+                if (config.sbio) {
+                    const s = config.sbio;
+                    if (s.mqtt) {
+                        setBool('sbio_mqtt_enabled', s.mqtt.enabled);
+                        setVal('sbio_mqtt_animations', s.mqtt.animations);
+                        setVal('sbio_mqtt_pin', s.mqtt.pin);
+                    }
+                    if (s.screensaver) {
+                        setBool('sbio_screensaver_enabled', s.screensaver.enabled);
+                        setBool('sbio_screensaver_animations', s.screensaver.animations);
+                        setVal('sbio_screensaver_start', s.screensaver.start);
+                        setVal('sbio_screensaver_stop', s.screensaver.stop);
+                        setBool('sbio_screensaver_data_updates', s.screensaver.data_updates);
+                        setBool('sbio_screensaver_motionsensor', s.screensaver.motionsensor);
+                        setVal('sbio_screensaver_pin', s.screensaver.pin);
+                        setVal('sbio_screensaver_delay', s.screensaver.delay);
+                    }
+                    if (s.dimmer) {
+                        setBool('sbio_dimmer_enabled', s.dimmer.enabled);
+                        setVal('sbio_dimmer_source', s.dimmer.source);
+                        setVal('sbio_dimmer_frequency', s.dimmer.frequency);
+                        setVal('sbio_dimmer_light_level_lux', s.dimmer.light_level_lux);
+                        setVal('sbio_dimmer_mode', s.dimmer.mode);
+                        setVal('sbio_dimmer_daytime', s.dimmer.daytime);
+                        setVal('sbio_dimmer_nighttime', s.dimmer.nighttime);
+                        setVal('sbio_dimmer_offset', s.dimmer.offset);
+                        setVal('sbio_dimmer_sunset_brightness', s.dimmer.sunset_brightness);
+                        setVal('sbio_dimmer_sunrise_brightness', s.dimmer.sunrise_brightness);
+                    }
+                    if (s.pushbutton) {
+                        setBool('sbio_pushbutton_enabled', s.pushbutton.enabled);
+                        setBool('sbio_pushbutton_bonnet', s.pushbutton.bonnet);
+                        setVal('sbio_pushbutton_pin', s.pushbutton.pin);
+                        setVal('sbio_pushbutton_reboot_duration', s.pushbutton.reboot_duration);
+                        setVal('sbio_pushbutton_reboot_override_process', s.pushbutton.reboot_override_process);
+                        setBool('sbio_pushbutton_display_reboot', s.pushbutton.display_reboot);
+                        setVal('sbio_pushbutton_poweroff_duration', s.pushbutton.poweroff_duration);
+                        setVal('sbio_pushbutton_poweroff_override_process', s.pushbutton.poweroff_override_process);
+                        setBool('sbio_pushbutton_display_halt', s.pushbutton.display_halt);
+                        setVal('sbio_pushbutton_state_triggered1', s.pushbutton.state_triggered1);
+                        setVal('sbio_pushbutton_state_triggered1_process', s.pushbutton.state_triggered1_process);
+                    }
+                }
+                
+                // MODIFIED: Use textContent and call Prism
+                outputElement.textContent = JSON.stringify(config, null, 2);
+                Prism.highlightElement(outputElement);
+                
+                // Show the output section and save button
+                document.getElementById('output_section').style.display = 'block';
+                document.getElementById('save_to_server').style.display = 'inline-block';
+
+                alert('Success: Configuration loaded from server!');
+
+            } catch (error) {
+                console.error("Error populating form:", error);
+                alert("Error populating form. The loaded config.json might be corrupt or outdated. Check console (F12) for details.");
+            }
+        }
+
+        /**
+         * Fetches the config from the server.
+         */
+        function loadFromServer() {
+            const loadButton = document.getElementById('load_from_server');
+            loadButton.textContent = 'Loading...';
+            loadButton.disabled = true;
+
+            fetch('/load')
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(err => { throw new Error(err.message); });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        populateForm(data.config);
+                    } else {
+                        throw new Error(data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Load failed:', error);
+                    alert('Load failed: ' + error.message);
+                })
+                .finally(() => {
+                    loadButton.innerHTML = '<i class="bi bi-arrow-down-square-fill me-2"></i> Load Config From Server';
+                    loadButton.disabled = false;
+                });
+        }
+        document.getElementById('load_from_server').addEventListener('click', loadFromServer);
+
+    </script>
+
+    <script>
+        /**
+         * Attempts to get the user's location from their public IP address.
+         */
+        function autofillLocationFromIP() {
+            const link = document.getElementById('autofill_location_btn');
+            const input = document.getElementById('pref_location');
+            const originalText = link.innerHTML;
+
+            // Show loading state
+            link.innerHTML = 'Locating...';
+
+            // Use a free, no-key IP-to-Geo API
+            fetch('http://ip-api.com/json')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.status === 'success') {
+                        // The schema prefers lat,lon for dimmer/weather
+                        const locationString = `${data.lat},${data.lon}`;
+                        input.value = locationString;
+                        alert(`Location found: ${data.city}, ${data.regionName}\nSet to: ${locationString}`);
+                    } else {
+                        throw new Error('API request failed: ' + (data.message || 'Unknown error'));
+                    }
+                })
+                .catch(error => {
+                    console.error('IP Geolocation failed:', error);
+                    alert('Could not automatically find location: ' + error.message);
+                })
+                .finally(() => {
+                    // Restore original link text
+                    link.innerHTML = originalText;
+                });
+        }
+        
+        /**
+         * Populates the states dropdowns with board options.
+         */
+        function populateBoardSelects(boardOptions) {
+            const selectIds = ['state_off_day', 'state_scheduled', 'state_intermission', 'state_post_game'];
+            // Generate the HTML string for the options
+            const optionsHtml = boardOptions
+                .sort((a, b) => a.n.localeCompare(b.n)) // Sort alphabetically by name
+                .map(o => `<option value="${o.v}">${o.n}</option>`)
+                .join('');
+            
+            // Populate all four select boxes
+            selectIds.forEach(id => {
+                const selectEl = document.getElementById(id);
+                if (selectEl) {
+                    selectEl.innerHTML = optionsHtml;
+                }
+            });
+        }
+
+
+        // --- Main DOMContentLoaded listener ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const themeToggleButton = document.getElementById('theme-toggle-button');
+            const themeLinks = document.querySelectorAll('a[data-theme-value]');
+            const autoMediaMatch = window.matchMedia('(prefers-color-scheme: dark)');
+            
+            // Get theme elements
+            const lightTheme = document.getElementById('prism-light-theme');
+            const darkTheme = document.getElementById('prism-dark-theme');
+            
+            const icons = {
+                light: '<i class="bi bi-sun-fill me-2"></i> Light',
+                dark: '<i class="bi bi-moon-stars-fill me-2"></i> Dark',
+                auto: '<i class="bi bi-circle-half me-2"></i> Auto'
+            };
+
+            // REPLACED applyHtmlTheme function
+            const applyTheme = (theme) => {
+                if (theme === 'dark') {
+                    document.documentElement.setAttribute('data-bs-theme', 'dark');
+                    if (lightTheme) lightTheme.disabled = true;
+                    if (darkTheme) darkTheme.disabled = false;
+                } else { // 'light'
+                    document.documentElement.setAttribute('data-bs-theme', 'light');
+                    if (lightTheme) lightTheme.disabled = false;
+                    if (darkTheme) darkTheme.disabled = true;
+                }
+            };
+            
+            // This function handles the logic for 'auto'
+            const applyHtmlTheme = (theme) => {
+                if (theme === 'light' || theme === 'dark') {
+                    applyTheme(theme);
+                } else { // 'auto'
+                    applyTheme(autoMediaMatch.matches ? 'dark' : 'light');
+                }
+            };
+
+            const updateUI = (theme) => {
+                themeToggleButton.innerHTML = icons[theme];
+                themeLinks.forEach(link => {
+                    if (link.getAttribute('data-theme-value') === theme) {
+                        link.classList.add('active');
+                    } else {
+                        link.classList.remove('active');
+                    }
+                });
+            };
+
+            const currentTheme = localStorage.getItem('theme') || 'auto';
+            updateUI(currentTheme);
+            // Note: The initial theme is already applied by the <head> script
+
+            themeLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const newTheme = link.getAttribute('data-theme-value');
+                    localStorage.setItem('theme', newTheme);
+                    applyHtmlTheme(newTheme); // Apply the theme
+                    updateUI(newTheme); // Update the button
+                });
+            });
+
+            // MODIFIED auto-listener
+            autoMediaMatch.addEventListener('change', (e) => {
+                if (localStorage.getItem('theme') === 'auto') {
+                    applyHtmlTheme('auto');
+                }
+            });
+
+            // === NEW LISTENER for Autofill Location ===
+            document.getElementById('autofill_location_btn').addEventListener('click', (e) => {
+                e.preventDefault(); // Prevent link from jumping
+                autofillLocationFromIP();
+            });
+
+            // === MODIFIED: Show Supervisor link and set active nav link ===
+            document.getElementById('nav-config').classList.add('active'); // Set this page as active
+            
+            fetch('/api/status')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.supervisor_available) {
+                        document.getElementById('nav-supervisor').style.display = 'block';
+                    }
+                })
+                .catch(err => console.error("Error fetching status for nav:", err));
+                
+            // === NEW: Fetch boards list and populate dropdowns ===
+            fetch('/api/boards')
+                .then(response => response.json())
+                .then(boardOptions => {
+                    populateBoardSelects(boardOptions);
+                })
+                .catch(err => {
+                    console.error("Error fetching boards list:", err);
+                    // Even if it fails, populate with an empty list
+                    populateBoardSelects([]); 
+                });
+        });
+    </script>
+    
+    <footer class="mt-5 pt-4 border-top text-center">
+        <p class="text-muted">Find help or contribute:</p>
+        <div class="d-flex justify-content-center gap-4 fs-2">
+            <a href="https://github.com/falkyre/nhl-led-scoreboard" title="GitHub Repository" class="text-body-secondary">
+                <i class="bi bi-github"></i>
+            </a>
+            <a href="https://github.com/falkyre/nhl-led-scoreboard/issues" title="Report an Issue" class="text-body-secondary">
+                <i class="bi bi-bug-fill"></i>
+            </a>
+            <a href="https://github.com/falkyre/nhl-led-scoreboard/wiki" title="Project Wiki" class="text-body-secondary">
+                <i class="bi bi-book-half"></i>
+            </a>
+            <a href="https://github.com/falkyre/nhl-led-scoreboard/blob/main/README.md" title="README" class="text-body-secondary">
+                <i class="bi bi-file-text-fill"></i>
+            </a>
+        </div>
+    </footer>
+
+</body>
+</html>

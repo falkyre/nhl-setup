@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NLS Control Hub</title>
+    <link rel="icon" type="image/x-icon" href="/assets/images/favicon.ico">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        .dropdown-item.active { font-weight: bold; }
+        
+        /* Toggle Logo based on theme */
+        .logo-header { max-width: 300px; width: 70%; height: auto; margin-bottom: 1rem; }
+        [data-bs-theme="light"] .logo-header { background-color: #ffffff; padding: 1rem; border-radius: 0.375rem; }
+        .logo-light { display: none; }
+        .logo-dark { display: inline-block; }
+        [data-bs-theme="light"] .logo-light { display: inline-block; }
+        [data-bs-theme="light"] .logo-dark { display: none; }
+
+        .status-running { color: var(--bs-success); font-weight: bold; }
+        .status-stopped { color: var(--bs-danger); font-weight: bold; }
+        .status-starting { color: var(--bs-warning); font-weight: bold; }
+        
+        .log-output {
+            background-color: var(--bs-body-bg);
+            border: 1px solid var(--bs-border-color);
+            padding: 1rem;
+            height: 400px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 0.9em;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        /* Iframe container styles */
+        .iframe-container {
+            position: relative;
+            width: 100%;
+            height: 600px;
+            border: 1px solid var(--bs-border-color);
+            border-radius: 0.375rem;
+            overflow: hidden;
+            background-color: #fff; /* Ensure white bg for supervisor standard UI */
+        }
+        #supervisor-frame {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+    </style>
+    <script>
+        (function() {
+            const applyTheme = (theme) => {
+                document.documentElement.setAttribute('data-bs-theme', theme);
+            };
+            const savedTheme = localStorage.getItem('theme') || 'auto';
+            
+            if (savedTheme === 'light' || savedTheme === 'dark') {
+                applyTheme(savedTheme);
+            } else { 
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                applyTheme(prefersDark ? 'dark' : 'light');
+            }
+        })();
+    </script>
+</head>
+<body class="container my-4">
+
+    <div class="d-flex justify-content-end mb-2">
+        <div class="dropdown">
+            <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="theme-toggle-button" data-bs-toggle="dropdown" aria-expanded="false">
+                </button>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="theme-toggle-button">
+                <li><a class="dropdown-item" href="#" data-theme-value="light"><i class="bi bi-sun-fill me-2"></i> Light</a></li>
+                <li><a class="dropdown-item" href="#" data-theme-value="dark"><i class="bi bi-moon-stars-fill me-2"></i> Dark</a></li>
+                <li><a class="dropdown-item" href="#" data-theme-value="auto"><i class="bi bi-circle-half me-2"></i> Auto</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="text-center">
+        <a href="/">
+            <img src="/assets/images/logo-lite.svg" class="logo-header logo-light" alt="Scoreboard Logo">
+            <img src="/assets/images/logo.svg" class="logo-header logo-dark" alt="Scoreboard Logo">
+        </a>
+    </div>
+
+    <nav class="nav nav-pills flex-column flex-sm-row justify-content-center text-center nav-fill mb-4">
+        <a class="nav-link" id="nav-home" href="/">HOME</a>
+        <a class="nav-link" id="nav-config" href="/config">CONFIGURATOR</a>
+        <a class="nav-link" id="nav-plugins" href="/plugins">PLUGINS</a>
+        <a class="nav-link" id="nav-utilities" href="/utilities">UTILITIES</a>
+        <a class="nav-link" id="nav-supervisor" href="/supervisor">MANAGER</a>
+    </nav>
+    <h1 class="text-center mb-4">Process Manager</h1>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="card-title mb-0">System Processes</h5>
+                <div>
+                    <button class="btn btn-sm btn-outline-secondary me-2" type="button" data-bs-toggle="collapse" data-bs-target="#supervisorUiCollapse" aria-expanded="false" aria-controls="supervisorUiCollapse" id="toggle-web-ui-btn">
+                        <i class="bi bi-window-stack"></i> Open Web Interface
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary" id="refresh-btn">
+                        <i class="bi bi-arrow-clockwise"></i> Refresh
+                    </button>
+                </div>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Name</th>
+                            <th>State</th>
+                            <th>Description</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="process-list">
+                        <tr><td colspan="4" class="text-center">Loading processes...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="collapse mb-5" id="supervisorUiCollapse">
+        <div class="card card-body bg-light">
+            <div class="d-flex justify-content-between mb-2">
+                <h5>Native Supervisor Interface</h5>
+                <button type="button" class="btn-close" data-bs-toggle="collapse" data-bs-target="#supervisorUiCollapse" aria-label="Close"></button>
+            </div>
+            <div class="iframe-container">
+                <iframe id="supervisor-frame" title="Supervisor Web Interface"></iframe>
+            </div>
+            <div class="text-center mt-2 text-muted small">
+                Accessing: <code id="supervisor-url-display"></code>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="logModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Error Log: <span id="log-process-name"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <pre id="log-content" class="log-output">Loading log...</pre>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Theme Logic (Standard) ---
+            const themeToggleButton = document.getElementById('theme-toggle-button');
+            const themeLinks = document.querySelectorAll('a[data-theme-value]');
+            const autoMediaMatch = window.matchMedia('(prefers-color-scheme: dark)');
+            const icons = {
+                light: '<i class="bi bi-sun-fill me-2"></i> Light',
+                dark: '<i class="bi bi-moon-stars-fill me-2"></i> Dark',
+                auto: '<i class="bi bi-circle-half me-2"></i> Auto'
+            };
+
+            const applyTheme = (theme) => document.documentElement.setAttribute('data-bs-theme', theme);
+            const applyHtmlTheme = (theme) => theme === 'light' || theme === 'dark' ? applyTheme(theme) : applyTheme(autoMediaMatch.matches ? 'dark' : 'light');
+            const updateUI = (theme) => {
+                themeToggleButton.innerHTML = icons[theme];
+                themeLinks.forEach(link => link.classList.toggle('active', link.getAttribute('data-theme-value') === theme));
+            };
+
+            const currentTheme = localStorage.getItem('theme') || 'auto';
+            updateUI(currentTheme);
+
+            themeLinks.forEach(link => link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const newTheme = link.getAttribute('data-theme-value');
+                localStorage.setItem('theme', newTheme);
+                applyHtmlTheme(newTheme);
+                updateUI(newTheme);
+            }));
+
+            autoMediaMatch.addEventListener('change', (e) => {
+                if (localStorage.getItem('theme') === 'auto') applyHtmlTheme('auto');
+            });
+
+            // --- Process Manager Logic ---
+            document.getElementById('nav-supervisor').classList.add('active');
+            const processList = document.getElementById('process-list');
+            const logModal = new bootstrap.Modal(document.getElementById('logModal'));
+            const logContent = document.getElementById('log-content');
+            const logName = document.getElementById('log-process-name');
+            let autoRefreshInterval;
+
+            function fetchProcesses() {
+                fetch('/api/supervisor/processes')
+                    .then(res => res.json())
+                    .then(data => {
+                        if(data.success) {
+                            renderTable(data.processes);
+                        } else {
+                            processList.innerHTML = `<tr><td colspan="4" class="text-danger">Error: ${data.message}</td></tr>`;
+                        }
+                    })
+                    .catch(err => {
+                        processList.innerHTML = `<tr><td colspan="4" class="text-danger">Connection error. Is the server running?</td></tr>`;
+                    });
+            }
+
+            function renderTable(processes) {
+                processList.innerHTML = '';
+                processes.forEach(proc => {
+                    const tr = document.createElement('tr');
+                    let stateClass = 'text-muted';
+                    let actionBtn = '';
+
+                    // State Logic (RUNNING=20, STOPPED=0, STARTING=10, STOPPING=40)
+                    if (proc.state === 20) { // RUNNING
+                        stateClass = 'status-running';
+                        actionBtn = `<button class="btn btn-sm btn-danger btn-stop" data-name="${proc.name}">Stop</button>`;
+                    } else if (proc.state === 0 || proc.state === 100 || proc.state === 200) { // STOPPED / EXITED / FATAL
+                        stateClass = 'status-stopped';
+                        actionBtn = `<button class="btn btn-sm btn-success btn-start" data-name="${proc.name}">Start</button>`;
+                    } else {
+                        stateClass = 'status-starting';
+                        actionBtn = `<button class="btn btn-sm btn-secondary" disabled>Processing...</button>`;
+                    }
+
+                    tr.innerHTML = `
+                        <td>${proc.name}</td>
+                        <td class="${stateClass}">${proc.statename}</td>
+                        <td>${proc.description}</td>
+                        <td class="text-end">
+                            ${actionBtn}
+                            <button class="btn btn-sm btn-info ms-1 btn-log" data-name="${proc.name}">Logs</button>
+                        </td>
+                    `;
+                    processList.appendChild(tr);
+                });
+
+                // Attach events
+                document.querySelectorAll('.btn-start').forEach(b => b.addEventListener('click', (e) => controlProcess('start', e.target.dataset.name)));
+                document.querySelectorAll('.btn-stop').forEach(b => b.addEventListener('click', (e) => controlProcess('stop', e.target.dataset.name)));
+                document.querySelectorAll('.btn-log').forEach(b => b.addEventListener('click', (e) => showLog(e.target.dataset.name)));
+            }
+
+            function controlProcess(action, name) {
+                processList.querySelectorAll('button').forEach(b => b.disabled = true);
+                
+                fetch(`/api/supervisor/${action}`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({name: name})
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if(!data.success) alert(`Failed to ${action} process: ${data.message}`);
+                    fetchProcesses();
+                })
+                .catch(err => {
+                    alert("Communication error");
+                    fetchProcesses();
+                });
+            }
+
+            function showLog(name) {
+                logName.textContent = name;
+                logContent.textContent = "Loading...";
+                logModal.show();
+
+                fetch('/api/supervisor/tail_stderr', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({name: name})
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if(data.success) {
+                        logContent.textContent = data.log || "(Log is empty)";
+                    } else {
+                        logContent.textContent = `Error fetching log: ${data.message}`;
+                    }
+                })
+                .catch(err => logContent.textContent = "Error fetching log.");
+            }
+
+            // Initial load and auto-refresh
+            fetchProcesses();
+            document.getElementById('refresh-btn').addEventListener('click', fetchProcesses);
+            autoRefreshInterval = setInterval(fetchProcesses, 5000);
+
+            // --- NEW: Embedded Web Interface Logic ---
+            const toggleBtn = document.getElementById('toggle-web-ui-btn');
+            const frame = document.getElementById('supervisor-frame');
+            const urlDisplay = document.getElementById('supervisor-url-display');
+            let frameLoaded = false;
+
+            // Listener for when the collapse element opens
+            const collapseElement = document.getElementById('supervisorUiCollapse');
+            collapseElement.addEventListener('show.bs.collapse', function () {
+                if (!frameLoaded) {
+                    const url = `http://${window.location.hostname}:9001`;
+                    frame.src = url;
+                    urlDisplay.textContent = url;
+                    frameLoaded = true;
+                    toggleBtn.textContent = "Hide Web Interface"; // Optional text update
+                }
+            });
+        });
+    </script>
+    
+    <footer class="mt-5 pt-4 border-top text-center">
+        <p class="text-muted">Find help or contribute:</p>
+        <div class="d-flex justify-content-center gap-4 fs-2">
+            <a href="https://github.com/falkyre/nhl-led-scoreboard" title="GitHub Repository" class="text-body-secondary"><i class="bi bi-github"></i></a>
+            <a href="https://github.com/falkyre/nhl-led-scoreboard/issues" title="Report an Issue" class="text-body-secondary"><i class="bi bi-bug-fill"></i></a>
+            <a href="https://github.com/falkyre/nhl-led-scoreboard/wiki" title="Project Wiki" class="text-body-secondary"><i class="bi bi-book-half"></i></a>
+            <a href="https://github.com/falkyre/nhl-led-scoreboard/blob/main/README.md" title="README" class="text-body-secondary"><i class="bi bi-file-text-fill"></i></a>
+        </div>
+    </footer>
+
+</body>
+</html>
