@@ -10,7 +10,7 @@ import re
 import xmlrpc.client
 from datetime import datetime
 from flask import Flask, request, jsonify, send_from_directory
-from richcolorlog import RichColorLogHandler  
+from richcolorlog import RichColorLogHandler
 
 # --- Command-Line Argument Parsing ---
 parser = argparse.ArgumentParser(description='Flask server for the NHL LED Scoreboard Control Hub.')
@@ -354,15 +354,18 @@ def save_config():
 
 @app.route('/api/run-issue-uploader', methods=['POST'])
 def run_issue_uploader():
-    """Runs the issueUpload.sh script and returns its output."""
+    """Runs the issue_upload.py script and returns its output."""
     app.logger.info("Request received to run issue uploader script...")
-    script_path = os.path.join(SCOREBOARD_DIR, 'scripts', 'sbtools', 'issueUpload.sh')
+    # The script is in the same directory as this server file
+    script_path = os.path.join(SCRIPT_DIR, 'issue_upload.py')
+    
     if not os.path.exists(script_path):
         app.logger.error(f"Script not found at {script_path}")
         return jsonify({'success': False, 'output': f'Error: Script not found at {script_path}'}), 404
     
-    # Call the generic run_shell_script helper
-    result = run_shell_script([script_path], timeout=120)
+    # Call the generic run_shell_script helper to execute the python script
+    # PYTHON_EXEC is defined above as sys.executable
+    result = run_shell_script([PYTHON_EXEC, script_path], timeout=180)
     return jsonify(result)
 
 # =============================================
