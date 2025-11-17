@@ -7,7 +7,6 @@ import subprocess
 import sys
 import shutil
 import re
-import xmlrpc.client # <-- NEW
 from datetime import datetime
 from flask import Flask, request, jsonify, send_from_directory
 from richcolorlog import RichColorLogHandler  
@@ -19,12 +18,14 @@ parser.add_argument(
     default='.', 
     help='Path to the root of the nhl-led-scoreboard directory (where VERSION and plugins.json are located). Defaults to the current directory.'
 )
+# Debug Flag
 parser.add_argument(
     '--debug',
     action='store_true',
     help='Run Flask in debug mode and show all pages for testing.'
 )
 args = parser.parse_args()
+
 SCOREBOARD_DIR = os.path.abspath(args.scoreboard_dir)
 # Get the directory the script itself is in
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -88,18 +89,52 @@ def check_first_run():
     """Checks if the first-run SETUP file exists."""
     return os.path.exists(SETUP_FILE)
 
+# =============================================
+# MODIFIED: check_and_create_plugins_file
+# =============================================
 def check_and_create_plugins_file():
-    """Checks for plugins.json, creates it from .example if missing."""
+    """
+    Checks for plugins.json. 
+    Creates/Overwrites it from .example if:
+    1. The file is missing.
+    2. The file is invalid JSON.
+    3. The file has no plugins (empty list).
+    """
+    should_restore = False
+    
     if not os.path.exists(PLUGINS_FILE):
-        app.logger.warning(f"{PLUGINS_FILE} not found. Checking for example file...")
+        app.logger.warning(f"{PLUGINS_FILE} not found.")
+        should_restore = True
+    else:
+        try:
+            with open(PLUGINS_FILE, 'r') as f:
+                content = f.read().strip()
+                if not content:
+                    # File is 0 bytes
+                    app.logger.warning(f"{PLUGINS_FILE} is empty.")
+                    should_restore = True
+                else:
+                    # Parse JSON
+                    data = json.loads(content)
+                    # Check if 'plugins' key is missing or empty list
+                    if not data.get('plugins'):
+                        app.logger.info(f"{PLUGINS_FILE} exists but has no plugins. Restoring defaults.")
+                        should_restore = True
+        except Exception as e:
+            app.logger.warning(f"Error validating {PLUGINS_FILE}: {e}. Will attempt restore.")
+            should_restore = True
+
+    if should_restore:
         if os.path.exists(PLUGINS_EXAMPLE_FILE):
             try:
+                app.logger.info(f"Copying {PLUGINS_EXAMPLE_FILE} to {PLUGINS_FILE}...")
                 shutil.copy(PLUGINS_EXAMPLE_FILE, PLUGINS_FILE)
-                app.logger.info(f"Successfully created {PLUGINS_FILE} from {PLUGINS_EXAMPLE_FILE}")
+                app.logger.info("Plugins file restored.")
             except Exception as e:
-                app.logger.error(f"Failed to copy {PLUGINS_EXAMPLE_FILE} to {PLUGINS_FILE}: {e}")
+                app.logger.error(f"Failed to copy example plugins file: {e}")
         else:
-            app.logger.warning(f"{PLUGINS_EXAMPLE_FILE} not found. A plugins.json file could not be created.")
+            app.logger.warning(f"{PLUGINS_EXAMPLE_FILE} not found. Cannot create plugins.json.")
+# =============================================
 
 def get_version():
     """Reads the version from the VERSION file and prepends 'V' if missing."""
@@ -330,62 +365,6 @@ def run_issue_uploader():
     return jsonify(result)
 
 # =============================================
-# NEW: Supervisor XML-RPC API Endpoints
-# =============================================
-@app.route('/api/supervisor/processes', methods=['GET'])
-def api_supervisor_processes():
-    """Fetches all process info from Supervisor."""
-    try:
-        with xmlrpc.client.ServerProxy(f'http://{SUPERVISOR_URL}:{SUPERVISOR_PORT}/RPC2') as proxy:
-            processes = proxy.supervisor.getAllProcessInfo()
-            return jsonify({'success': True, 'processes': processes})
-    except Exception as e:
-        app.logger.error(f"XML-RPC Error: {e}")
-        return jsonify({'success': False, 'message': str(e)}), 500
-
-@app.route('/api/supervisor/start', methods=['POST'])
-def api_supervisor_start():
-    """Starts a process via Supervisor."""
-    name = request.json.get('name')
-    try:
-        with xmlrpc.client.ServerProxy(f'http://{SUPERVISOR_URL}:{SUPERVISOR_PORT}/RPC2') as proxy:
-            result = proxy.supervisor.startProcess(name)
-            return jsonify({'success': True, 'result': result})
-    except Exception as e:
-        app.logger.error(f"XML-RPC Start Error: {e}")
-        return jsonify({'success': False, 'message': str(e)}), 500
-
-@app.route('/api/supervisor/stop', methods=['POST'])
-def api_supervisor_stop():
-    """Stops a process via Supervisor."""
-    name = request.json.get('name')
-    try:
-        with xmlrpc.client.ServerProxy(f'http://{SUPERVISOR_URL}:{SUPERVISOR_PORT}/RPC2') as proxy:
-            result = proxy.supervisor.stopProcess(name)
-            return jsonify({'success': True, 'result': result})
-    except Exception as e:
-        app.logger.error(f"XML-RPC Stop Error: {e}")
-        return jsonify({'success': False, 'message': str(e)}), 500
-
-@app.route('/api/supervisor/tail_stderr', methods=['POST'])
-def api_supervisor_tail_stderr():
-    """Tails the stderr log of a process."""
-    name = request.json.get('name')
-    # Read the last 4KB (4096 bytes) of the log
-    offset = -4096 
-    length = 4096
-    try:
-        with xmlrpc.client.ServerProxy(f'http://{SUPERVISOR_URL}:{SUPERVISOR_PORT}/RPC2') as proxy:
-            # Returns [log_data, offset, overflow]
-            result = proxy.supervisor.tailProcessStderrLog(name, offset, length)
-            return jsonify({'success': True, 'log': result[0], 'offset': result[1], 'overflow': result[2]})
-    except Exception as e:
-        app.logger.error(f"XML-RPC Log Error: {e}")
-        return jsonify({'success': False, 'message': str(e)}), 500
-# =============================================
-
-
-# =============================================
 # Plugin Management API Endpoints
 # =============================================
 
@@ -398,7 +377,9 @@ def get_plugin_status():
     app.logger.info("Request received for plugin status...")
     
     # 1. Get the "available" plugins from plugins.json
+    # This call will RE-CREATE plugins.json if it was empty/deleted
     check_and_create_plugins_file()
+    
     available_plugins = []
     try:
         with open(PLUGINS_FILE, 'r') as f:
@@ -503,6 +484,60 @@ def sync_plugins():
 # End of Plugin API Section
 # =============================================
 
+# =============================================
+# Supervisor XML-RPC API Endpoints
+# =============================================
+@app.route('/api/supervisor/processes', methods=['GET'])
+def api_supervisor_processes():
+    """Fetches all process info from Supervisor."""
+    try:
+        with xmlrpc.client.ServerProxy(f'http://{SUPERVISOR_URL}:{SUPERVISOR_PORT}/RPC2') as proxy:
+            processes = proxy.supervisor.getAllProcessInfo()
+            return jsonify({'success': True, 'processes': processes})
+    except Exception as e:
+        app.logger.error(f"XML-RPC Error: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/supervisor/start', methods=['POST'])
+def api_supervisor_start():
+    """Starts a process via Supervisor."""
+    name = request.json.get('name')
+    try:
+        with xmlrpc.client.ServerProxy(f'http://{SUPERVISOR_URL}:{SUPERVISOR_PORT}/RPC2') as proxy:
+            result = proxy.supervisor.startProcess(name)
+            return jsonify({'success': True, 'result': result})
+    except Exception as e:
+        app.logger.error(f"XML-RPC Start Error: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/supervisor/stop', methods=['POST'])
+def api_supervisor_stop():
+    """Stops a process via Supervisor."""
+    name = request.json.get('name')
+    try:
+        with xmlrpc.client.ServerProxy(f'http://{SUPERVISOR_URL}:{SUPERVISOR_PORT}/RPC2') as proxy:
+            result = proxy.supervisor.stopProcess(name)
+            return jsonify({'success': True, 'result': result})
+    except Exception as e:
+        app.logger.error(f"XML-RPC Stop Error: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/supervisor/tail_stderr', methods=['POST'])
+def api_supervisor_tail_stderr():
+    """Tails the stderr log of a process."""
+    name = request.json.get('name')
+    # Read the last 4KB (4096 bytes) of the log
+    offset = -4096 
+    length = 4096
+    try:
+        with xmlrpc.client.ServerProxy(f'http://{SUPERVISOR_URL}:{SUPERVISOR_PORT}/RPC2') as proxy:
+            # Returns [log_data, offset, overflow]
+            result = proxy.supervisor.tailProcessStderrLog(name, offset, length)
+            return jsonify({'success': True, 'log': result[0], 'offset': result[1], 'overflow': result[2]})
+    except Exception as e:
+        app.logger.error(f"XML-RPC Log Error: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+# =============================================
 
 # --- Page Serving ---
 
@@ -566,7 +601,7 @@ if __name__ == '__main__':
         app.logger.warning("="*50)
         
     app.logger.info(f"Starting NHL Scoreboard Config Server on port {PORT}")
-    app.logger.info(f"Serving HTML files from: {SCRIPT_DIR}")
+    app.logger.info(f"Serving HTML files from: {SCOREBOARD_DIR}")
     app.logger.info(f"Serving Assets from: {ASSETS_DIR}")
     app.logger.info(f"Access at http://[YOUR_PI_IP]:{PORT} in your browser.")
     

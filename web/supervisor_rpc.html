@@ -157,6 +157,9 @@
                     <pre id="log-content" class="log-output">Loading log...</pre>
                 </div>
                 <div class="modal-footer">
+                    <button type="button" class="btn btn-warning me-auto" id="btn-upload-logs">
+                        <i class="bi bi-upload me-2"></i> Upload Logs
+                    </button>
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 </div>
             </div>
@@ -206,6 +209,7 @@
             const logModal = new bootstrap.Modal(document.getElementById('logModal'));
             const logContent = document.getElementById('log-content');
             const logName = document.getElementById('log-process-name');
+            const uploadLogsBtn = document.getElementById('btn-upload-logs'); // New button ref
             let autoRefreshInterval;
 
             function fetchProcesses() {
@@ -230,7 +234,6 @@
                     let stateClass = 'text-muted';
                     let actionBtn = '';
 
-                    // State Logic (RUNNING=20, STOPPED=0, STARTING=10, STOPPING=40)
                     if (proc.state === 20) { // RUNNING
                         stateClass = 'status-running';
                         actionBtn = `<button class="btn btn-sm btn-danger btn-stop" data-name="${proc.name}">Stop</button>`;
@@ -254,7 +257,6 @@
                     processList.appendChild(tr);
                 });
 
-                // Attach events
                 document.querySelectorAll('.btn-start').forEach(b => b.addEventListener('click', (e) => controlProcess('start', e.target.dataset.name)));
                 document.querySelectorAll('.btn-stop').forEach(b => b.addEventListener('click', (e) => controlProcess('stop', e.target.dataset.name)));
                 document.querySelectorAll('.btn-log').forEach(b => b.addEventListener('click', (e) => showLog(e.target.dataset.name)));
@@ -262,7 +264,6 @@
 
             function controlProcess(action, name) {
                 processList.querySelectorAll('button').forEach(b => b.disabled = true);
-                
                 fetch(`/api/supervisor/${action}`, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
@@ -282,6 +283,11 @@
             function showLog(name) {
                 logName.textContent = name;
                 logContent.textContent = "Loading...";
+                
+                // Reset upload button state when opening modal
+                uploadLogsBtn.disabled = false;
+                uploadLogsBtn.innerHTML = '<i class="bi bi-upload me-2"></i> Upload Logs';
+                
                 logModal.show();
 
                 fetch('/api/supervisor/tail_stderr', {
@@ -299,19 +305,38 @@
                 })
                 .catch(err => logContent.textContent = "Error fetching log.");
             }
+            
+            // --- NEW: Upload Logs Button Logic ---
+            uploadLogsBtn.addEventListener('click', () => {
+                if(!confirm("This will run the issue uploader script and replace the current log view with the output. Continue?")) return;
+
+                uploadLogsBtn.disabled = true;
+                uploadLogsBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Uploading...';
+                logContent.textContent = "Running upload script... this may take a moment.";
+
+                fetch('/api/run-issue-uploader', { method: 'POST' })
+                    .then(res => res.json())
+                    .then(data => {
+                        logContent.textContent = data.output;
+                    })
+                    .catch(err => logContent.textContent = "Error: " + err)
+                    .finally(() => {
+                        uploadLogsBtn.disabled = false;
+                        uploadLogsBtn.innerHTML = '<i class="bi bi-upload me-2"></i> Upload Logs';
+                    });
+            });
 
             // Initial load and auto-refresh
             fetchProcesses();
             document.getElementById('refresh-btn').addEventListener('click', fetchProcesses);
             autoRefreshInterval = setInterval(fetchProcesses, 5000);
 
-            // --- NEW: Embedded Web Interface Logic ---
+            // Embedded Web Interface Logic
             const toggleBtn = document.getElementById('toggle-web-ui-btn');
             const frame = document.getElementById('supervisor-frame');
             const urlDisplay = document.getElementById('supervisor-url-display');
             let frameLoaded = false;
 
-            // Listener for when the collapse element opens
             const collapseElement = document.getElementById('supervisorUiCollapse');
             collapseElement.addEventListener('show.bs.collapse', function () {
                 if (!frameLoaded) {
@@ -319,7 +344,6 @@
                     frame.src = url;
                     urlDisplay.textContent = url;
                     frameLoaded = true;
-                    toggleBtn.textContent = "Hide Web Interface"; // Optional text update
                 }
             });
         });
