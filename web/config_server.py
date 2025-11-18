@@ -235,46 +235,44 @@ def parse_plugin_list_output(output):
     """Parses the text table from 'plugins.py list'."""
     plugin_statuses = {}
     lines = output.strip().split('\n')
-    
+
     if len(lines) <= 2:
         app.logger.warning("Could not parse 'plugins.py list' output: no data lines found.")
         return plugin_statuses
 
-    # Find the header line to get column positions
+    # Verify header line exists
     header = lines[0]
-    # Use regex to find column names, allowing for variable whitespace
-    header_matches = re.search(r"^(NAME)\s+(VERSION)\s+(STATUS)\s+(COMMIT)\s*$", header)
-    if not header_matches:
+    if not re.search(r"NAME\s+VERSION\s+STATUS\s+COMMIT", header):
         app.logger.error(f"Could not parse 'plugins.py list' header. Got: {header}")
         return plugin_statuses
 
-    # Get the start index of each column
-    name_pos = header_matches.start(1)
-    version_pos = header_matches.start(2)
-    status_pos = header_matches.start(3)
-    commit_pos = header_matches.start(4)
-
-    # Parse data lines
-    for line in lines[2:]: # Skip header and '---' line
+    # Parse data lines (skip header at index 0 and separator line at index 1)
+    for line in lines[2:]:
         if not line.strip():
             continue
-            
+
         try:
-            # Extract data based on column start positions
-            name = line[name_pos:version_pos].strip()
-            version = line[version_pos:status_pos].strip()
-            status = line[status_pos:commit_pos].strip()
-            commit = line[commit_pos:].strip()
-            
-            if name:
+            # Split by whitespace - this handles variable spacing better than fixed positions
+            parts = line.split()
+
+            # We expect at least 4 parts: name, version, status, commit
+            if len(parts) >= 4:
+                name = parts[0]
+                version = parts[1]
+                status = parts[2]
+                commit = parts[3]
+
                 plugin_statuses[name] = {
                     "version": version,
                     "status": status,
                     "commit": commit
                 }
+            else:
+                app.logger.warning(f"Could not parse plugin list line (expected 4 columns, got {len(parts)}): '{line}'")
+
         except Exception as e:
             app.logger.warning(f"Could not parse plugin list line: '{line}'. Error: {e}")
-            
+
     return plugin_statuses
 
 # --- API Endpoints ---
