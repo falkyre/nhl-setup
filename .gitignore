@@ -183,3 +183,5 @@ cython_debug/
 config/*
 
 .devcontainer.json
+web/uv.lock
+web/.python-version
