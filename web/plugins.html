@@ -105,9 +105,14 @@
         <div class="card-body">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h5 class="card-title mb-0">Plugins</h5>
-                <button class="btn btn-secondary btn-sm" id="sync_all_btn">
-                    <i class="bi bi-arrow-clockwise me-2"></i> Sync All
-                </button>
+                <div>
+                    <button class="btn btn-info btn-sm" id="refresh_list_btn">
+                        <i class="bi bi-arrow-repeat me-2"></i> Refresh List
+                    </button>
+                    <button class="btn btn-secondary btn-sm" id="sync_all_btn">
+                        <i class="bi bi-arrow-clockwise me-2"></i> Sync All
+                    </button>
+                </div>
             </div>
             
             <div id="plugin-list-container">
@@ -216,32 +221,39 @@
                     if (data.success && data.plugins.length > 0) {
                         data.plugins.forEach(plugin => {
                             const tr = document.createElement('tr');
-                            const isMissing = plugin.status === 'missing';
+                            const isInstalled = plugin.status !== 'available' && plugin.status !== 'missing';
                             
-                            // Determine status color
+                            // Determine status color and text
                             let statusClass = 'text-muted';
-                            if (plugin.status === 'missing') {
-                                statusClass = 'text-warning';
-                            } else if (plugin.status !== '-' && plugin.status !== 'unknown') { // Any "installed" status
+                            let statusText = plugin.status;
+
+                            if (plugin.status === 'available' || plugin.status === 'missing') {
+                                statusClass = 'text-primary';
+                                statusText = 'Available';
+                            } else if (plugin.status === 'error' ) {
+                                statusClass = 'text-danger';
+                                statusText = 'Error';
+                            } else if (isInstalled) {
                                 statusClass = 'text-success';
                             }
 
+
                             // Build action buttons
                             const actions = `
-                                <button class="btn btn-sm btn-success" data-url="${plugin.url}" ${isMissing ? '' : 'disabled'} title="Install">
+                                <button class="btn btn-sm btn-success" data-url="${plugin.url}" ${!isInstalled ? '' : 'disabled'} title="Install">
                                     <i class="bi bi-download"></i>
                                 </button>
-                                <button class="btn btn-sm btn-info" data-name="${plugin.name}" ${isMissing ? 'disabled' : ''} title="Update">
+                                <button class="btn btn-sm btn-info" data-name="${plugin.name}" ${isInstalled ? '' : 'disabled'} title="Update">
                                     <i class="bi bi-arrow-clockwise"></i>
                                 </button>
-                                <button class="btn btn-sm btn-danger" data-name="${plugin.name}" title="Remove from list">
+                                <button class="btn btn-sm btn-danger" data-name="${plugin.name}" ${isInstalled ? '' : 'disabled'} title="Remove">
                                     <i class="bi bi-trash-fill"></i>
                                 </button>
                             `;
                             
                             tr.innerHTML = `
                                 <td><strong>${plugin.name}</strong></td>
-                                <td><span class="fw-bold ${statusClass}">${plugin.status}</span></td>
+                                <td><span class="fw-bold ${statusClass}">${statusText}</span></td>
                                 <td>${plugin.version}</td>
                                 <td class="text-end">${actions}</td>
                             `;
@@ -373,6 +385,32 @@
             // Sync All Button
             document.getElementById('sync_all_btn').addEventListener('click', () => {
                 runPluginCommand('/api/plugins/sync', {}, 'Syncing Plugins...');
+            });
+
+            // Refresh List Button
+            document.getElementById('refresh_list_btn').addEventListener('click', () => {
+                const modalTitle = document.getElementById('outputModalLabel');
+                const modalBody = document.getElementById('output_modal_content');
+                
+                modalTitle.textContent = 'Refreshing Plugin List...';
+                modalBody.textContent = 'Downloading latest plugin index...';
+                modalBody.classList.remove('text-danger');
+                outputModal.show();
+
+                fetch('/api/plugins/refresh', { method: 'POST' })
+                    .then(res => res.json())
+                    .then(data => {
+                        modalBody.textContent = data.message;
+                        if (!data.success) {
+                            modalBody.classList.add('text-danger');
+                        }
+                        // Reload the list after refreshing
+                        loadPluginList();
+                    })
+                    .catch(err => {
+                        modalBody.textContent = 'A client-side error occurred: ' + err;
+                        modalBody.classList.add('text-danger');
+                    });
             });
 
             // Initial load of plugin list

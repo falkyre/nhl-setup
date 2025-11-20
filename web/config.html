@@ -15,6 +15,10 @@
     <link href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/match-braces/prism-match-braces.css" rel="stylesheet" />
     <link href="https://cdn.jsdelivr.net/npm/prismjs-rainbow-braces@1.0.2/prism-rainbow-braces.css" rel="stylesheet" />
 
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/light.css">
+
 
     <style>
         .form-text { font-size: 0.875em; }
@@ -239,7 +243,7 @@
                             <div class="col-md-6 mb-3">
                                 <label for="pref_location" class="form-label d-flex justify-content-between">
                                     Location
-                                    <a href="#" id="autofill_location_btn" class="small">(Autofill Lat/Lon from IP)</a>
+                                    <a href="#" id="autofill_location_btn" class="small">Autofill Lat/Lon from IP</a>
                                 </label>
                                 <input type="text" class="form-control" id="pref_location" placeholder="Winnipeg, MB">
                                 <div class="form-text">Used by dimmer and weather. E.g., "City,State" or "Lat,Long".</div>
@@ -263,7 +267,7 @@
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label for="pref_live_game_refresh" class="form-label">Live Refresh Rate (sec)</label>
-                                <input type="number" class="form-control" id="pref_live_game_refresh" value="15">
+                                <input type="number" class="form-control" id="pref_live_game_refresh" value="15" min="10">
                                 <div class="form-text">API poll rate during live games (min 10).</div>
                             </div>
                             <div class="col-md-4 mb-3">
@@ -444,12 +448,18 @@
                                         <div class="row">
                                             <div class="col-md-6 mb-3">
                                                 <label for="boards_clock_clock_rgb" class="form-label">Clock RGB</label>
-                                                <input type="text" class="form-control" id="boards_clock_clock_rgb" placeholder="255,255,255">
+                                                <div class="input-group">
+                                                    <input type="text" class="form-control" id="boards_clock_clock_rgb" placeholder="255,255,255">
+                                                    <input type="color" class="form-control form-control-color" id="boards_clock_clock_rgb_picker" value="#FFFFFF" title="Choose your color">
+                                                </div>
                                                 <div class="form-text">R,G,B for clock numbers (if team colors off).</div>
                                             </div>
                                             <div class="col-md-6 mb-3">
                                                 <label for="boards_clock_date_rgb" class="form-label">Date RGB</label>
-                                                <input type="text" class="form-control" id="boards_clock_date_rgb" placeholder="200,200,200">
+                                                <div class="input-group">
+                                                    <input type="text" class="form-control" id="boards_clock_date_rgb" placeholder="200,200,200">
+                                                    <input type="color" class="form-control form-control-color" id="boards_clock_date_rgb_picker" value="#C8C8C8" title="Choose your color">
+                                                </div>
                                                 <div class="form-text">R,G,B for date/weather text (if team colors off).</div>
                                             </div>
                                         </div>
@@ -521,16 +531,16 @@
                                         <div class="row">
                                             <div class="col-md-4 mb-3">
                                                 <label for="boards_weather_update_freq" class="form-label">Update Freq (min)</label>
-                                                <input type="number" class="form-control" id="boards_weather_update_freq" value="5">
+                                                <input type="number" class="form-control" id="boards_weather_update_freq" value="5" min=""1">
                                             </div>
                                             <div class="col-md-4 mb-3">
                                                 <label for="boards_weather_forecast_days" class="form-label">Forecast Days</label>
-                                                <input type="number" class="form-control" id="boards_weather_forecast_days" value="3">
+                                                <input type="number" class="form-control" id="boards_weather_forecast_days" value="3" min="1" max="3">
                                                 <div class="form-text">Max 3.</div>
                                             </div>
                                             <div class="col-md-4 mb-3">
                                                 <label for="boards_weather_forecast_update" class="form-label">Forecast Update (hours)</label>
-                                                <input type="number" class="form-control" id="boards_weather_forecast_update" value="3">
+                                                <input type="number" class="form-control" id="boards_weather_forecast_update" value="3" min="1">
                                             </div>
                                         </div>
                                         <div class="form-check mb-3">
@@ -761,11 +771,11 @@
                                         <div class="row">
                                             <div class="col-md-4 mb-3">
                                                 <label for="sbio_dimmer_daytime" class="form-label">Daytime (Software)</label>
-                                                <input type="text" class="form-control" id="sbio_dimmer_daytime" value="8:30 AM">
+                                                <input type="time" class="form-control" id="sbio_dimmer_daytime">
                                             </div>
                                             <div class="col-md-4 mb-3">
                                                 <label for="sbio_dimmer_nighttime" class="form-label">Nighttime (Software)</label>
-                                                <input type="text" class="form-control" id="sbio_dimmer_nighttime" value="5:30 PM">
+                                                <input type="time" class="form-control" id="sbio_dimmer_nighttime">
                                             </div>
                                             <div class="col-md-4 mb-3">
                                                 <label for="sbio_dimmer_offset" class="form-label">Sunrise/Sunset Offset (min)</label>
@@ -868,8 +878,8 @@
 
     <hr class="my-4">
 
-    <button id="generate_json" class="btn btn-primary btn-lg">Generate Config JSON</button>
-    <button id="save_to_server" class="btn btn-success btn-lg ms-2" style="display: none;">Save to Server</button>
+    <button id="generate_json" class="btn btn-primary btn-lg" data-bs-toggle="tooltip" data-bs-placement="top" title="Once JSON generated, press Save to Server to save it">Generate Config JSON</button>
+    <button id="save_to_server" class="btn btn-success btn-lg ms-2" disabled>Save to Server</button>
 
     <div id="output_section" style="display: none;">
         <h3 class="mt-5">Generated <code>config.json</code></h3>
@@ -886,6 +896,32 @@
     
     <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/match-braces/prism-match-braces.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/prismjs-rainbow-braces@1.0.2/prism-rainbow-braces.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const timeInputs = document.querySelectorAll(".form-control[type='time']");
+
+            timeInputs.forEach(element => {
+                let config = {
+                    enableTime: true,
+                    noCalendar: true,
+                    dateFormat: "H:i",
+                    time_24hr: true,
+                    preload: true,
+                    theme: document.documentElement.getAttribute('data-bs-theme') === 'dark' ? 'dark' : 'light'
+                };
+
+                // For specific time inputs that can be optional, allow manual input.
+                // This lets the user clear the field by deleting the text.
+                if (['sbio_dimmer_daytime', 'sbio_dimmer_nighttime'].includes(element.id)) {
+                    config.allowInput = true;
+                }
+
+                flatpickr(element, config);
+            });
+        });
+    </script>
 
 
     <script>
@@ -1038,7 +1074,8 @@
 
                 // Show the output section and save button
                 document.getElementById('output_section').style.display = 'block';
-                document.getElementById('save_to_server').style.display = 'inline-block';
+                const saveButton = document.getElementById('save_to_server');
+                saveButton.disabled = false;
             
             } catch (error) {
                 console.error("Error generating JSON:", error);
@@ -1096,7 +1133,13 @@
     <script>
         // --- Helper functions for SETTING data *into* the form ---
         function setVal(elementId, value) {
-            if (value !== undefined) document.getElementById(elementId).value = value;
+            if (value !== undefined) {
+                const element = document.getElementById(elementId);
+                element.value = value;
+                if (element._flatpickr) {
+                    element._flatpickr.setDate(value);
+                }
+            }
         }
         function setBool(elementId, value) {
             if (value !== undefined) document.getElementById(elementId).checked = value;
@@ -1426,6 +1469,12 @@
                 autofillLocationFromIP();
             });
 
+            // === NEW: Initialize tooltips ===
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+
             // === MODIFIED: Show Supervisor link and set active nav link ===
             document.getElementById('nav-config').classList.add('active'); // Set this page as active
             
@@ -1449,6 +1498,35 @@
                     // Even if it fails, populate with an empty list
                     populateBoardSelects([]); 
                 });
+        });
+    </script>
+    
+    <script>
+        // --- Color Picker Logic ---
+        document.addEventListener('DOMContentLoaded', () => {
+            function setupColorPicker(pickerId, targetId) {
+                const picker = document.getElementById(pickerId);
+                const target = document.getElementById(targetId);
+
+                picker.addEventListener('input', (e) => {
+                    const hexColor = e.target.value;
+                    const r = parseInt(hexColor.substr(1, 2), 16);
+                    const g = parseInt(hexColor.substr(3, 2), 16);
+                    const b = parseInt(hexColor.substr(5, 2), 16);
+                    target.value = `${r},${g},${b}`;
+                });
+
+                target.addEventListener('input', (e) => {
+                    const rgb = e.target.value.split(',').map(s => parseInt(s.trim(), 10));
+                    if (rgb.length === 3 && !rgb.some(isNaN)) {
+                        const hexColor = '#' + rgb.map(c => c.toString(16).padStart(2, '0')).join('');
+                        picker.value = hexColor;
+                    }
+                });
+            }
+
+            setupColorPicker('boards_clock_clock_rgb_picker', 'boards_clock_clock_rgb');
+            setupColorPicker('boards_clock_date_rgb_picker', 'boards_clock_date_rgb');
         });
     </script>
     

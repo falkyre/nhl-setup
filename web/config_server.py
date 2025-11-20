@@ -8,6 +8,7 @@ import sys
 import shutil
 import re
 import xmlrpc.client
+import urllib.request
 from datetime import datetime
 from flask import Flask, request, jsonify, send_from_directory
 from richcolorlog import RichColorLogHandler
@@ -39,7 +40,8 @@ CONFIG_DIR = os.path.join(SCOREBOARD_DIR, 'config')
 CONFIG_FILE = 'config.json'
 CONFIG_PATH = os.path.join(CONFIG_DIR, CONFIG_FILE)
 VERSION_FILE = os.path.join(SCOREBOARD_DIR, 'VERSION')
-PLUGINS_FILE = os.path.join(SCOREBOARD_DIR, 'plugins.json')
+PLUGINS_INDEX_FILE = os.path.join(SCOREBOARD_DIR, 'plugins_index.json')
+PLUGINS_INSTALLED_FILE = os.path.join(SCOREBOARD_DIR, 'plugins.json')
 PLUGINS_EXAMPLE_FILE = os.path.join(SCOREBOARD_DIR, 'plugins.json.example')
 PLUGINS_LOCK_FILE = os.path.join(SCOREBOARD_DIR, 'plugins.lock.json')
 PLUGINS_SCRIPT = os.path.join(SCOREBOARD_DIR, 'plugins.py')
@@ -91,9 +93,9 @@ def check_first_run():
     return os.path.exists(SETUP_FILE)
 
 # =============================================
-# MODIFIED: check_and_create_plugins_file
+# MODIFIED: check_and_create_installed_plugins_file
 # =============================================
-def check_and_create_plugins_file():
+def check_and_create_installed_plugins_file():
     """
     Checks for plugins.json. 
     Creates/Overwrites it from .example if:
@@ -103,33 +105,33 @@ def check_and_create_plugins_file():
     """
     should_restore = False
     
-    if not os.path.exists(PLUGINS_FILE):
-        app.logger.warning(f"{PLUGINS_FILE} not found.")
+    if not os.path.exists(PLUGINS_INSTALLED_FILE):
+        app.logger.warning(f"{PLUGINS_INSTALLED_FILE} not found.")
         should_restore = True
     else:
         try:
-            with open(PLUGINS_FILE, 'r') as f:
+            with open(PLUGINS_INSTALLED_FILE, 'r') as f:
                 content = f.read().strip()
                 if not content:
                     # File is 0 bytes
-                    app.logger.warning(f"{PLUGINS_FILE} is empty.")
+                    app.logger.warning(f"{PLUGINS_INSTALLED_FILE} is empty.")
                     should_restore = True
                 else:
                     # Parse JSON
                     data = json.loads(content)
                     # Check if 'plugins' key is missing or empty list
                     if not data.get('plugins'):
-                        app.logger.info(f"{PLUGINS_FILE} exists but has no plugins. Restoring defaults.")
+                        app.logger.info(f"{PLUGINS_INSTALLED_FILE} exists but has no plugins. Restoring defaults.")
                         should_restore = True
         except Exception as e:
-            app.logger.warning(f"Error validating {PLUGINS_FILE}: {e}. Will attempt restore.")
+            app.logger.warning(f"Error validating {PLUGINS_INSTALLED_FILE}: {e}. Will attempt restore.")
             should_restore = True
 
     if should_restore:
         if os.path.exists(PLUGINS_EXAMPLE_FILE):
             try:
-                app.logger.info(f"Copying {PLUGINS_EXAMPLE_FILE} to {PLUGINS_FILE}...")
-                shutil.copy(PLUGINS_EXAMPLE_FILE, PLUGINS_FILE)
+                app.logger.info(f"Copying {PLUGINS_EXAMPLE_FILE} to {PLUGINS_INSTALLED_FILE}...")
+                shutil.copy(PLUGINS_EXAMPLE_FILE, PLUGINS_INSTALLED_FILE)
                 app.logger.info("Plugins file restored.")
             except Exception as e:
                 app.logger.error(f"Failed to copy example plugins file: {e}")
@@ -155,11 +157,11 @@ def get_plugin_boards():
     """Reads plugins.json and returns a list of board names."""
     
     # Run check to create plugins.json if it's missing
-    check_and_create_plugins_file()
+    check_and_create_installed_plugins_file()
     
     board_names = []
     try:
-        with open(PLUGINS_FILE, 'r') as f:
+        with open(PLUGINS_INSTALLED_FILE, 'r') as f:
             data = json.load(f)
             # Check if 'plugins' key exists and is a list
             if 'plugins' in data and isinstance(data['plugins'], list):
@@ -169,13 +171,13 @@ def get_plugin_boards():
                         board_names.append(plugin['name'])
                 app.logger.info(f"Loaded {len(board_names)} plugin boards: {board_names}")
             else:
-                app.logger.warning(f"{PLUGINS_FILE} is missing 'plugins' key or it's not a list.")
+                app.logger.warning(f"{PLUGINS_INSTALLED_FILE} is missing 'plugins' key or it's not a list.")
     except FileNotFoundError:
-        app.logger.info(f"{PLUGINS_FILE} not found, no custom boards loaded.")
+        app.logger.info(f"{PLUGINS_INSTALLED_FILE} not found, no custom boards loaded.")
     except json.JSONDecodeError:
-        app.logger.error(f"Could not decode {PLUGINS_FILE}. Check for JSON syntax errors.")
+        app.logger.error(f"Could not decode {PLUGINS_INSTALLED_FILE}. Check for JSON syntax errors.")
     except Exception as e:
-        app.logger.error(f"Error reading {PLUGINS_FILE}: {e}")
+        app.logger.error(f"Error reading {PLUGINS_INSTALLED_FILE}: {e}")
     
     return board_names
 
@@ -370,71 +372,131 @@ def run_issue_uploader():
 # Plugin Management API Endpoints
 # =============================================
 
+def download_plugins_index(force=False):
+    """
+    Downloads the plugins_index.json file.
+    If force is False, it will only download if the file doesn't exist.
+    If force is True, it will overwrite the existing file.
+    """
+    PLUGINS_INDEX_URL = "https://raw.githubusercontent.com/falkyre/nhl-led-scoreboard/main/plugins_index.json"
+    
+    if not force and os.path.exists(PLUGINS_INDEX_FILE):
+        app.logger.info(f"{PLUGINS_INDEX_FILE} already exists. Skipping download.")
+        return {'success': True, 'message': 'Plugin index already exists.'}
+
+    app.logger.info(f"Downloading plugin index from {PLUGINS_INDEX_URL}...")
+    try:
+        with urllib.request.urlopen(PLUGINS_INDEX_URL) as response:
+            if response.status == 200:
+                data = response.read()
+                with open(PLUGINS_INDEX_FILE, 'wb') as f:
+                    f.write(data)
+                app.logger.info(f"Successfully downloaded and saved {PLUGINS_INDEX_FILE}")
+                return {'success': True, 'message': 'Plugin index downloaded successfully.'}
+            else:
+                app.logger.error(f"Failed to download plugin index. Status code: {response.status}")
+                return {'success': False, 'message': f"Failed to download. Status: {response.status}"}
+    except Exception as e:
+        app.logger.error(f"Error downloading plugin index: {e}")
+        return {'success': False, 'message': f"An error occurred: {e}"}
+
+@app.route('/api/plugins/refresh', methods=['POST'])
+def refresh_plugins_index():
+    """API endpoint to force a refresh of the plugins_index.json file."""
+    app.logger.info("Request received to refresh plugins index...")
+    result = download_plugins_index(force=True)
+    return jsonify(result)
+
 @app.route('/api/plugins/status', methods=['GET'])
 def get_plugin_status():
     """
-    Reads plugins.json (for URL/ref) and runs 'plugins.py list' (for status)
-    and returns a merged list of all plugins.
+    Reads plugins_index.json (for available plugins), plugins.json (for installed plugins),
+    and runs 'plugins.py list' (for live status), returning a merged list.
     """
     app.logger.info("Request received for plugin status...")
-    
-    # 1. Get the "available" plugins from plugins.json
-    # This call will RE-CREATE plugins.json if it was empty/deleted
-    check_and_create_plugins_file()
-    
-    available_plugins = []
+
+    # 1. Ensure plugins_index.json exists, downloading if it doesn't.
+    download_plugins_index()
+
+    # 2. Get the list of "available" plugins from plugins_index.json
+    available_plugins = {}
     try:
-        with open(PLUGINS_FILE, 'r') as f:
+        with open(PLUGINS_INDEX_FILE, 'r') as f:
             data = json.load(f)
             if 'plugins' in data and isinstance(data['plugins'], list):
-                available_plugins = data['plugins']
+                for plugin in data['plugins']:
+                    if 'name' in plugin:
+                        available_plugins[plugin['name']] = plugin
     except Exception as e:
-        app.logger.error(f"Error reading {PLUGINS_FILE}: {e}")
+        app.logger.error(f"Error reading {PLUGINS_INDEX_FILE}: {e}")
+        # We can continue, but the list of available plugins might be empty.
+
+    # 3. Get the list of "installed" plugins from plugins.json
+    # This also ensures the file is created if it's missing.
+    check_and_create_installed_plugins_file()
+    installed_plugins = {}
+    try:
+        with open(PLUGINS_INSTALLED_FILE, 'r') as f:
+            data = json.load(f)
+            if 'plugins' in data and isinstance(data['plugins'], list):
+                for plugin in data['plugins']:
+                    if 'name' in plugin:
+                        installed_plugins[plugin['name']] = plugin
+    except Exception as e:
+        app.logger.error(f"Error reading {PLUGINS_INSTALLED_FILE}: {e}")
         return jsonify({'success': False, 'plugins': [], 'message': str(e)}), 500
 
-    # 2. Get the "actual" status from 'plugins.py list'
+    # 4. Get the "live" status from 'plugins.py list'
     list_result = run_plugin_script(['list'], timeout=30)
     if not list_result['success']:
         app.logger.error("Failed to run 'plugins.py list'")
-        # Don't fail the whole request; just return info from plugins.json
         plugin_statuses = {}
     else:
         plugin_statuses = parse_plugin_list_output(list_result['output'])
     
     app.logger.info(f"Parsed {len(plugin_statuses)} plugin statuses from 'list' command.")
 
-    # 3. Merge the two lists
-    merged_plugins = []
-    # We iterate over plugins.json as the "source of truth" for what *should* be available
-    for plugin in available_plugins:
-        name = plugin.get('name')
-        if not name:
-            continue
-            
-        # Check if this plugin is in the 'list' output
-        status_data = plugin_statuses.get(name)
-        
-        if status_data:
-            # It was found in the 'list' output
-            version = status_data.get('version', '-')
-            status = status_data.get('status', 'unknown')
-            commit = status_data.get('commit', '-')
-        else:
-            # It's in plugins.json but not in 'list' output (e.g., error, or 'list' only shows installed)
-            version = '-'
-            commit = '-'
-            status = 'missing' # Assume 'missing' if not in the 'list' output
-            
-        merged_plugins.append({
+    # 5. Merge all sources
+    merged_plugins = {}
+    
+    # Start with available plugins
+    for name, plugin_data in available_plugins.items():
+        merged_plugins[name] = {
             "name": name,
-            "url": plugin.get('url', '-'),
-            "version": version,
-            "status": status,
-            "commit": commit
-        })
+            "url": plugin_data.get('url', '-'),
+            "version": "-",
+            "status": "available",
+            "commit": "-"
+        }
+
+    # Update with installed info and live status
+    all_plugin_names = set(available_plugins.keys()) | set(installed_plugins.keys()) | set(plugin_statuses.keys())
+
+    for name in all_plugin_names:
+        if name not in merged_plugins:
+             merged_plugins[name] = {
+                "name": name,
+                "url": installed_plugins.get(name, {}).get('url', '-'),
+                "version": "-",
+                "status": "unknown",
+                "commit": "-"
+            }
+
+        status_data = plugin_statuses.get(name)
+        if status_data:
+            # Plugin is installed according to 'plugins.py list'
+            merged_plugins[name]['version'] = status_data.get('version', '-')
+            merged_plugins[name]['status'] = status_data.get('status', 'installed')
+            merged_plugins[name]['commit'] = status_data.get('commit', '-')
+        elif name in installed_plugins:
+            # In plugins.json but not in 'list' output -> likely an error or partially removed
+             merged_plugins[name]['status'] = 'error'
+        # If only in available_plugins, status remains 'available'
+
+    final_plugin_list = sorted(list(merged_plugins.values()), key=lambda p: p['name'])
         
-    app.logger.info(f"Returning {len(merged_plugins)} plugins.")
-    return jsonify({'success': True, 'plugins': merged_plugins})
+    app.logger.info(f"Returning {len(final_plugin_list)} plugins.")
+    return jsonify({'success': True, 'plugins': final_plugin_list})
 
 
 @app.route('/api/plugins/add', methods=['POST'])
