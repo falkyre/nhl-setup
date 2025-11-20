@@ -48,7 +48,10 @@ PLUGINS_SCRIPT = os.path.join(SCOREBOARD_DIR, 'plugins.py')
 PYTHON_EXEC = sys.executable
 
 # ASSETS_DIR is relative to the script's location
-ASSETS_DIR = os.path.join(SCRIPT_DIR, 'assets') 
+ASSETS_DIR = os.path.join(SCRIPT_DIR, 'static') 
+# TEMPLATES_DIR is relative to the script's location
+TEMPLATES_DIR = os.path.join(SCRIPT_DIR, 'templates') 
+
 
 # Absolute paths
 SETUP_FILE = '/home/pi/.nhlledportal/SETUP'
@@ -614,9 +617,9 @@ def index():
     # Bypass setup check if in debug mode
     if check_first_run() and not args.debug:
         app.logger.info(f"SETUP file found. Serving setup.html for {request.remote_addr}")
-        return send_from_directory(SCRIPT_DIR, 'setup.html') 
+        return send_from_directory(TEMPLATES_DIR, 'setup.html') 
         
-    return send_from_directory(SCRIPT_DIR, 'index.html')
+    return send_from_directory(TEMPLATES_DIR, 'index.html')
 
 @app.route('/setup')
 def setup_page():
@@ -624,31 +627,31 @@ def setup_page():
     # Bypass setup check if in debug mode
     if not check_first_run() and not args.debug:
         app.logger.info("Access to /setup denied, redirecting to /")
-        return send_from_directory(SCRIPT_DIR, 'index.html') 
+        return send_from_directory(TEMPLATES_DIR, 'index.html') 
     
     app.logger.info(f"Serving setup.html (Debug: {args.debug})")
-    return send_from_directory(SCRIPT_DIR, 'setup.html') 
+    return send_from_directory(TEMPLATES_DIR, 'setup.html') 
 
 
 @app.route('/config')
 def config_page():
     """Serves the configurator page."""
-    return send_from_directory(SCRIPT_DIR, 'config.html') 
+    return send_from_directory(TEMPLATES_DIR, 'config.html') 
 
 @app.route('/utilities')
 def utilities_page():
     """Serves the placeholder utilities page."""
-    return send_from_directory(SCRIPT_DIR, 'utilities.html') 
+    return send_from_directory(TEMPLATES_DIR, 'utilities.html') 
 
 @app.route('/plugins')
 def plugins_page():
     """Serves the new plugins page."""
-    return send_from_directory(SCRIPT_DIR, 'plugins.html')
+    return send_from_directory(TEMPLATES_DIR, 'plugins.html')
 
 @app.route('/supervisor')
 def supervisor_page():
     """Serves the supervisor embed page."""
-    return send_from_directory(SCRIPT_DIR, 'supervisor_rpc.html') 
+    return send_from_directory(TEMPLATES_DIR, 'supervisor_rpc.html') 
 
 @app.route('/assets/<path:path>')
 def send_asset(path):
@@ -665,7 +668,7 @@ if __name__ == '__main__':
         app.logger.warning("="*50)
         
     app.logger.info(f"Starting NHL Scoreboard Config Server on port {PORT}")
-    app.logger.info(f"Serving HTML files from: {SCOREBOARD_DIR}")
+    app.logger.info(f"Serving HTML files from: {TEMPLATES_DIR}")
     app.logger.info(f"Serving Assets from: {ASSETS_DIR}")
     app.logger.info(f"Access at http://[YOUR_PI_IP]:{PORT} in your browser.")
     
