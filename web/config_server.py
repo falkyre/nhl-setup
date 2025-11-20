@@ -9,6 +9,7 @@ import shutil
 import re
 import xmlrpc.client
 import urllib.request
+import toml
 from datetime import datetime
 from flask import Flask, request, jsonify, send_from_directory
 from richcolorlog import RichColorLogHandler
@@ -17,8 +18,8 @@ from richcolorlog import RichColorLogHandler
 parser = argparse.ArgumentParser(description='Flask server for the NHL LED Scoreboard Control Hub.')
 parser.add_argument(
     '-d', '--scoreboard_dir', 
-    default='.', 
-    help='Path to the root of the nhl-led-scoreboard directory (where VERSION and plugins.json are located). Defaults to the current directory.'
+    default=None, 
+    help='Path to the root of the nhl-led-scoreboard directory (where VERSION and plugins.json are located). Overrides config file.'
 )
 # Debug Flag
 parser.add_argument(
@@ -28,13 +29,41 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
-SCOREBOARD_DIR = os.path.abspath(args.scoreboard_dir)
 # Get the directory the script itself is in
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 # --- End Argument Parsing ---
 
 # --- Configuration ---
+# Set default values
 PORT = 8000
+PYTHON_EXEC = sys.executable
+SUPERVISOR_URL = '127.0.0.1'
+SUPERVISOR_PORT = 9001
+SCOREBOARD_DIR = '.'
+
+# Load from config.toml if it exists
+CONFIG_TOML_PATH = os.path.join(SCRIPT_DIR, 'config.toml')
+if os.path.exists(CONFIG_TOML_PATH):
+    with open(CONFIG_TOML_PATH, 'r') as f:
+        toml_config = toml.load(f)
+    
+    PORT = toml_config.get('PORT', PORT)
+    PYTHON_EXEC = toml_config.get('PYTHON_EXEC', PYTHON_EXEC)
+    SUPERVISOR_URL = toml_config.get('SUPERVISOR_URL', SUPERVISOR_URL)
+    SUPERVISOR_PORT = toml_config.get('SUPERVISOR_PORT', SUPERVISOR_PORT)
+    
+    # scoreboard_dir from config is used if the command-line arg is not provided
+    if args.scoreboard_dir is None:
+        SCOREBOARD_DIR = toml_config.get('scoreboard_dir', SCOREBOARD_DIR)
+
+# Command-line argument for scoreboard_dir takes highest precedence
+if args.scoreboard_dir is not None:
+    SCOREBOARD_DIR = args.scoreboard_dir
+
+# Ensure SCOREBOARD_DIR is an absolute path
+SCOREBOARD_DIR = os.path.abspath(SCOREBOARD_DIR)
+
+
 # Paths relative to --scoreboard_dir
 CONFIG_DIR = os.path.join(SCOREBOARD_DIR, 'config')
 CONFIG_FILE = 'config.json'
@@ -45,7 +74,6 @@ PLUGINS_INSTALLED_FILE = os.path.join(SCOREBOARD_DIR, 'plugins.json')
 PLUGINS_EXAMPLE_FILE = os.path.join(SCOREBOARD_DIR, 'plugins.json.example')
 PLUGINS_LOCK_FILE = os.path.join(SCOREBOARD_DIR, 'plugins.lock.json')
 PLUGINS_SCRIPT = os.path.join(SCOREBOARD_DIR, 'plugins.py')
-PYTHON_EXEC = sys.executable
 
 # ASSETS_DIR is relative to the script's location
 ASSETS_DIR = os.path.join(SCRIPT_DIR, 'static') 
@@ -55,8 +83,6 @@ TEMPLATES_DIR = os.path.join(SCRIPT_DIR, 'templates')
 
 # Absolute paths
 SETUP_FILE = '/home/pi/.nhlledportal/SETUP'
-SUPERVISOR_URL = '127.0.0.1'
-SUPERVISOR_PORT = 9001
 # --- End Configuration ---
 
 # =============================================
@@ -74,14 +100,21 @@ handler = RichColorLogHandler(
     show_background=False
 )
 
-# 2. Get the Flask app's logger
-app = Flask(__name__)
+# Check to see if we are running in a frozen/packaged environment
+if getattr(sys, 'frozen', False):
+    template_folder = os.path.join(sys._MEIPASS, 'templates')
+    static_folder = os.path.join(sys._MEIPASS, 'static')
+    app = Flask(__name__, template_folder=template_folder, static_folder=static_folder)
+else:
+    app = Flask(__name__)
+
+# 3. Get the Flask app's logger 
 app.logger.handlers = []  # Remove the default handler
 app.logger.addHandler(handler)
 app.logger.setLevel(log_level)
 app.logger.propagate = False  # Don't propagate to the root logger
 
-# 3. Get the Werkzeug logger (handles request logs)
+# 4. Get the Werkzeug logger (handles request logs)
 werkzeug_logger = logging.getLogger('werkzeug')
 werkzeug_logger.handlers = []  # Remove its default handlers
 werkzeug_logger.addHandler(handler)
