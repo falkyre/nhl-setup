@@ -28,6 +28,7 @@ import platform
 import shutil
 import json
 import xmlrpc.client
+import argparse
 
 # You may need to adjust this if your Supervisor is bound to a different host/port.
 SUPERVISOR_URL = "http://localhost:9001/RPC2"
@@ -198,8 +199,9 @@ def pastebinit(text):
     except Exception as e:
         return f"Failed to upload to pastebin: {e}"
 
-def issue_upload(scoreboard_proc=None, supervisor_url=None):
-    root = os.path.expanduser("~/nhl-led-scoreboard")
+def issue_upload(scoreboard_proc=None, supervisor_url=None, scoreboard_dir=None):
+    root = scoreboard_dir or os.path.expanduser("~/nhl-led-scoreboard")
+    os.chdir(root)
     scoreboard_proc = scoreboard_proc or "scoreboard"
     currdate = datetime.datetime.now().isoformat()
     out = []
@@ -291,5 +293,9 @@ def issue_upload(scoreboard_proc=None, supervisor_url=None):
     return url or result
 
 if __name__ == "__main__":
-    proc_name = sys.argv[1] if len(sys.argv) > 1 else None
-    issue_upload(proc_name)
+    parser = argparse.ArgumentParser(description="Gather diagnostic information for nhl-led-scoreboard.")
+    parser.add_argument("proc_name", nargs='?', default=None, help="The name of the scoreboard process in Supervisor.")
+    parser.add_argument("--scoreboard_dir", default=os.path.expanduser("~/nhl-led-scoreboard"), help="Path to the root of the nhl-led-scoreboard directory.")
+    args = parser.parse_args()
+
+    issue_upload(scoreboard_proc=args.proc_name, scoreboard_dir=args.scoreboard_dir)

@@ -448,7 +448,7 @@ def run_issue_uploader():
     
     # Call the generic run_shell_script helper to execute the python script
     # PYTHON_EXEC is defined above as sys.executable
-    result = run_shell_script([PYTHON_EXEC, script_path], timeout=180)
+    result = run_shell_script([PYTHON_EXEC, script_path, '--scoreboard_dir', SCOREBOARD_DIR], timeout=180)
     return jsonify(result)
 
 # =============================================
