@@ -251,10 +251,16 @@
                         <td>${proc.description}</td>
                         <td class="text-end">
                             ${actionBtn}
-                            <button class="btn btn-sm btn-info ms-1 btn-log" data-name="${proc.name}">Logs</button>
+                            <button class="btn btn-sm btn-info ms-1 btn-log" data-name="${proc.name}" data-bs-toggle="tooltip" title="Show Error log">Errors</button>
                         </td>
                     `;
                     processList.appendChild(tr);
+                });
+
+                // Re-initialize tooltips after rendering
+                const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+                tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+                    new bootstrap.Tooltip(tooltipTriggerEl);
                 });
 
                 document.querySelectorAll('.btn-start').forEach(b => b.addEventListener('click', (e) => controlProcess('start', e.target.dataset.name)));
