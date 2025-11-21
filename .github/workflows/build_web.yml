@@ -1,0 +1,114 @@
+name: Build Raspberry Pi Executables
+
+permissions:
+  contents: write
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      entry_point:
+        description: 'Main Python file (e.g., app.py)'
+        required: true
+        default: 'app.py'
+      app_name:
+        description: 'Name of the output executable'
+        required: true
+        default: 'flask_app'
+      target:
+        description: 'Target Platform'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - bookworm-armv7
+          - bookworm-arm64
+          - trixie-armv7
+          - trixie-arm64
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    # This condition checks if the user selected "all" OR if the current matrix job matches the selection
+    # We added "github.event_name == 'release'" so it runs all jobs when a release is published
+    if: ${{ github.event_name == 'release' || inputs.target == 'all' || inputs.target == matrix.suffix }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Bookworm (Debian 12) - 32-bit
+          - os_name: bookworm
+            docker_image: debian:bookworm
+            arch: linux/arm/v7
+            suffix: bookworm-armv7
+          # Bookworm (Debian 12) - 64-bit
+          - os_name: bookworm
+            docker_image: debian:bookworm
+            arch: linux/arm64
+            suffix: bookworm-arm64
+          # Trixie (Debian 13/Testing) - 32-bit
+          - os_name: trixie
+            docker_image: debian:trixie
+            arch: linux/arm/v7
+            suffix: trixie-armv7
+          # Trixie (Debian 13/Testing) - 64-bit
+          - os_name: trixie
+            docker_image: debian:trixie
+            arch: linux/arm64
+            suffix: trixie-arm64
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Build inside Docker Container
+        # We mount $PWD to /app, but set the working directory (-w) to /app/web
+        run: |
+          docker run --rm --platform ${{ matrix.arch }} -v "$PWD":/app -w /app/web ${{ matrix.docker_image }} /bin/bash -c "
+            set -e
+
+            echo 'Installing dependencies...'
+            apt-get update && \
+            apt-get install -y python3 python3-pip python3-venv python3-dev build-essential binutils
+
+            echo 'Setting up Virtual Environment...'
+            # Required for PEP 668 compliance in Bookworm/Trixie
+            python3 -m venv venv
+            source venv/bin/activate
+
+            echo 'Installing Python requirements...'
+            if [ -f requirements.txt ]; then
+                pip install -r requirements.txt
+            fi
+            pip install pyinstaller
+
+            echo 'Building Executable...'
+            # --add-data source:dest (Linux syntax)
+            # We explicitly add templates and static folders
+            # We use || 'default' to handle release events where inputs are empty
+            pyinstaller --onefile --clean \
+              --add-data 'templates:templates' \
+              --add-data 'static:static' \
+              --name ${{ inputs.app_name || 'flask_app' }}-${{ matrix.suffix }} \
+              ${{ inputs.entry_point || 'app.py' }}
+            
+            # Fix permissions so GitHub runner can read the artifacts
+            chown -R 1001:1001 dist/
+          "
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.app_name || 'flask_app' }}-${{ matrix.suffix }}
+          path: web/dist/${{ inputs.app_name || 'flask_app' }}-${{ matrix.suffix }}
+
+      - name: Upload to Release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: web/dist/${{ inputs.app_name || 'flask_app' }}-${{ matrix.suffix }}
