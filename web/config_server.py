@@ -36,7 +36,17 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 # --- Configuration ---
 # Set default values
 PORT = 8000
-PYTHON_EXEC = sys.executable
+
+# If running as a frozen executable, sys.executable points to the app itself.
+# We need to use a generic python interpreter to run other scripts like plugins.py.
+# This can be overridden in config.toml if a specific python path is needed.
+if getattr(sys, 'frozen', False):
+    # For a frozen app, assume 'python3' is available in the system's PATH.
+    PYTHON_EXEC = 'python3'
+else:
+    # For development, use the same interpreter running this script to maintain venv.
+    PYTHON_EXEC = sys.executable
+
 SUPERVISOR_URL = '127.0.0.1'
 SUPERVISOR_PORT = 9001
 SCOREBOARD_DIR = '.'
