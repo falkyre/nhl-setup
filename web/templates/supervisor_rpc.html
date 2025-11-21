@@ -339,12 +339,16 @@
 
             const collapseElement = document.getElementById('supervisorUiCollapse');
             collapseElement.addEventListener('show.bs.collapse', function () {
+                toggleBtn.innerHTML = '<i class="bi bi-window-stack"></i> Close Web Interface';
                 if (!frameLoaded) {
                     const url = `http://${window.location.hostname}:9001`;
                     frame.src = url;
                     urlDisplay.textContent = url;
                     frameLoaded = true;
                 }
+            });
+            collapseElement.addEventListener('hide.bs.collapse', function () {
+                toggleBtn.innerHTML = '<i class="bi bi-window-stack"></i> Open Web Interface';
             });
         });
     </script>
