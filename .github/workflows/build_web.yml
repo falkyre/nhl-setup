@@ -83,6 +83,7 @@ jobs:
             # --add-data source:dest (Linux syntax)
             # We explicitly add templates and static folders
             pyinstaller --onefile --clean \
+              --add-binary 'issue_upload.py:.' \
               --add-data 'templates:templates' \
               --add-data 'static:static' \
               --name nls_controlhub-${{ matrix.suffix }} \
