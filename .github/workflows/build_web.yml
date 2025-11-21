@@ -1,4 +1,4 @@
-name: Build Raspberry Pi Executables
+name: Build NLS Control Hub Executables
 
 permissions:
   contents: write
@@ -8,14 +8,6 @@ on:
     types: [published]
   workflow_dispatch:
     inputs:
-      entry_point:
-        description: 'Main Python file (e.g., app.py)'
-        required: true
-        default: 'app.py'
-      app_name:
-        description: 'Name of the output executable'
-        required: true
-        default: 'flask_app'
       target:
         description: 'Target Platform'
         required: true
@@ -31,9 +23,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    # This condition checks if the user selected "all" OR if the current matrix job matches the selection
-    # We added "github.event_name == 'release'" so it runs all jobs when a release is published
-    if: ${{ github.event_name == 'release' || inputs.target == 'all' || inputs.target == matrix.suffix }}
+    # REMOVED: The job-level 'if' condition caused the error because 'matrix' is not available there.
     strategy:
       fail-fast: false
       matrix:
@@ -67,6 +57,8 @@ jobs:
         uses: docker/setup-qemu-action@v3
 
       - name: Build inside Docker Container
+        # Added the condition here. 'matrix' IS available in step-level 'if' conditions.
+        if: ${{ github.event_name == 'release' || inputs.target == 'all' || inputs.target == matrix.suffix }}
         # We mount $PWD to /app, but set the working directory (-w) to /app/web
         run: |
           docker run --rm --platform ${{ matrix.arch }} -v "$PWD":/app -w /app/web ${{ matrix.docker_image }} /bin/bash -c "
@@ -90,25 +82,26 @@ jobs:
             echo 'Building Executable...'
             # --add-data source:dest (Linux syntax)
             # We explicitly add templates and static folders
-            # We use || 'default' to handle release events where inputs are empty
             pyinstaller --onefile --clean \
               --add-data 'templates:templates' \
               --add-data 'static:static' \
-              --name ${{ inputs.app_name || 'flask_app' }}-${{ matrix.suffix }} \
-              ${{ inputs.entry_point || 'app.py' }}
+              --name nls_controlhub-${{ matrix.suffix }} \
+              config_server.py
             
             # Fix permissions so GitHub runner can read the artifacts
             chown -R 1001:1001 dist/
           "
 
       - name: Upload Artifact
+        # We must also skip the upload if we skipped the build, otherwise it fails finding files.
+        if: ${{ github.event_name == 'release' || inputs.target == 'all' || inputs.target == matrix.suffix }}
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ inputs.app_name || 'flask_app' }}-${{ matrix.suffix }}
-          path: web/dist/${{ inputs.app_name || 'flask_app' }}-${{ matrix.suffix }}
+          name: nls_controlhub-${{ matrix.suffix }}
+          path: web/dist/nls_controlhub-${{ matrix.suffix }}
 
       - name: Upload to Release
         if: github.event_name == 'release'
         uses: softprops/action-gh-release@v2
         with:
-          files: web/dist/${{ inputs.app_name || 'flask_app' }}-${{ matrix.suffix }}
+          files: web/dist/nls_controlhub-${{ matrix.suffix }}
