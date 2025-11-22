@@ -103,11 +103,11 @@ def get_venv_info():
             pip_list = ["pip not found in venv"]
     return info, pip_list
 
-def find_paths():
+def find_paths(scoreboard_dir):
     paths = [
         ("~/nhl-led-score-board", os.path.expanduser("~/nhl-led-score-board")),
-        ("~/nhl-led-scoreboard/submodules/matrix/bindings/python",
-         os.path.expanduser("~/nhl-led-scoreboard/submodules/matrix/bindings/python"))
+        (f"{scoreboard_dir}/submodules/matrix/bindings/python",
+         os.path.join(scoreboard_dir, "submodules/matrix/bindings/python"))
     ]
     out = []
     for label, p in paths:
@@ -236,7 +236,7 @@ def issue_upload(scoreboard_proc=None, supervisor_url=None, scoreboard_dir=None)
     print("Checking for venv and other paths...")
     venv_info, pip_list = get_venv_info()
     out.append(venv_info)
-    out += find_paths()
+    out += find_paths(root)
 
     if os.path.isdir(os.path.expanduser("~/nhlsb-venv")):
         print("Gathering pip list...")
