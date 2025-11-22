@@ -1,0 +1,73 @@
+name: Build Debian Packages for NLS Control Hub
+
+on:
+  workflow_run:
+    workflows: ["Build NLS Control Hub Executables"]
+    types:
+      - completed
+
+jobs:
+  build-debian-package:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - suffix: bookworm-armv7
+            arch: armhf
+          - suffix: bookworm-arm64
+            arch: arm64
+          - suffix: trixie-armv7
+            arch: armhf
+          - suffix: trixie-arm64
+            arch: arm64
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Download Executable Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: nls_controlhub-${{ matrix.suffix }}
+          run-id: ${{ github.event.workflow_run.id }}
+          path: ./executable
+
+      - name: Set up Debian package structure
+        run: |
+          mkdir -p debian/DEBIAN
+          mkdir -p debian/etc/systemd/system
+          mkdir -p debian/etc/nls_controlhub
+          mkdir -p debian/usr/local/bin
+
+      - name: Get version from VERSION file
+        id: version
+        run: echo "version=$(cat VERSION)" >> $GITHUB_OUTPUT
+
+      - name: Create control file
+        run: |
+          cat <<EOF > debian/DEBIAN/control
+          Package: nls-controlhub
+          Version: ${{ steps.version.outputs.version }}
+          Architecture: ${{ matrix.arch }}
+          Maintainer: falkyre <falkyre@gmail.com>
+          Description: NHL LED Scoreboard Control Hub.
+           A web-based control panel for the NHL LED Scoreboard.
+          EOF
+
+      - name: Copy files to package structure
+        run: |
+          cp packaging/nls_controlhub.service debian/etc/systemd/system/
+          cp web/config.toml debian/etc/nls_controlhub/
+          mv ./executable/nls_controlhub-${{ matrix.suffix }} debian/usr/local/bin/nls_controlhub
+          chmod +x debian/usr/local/bin/nls_controlhub
+
+      - name: Build Debian package
+        run: dpkg-deb --build debian nls-controlhub-${{ matrix.suffix }}.deb
+
+      - name: Upload Debian package
+        uses: actions/upload-artifact@v4
+        with:
+          name: nls-controlhub-deb-${{ matrix.suffix }}
+          path: nls-controlhub-${{ matrix.suffix }}.deb

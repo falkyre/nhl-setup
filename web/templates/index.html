@@ -76,10 +76,10 @@
         <img src="/assets/images/logo-lite.svg" class="logo-header logo-light" alt="Scoreboard Logo">
         <img src="/assets/images/logo.svg" class="logo-header logo-dark" alt="Scoreboard Logo">
         
-        <h1 class="mb-3">CONTROL HUB</h1>
+        <h1 id="control-hub-title" class="mb-3">CONTROL HUB</h1>
         
         <table class="table table-borderless w-auto mx-auto mb-4">
-            <caption style="caption-side: top; text-align: center;" class="text-muted">nhl-led-scoreboard versions</caption>
+            <caption style="caption-side: top; text-align: center;" class="text-muted lead">nhl-led-scoreboard versions</caption>
             <thead>
                 <tr>
                     <th class="text-center text-muted lead px-4">INSTALLED</th>
@@ -179,6 +179,12 @@
                     versionEl.innerHTML = badgeHTML;
                     versionEl.classList.remove('spinner-border', 'spinner-border-sm'); // Remove spinner classes
 
+                    // --- Set Control Hub Title with Version ---
+                    const titleEl = document.getElementById('control-hub-title');
+                    if (data.control_hub_version) {
+                        titleEl.innerHTML = `<img src="/assets/images/favicon.ico" alt="NLS Logo" style="height: 1em; vertical-align: middle; margin-right: 0.2em;"> <small class="text-muted">Control Hub V${data.control_hub_version}</small>`;
+                    }
+                    
                     // Show Supervisor Button if available
                     if (data.supervisor_available) {
                         document.getElementById('supervisor-btn').style.display = 'block';

@@ -14,6 +14,8 @@ from datetime import datetime
 from flask import Flask, request, jsonify, send_from_directory
 from richcolorlog import RichColorLogHandler
 
+__version__ = "2025.12.0"
+
 def is_frozen():
     """Checks if the script is running in a frozen/packaged environment (e.g., PyInstaller)."""
     return getattr(sys, 'frozen', False)
@@ -46,6 +48,11 @@ parser.add_argument(
     '--debug',
     action='store_true',
     help='Run Flask in debug mode and show all pages for testing.'
+)
+parser.add_argument(
+    '-v', '--version',
+    action='version',
+    version=f'%(prog)s {__version__}'
 )
 args = parser.parse_args()
 
@@ -371,6 +378,7 @@ def api_status():
     
     return jsonify({
         'version': get_version(),
+        'control_hub_version': __version__,
         'supervisor_available': supervisor_status
     })
 

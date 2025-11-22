@@ -1,7 +1,7 @@
 [project]
 name = "nls-controlhub"
-version = "0.1.0"
-description = "Add your description here"
+version = "2025.12.0"
+description = "Small Web UI to control and config NHL scoreboard"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
