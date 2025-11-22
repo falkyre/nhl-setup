@@ -7,21 +7,52 @@ on:
       - completed
 
 jobs:
-  build-debian-package:
+  determine-matrix:
     runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Determine which artifacts were built
+        id: set-matrix
+        uses: actions/github-script@v6
+        with:
+          script: |
+            let all_artifacts = await github.rest.actions.listWorkflowRunArtifacts({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              run_id: context.payload.workflow_run.id,
+            });
+            let matrix = { include: [] };
+            for (let artifact of all_artifacts.data.artifacts) {
+              if (artifact.name.startsWith('nls_controlhub-')) {
+                const suffix = artifact.name.replace('nls_controlhub-', '');
+                let arch = '';
+                if (suffix.includes('armv7')) {
+                  arch = 'armhf';
+                } else if (suffix.includes('arm64')) {
+                  arch = 'arm64';
+                }
+                if (arch) {
+                  matrix.include.push({ suffix: suffix, arch: arch });
+                }
+              }
+            }
+            core.setOutput('matrix', JSON.stringify(matrix));
+            if (matrix.include.length === 0) {
+              console.log("No matching artifacts found. Skipping packaging.");
+            } else {
+              console.log("Found matching artifacts. Proceeding with matrix:", JSON.stringify(matrix));
+            }
+
+  build-debian-package:
+    needs: determine-matrix
+    # Only run this job if the matrix is not empty
+    if: ${{ needs.determine-matrix.outputs.matrix != '{"include":[]}' }}
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - suffix: bookworm-armv7
-            arch: armhf
-          - suffix: bookworm-arm64
-            arch: arm64
-          - suffix: trixie-armv7
-            arch: armhf
-          - suffix: trixie-arm64
-            arch: arm64
+      matrix: ${{ fromJson(needs.determine-matrix.outputs.matrix) }}
 
     steps:
       - name: Checkout Repository
@@ -51,7 +82,7 @@ jobs:
           Package: nls-controlhub
           Version: ${{ steps.version.outputs.version }}
           Architecture: ${{ matrix.arch }}
-          Maintainer: falkyre <falkyre@gmail.com>
+          Maintainer: falkyre <falkyre@example.com>
           Description: NHL LED Scoreboard Control Hub.
            A web-based control panel for the NHL LED Scoreboard.
           EOF
