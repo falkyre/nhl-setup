@@ -5,26 +5,67 @@ on:
     workflows: ["Build NLS Control Hub Executables"]
     types:
       - completed
+  workflow_dispatch:
+    inputs:
+      workflow_name:
+        description: 'Name of the workflow to get artifacts from'
+        required: true
+        default: 'Build NLS Control Hub Executables'
+        type: choice
+        options:
+        - Build NLS Control Hub Executables
+        - Build Web Interface
 
 jobs:
   determine-matrix:
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
+      run_id: ${{ steps.set-matrix.outputs.run_id }}
     steps:
       - name: Determine which artifacts were built
         id: set-matrix
         uses: actions/github-script@v6
         with:
           script: |
-            let all_artifacts = await github.rest.actions.listWorkflowRunArtifacts({
+            let run_id;
+            if ('${{ github.event_name }}' === 'workflow_run') {
+              run_id = ${{ github.event.workflow_run.id }};
+              console.log(`Triggered by workflow_run, run_id: ${run_id}`);
+            } else { // workflow_dispatch
+              console.log("Triggered by workflow_dispatch, finding last successful run...");
+              const workflow_name = '${{ github.event.inputs.workflow_name }}';
+              const runs = await github.rest.actions.listWorkflowRuns({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                workflow_id: workflow_name,
+                status: 'success',
+                branch: 'main'
+              });
+              if (runs.data.workflow_runs.length > 0) {
+                run_id = runs.data.workflow_runs[0].id;
+                console.log(`Found last successful run for '${workflow_name}', run_id: ${run_id}`);
+              } else {
+                core.setFailed(`No successful runs found on main branch for workflow: ${workflow_name}`);
+                return;
+              }
+            }
+            core.setOutput('run_id', run_id);
+
+            const all_artifacts_response = await github.rest.actions.listWorkflowRunArtifacts({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              run_id: context.payload.workflow_run.id,
+              run_id: run_id,
             });
+
+            console.log("--- All Artifacts ---");
+            console.log(JSON.stringify(all_artifacts_response.data.artifacts, null, 2));
+            console.log("---------------------");
+
             let matrix = { include: [] };
-            for (let artifact of all_artifacts.data.artifacts) {
+            for (let artifact of all_artifacts_response.data.artifacts) {
+              console.log(`Processing artifact: Name: '${artifact.name}', ID: ${artifact.id}`);
               if (artifact.name.startsWith('nls_controlhub-')) {
                 const suffix = artifact.name.replace('nls_controlhub-', '').trim();
                 let arch = '';
@@ -33,16 +74,27 @@ jobs:
                 } else if (suffix.includes('arm64')) {
                   arch = 'arm64';
                 }
+
+                console.log(`  - Suffix: '${suffix}', Arch: '${arch}'`);
+
                 if (arch) {
                   matrix.include.push({ suffix: suffix, arch: arch });
+                  console.log(`  - Added to matrix.`);
+                } else {
+                  console.log("  - Skipped: No valid architecture found in suffix.");
                 }
+              } else {
+                console.log("  - Skipped: Artifact name does not start with 'nls_controlhub-'.");
               }
             }
+
             core.setOutput('matrix', JSON.stringify(matrix));
+
             if (matrix.include.length === 0) {
-              console.log("No matching artifacts found. Skipping packaging.");
+              console.log("Matrix is empty. No packages will be built.");
             } else {
-              console.log("Found matching artifacts. Proceeding with matrix:", JSON.stringify(matrix));
+              console.log("Generated Matrix:");
+              console.log(JSON.stringify(matrix, null, 2));
             }
 
   build-debian-package:
@@ -62,7 +114,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: nls_controlhub-${{ matrix.suffix }}
-          run-id: ${{ github.event.workflow_run.id }}
+          run-id: ${{ needs.determine-matrix.outputs.run_id }}
           path: ./executable
 
       - name: Set up Debian package structure
