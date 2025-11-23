@@ -122,7 +122,7 @@ jobs:
       - name: Get version from VERSION file
         if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.target == 'all' || github.event.inputs.target == matrix.suffix }}
         id: version
-        run: echo "version=$(cat VERSION)" >> $GITHUB_OUTPUT
+        run: echo "version=$(cat web/VERSION)" >> $GITHUB_OUTPUT
 
       - name: Create control file
         if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.target == 'all' || github.event.inputs.target == matrix.suffix }}
