@@ -7,14 +7,14 @@ on:
       - completed
   workflow_dispatch:
     inputs:
-      workflow_name:
-        description: 'Name of the workflow to get artifacts from'
+      workflow_filename:
+        description: 'Filename of the workflow to get artifacts from'
         required: true
-        default: 'Build NLS Control Hub Executables'
+        default: 'build.yml'
         type: choice
         options:
-        - Build NLS Control Hub Executables
-        - Build Web Interface
+        - build.yml
+        - build_web.yml
 
 jobs:
   determine-matrix:
@@ -35,19 +35,19 @@ jobs:
               console.log(`Triggered by workflow_run, run_id: ${run_id}`);
             } else { // workflow_dispatch
               console.log("Triggered by workflow_dispatch, finding last successful run...");
-              const workflow_name = context.payload.inputs.workflow_name;
+              const workflow_filename = context.payload.inputs.workflow_filename;
               const runs = await github.rest.actions.listWorkflowRuns({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                workflow_id: workflow_name,
+                workflow_id: workflow_filename,
                 status: 'success',
                 branch: 'main'
               });
               if (runs.data.workflow_runs.length > 0) {
                 run_id = runs.data.workflow_runs[0].id;
-                console.log(`Found last successful run for '${workflow_name}', run_id: ${run_id}`);
+                console.log(`Found last successful run for '${workflow_filename}', run_id: ${run_id}`);
               } else {
-                core.setFailed(`No successful runs found on main branch for workflow: ${workflow_name}`);
+                core.setFailed(`No successful runs found on main branch for workflow: ${workflow_filename}`);
                 return;
               }
             }
