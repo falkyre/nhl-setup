@@ -131,7 +131,7 @@ SyslogIdentifier=nls_controlhub
 WantedBy=multi-user.target
 ```
 
-**Important:** The `User` and `WorkingDirectory` are set to `pi` and `/home/pi` by default. If you are using a different username on your Raspberry Pi (as is default on newer Raspberry Pi OS versions like Bookworm and Trixie), you will need to edit this file.
+**Important:** The `User` and `WorkingDirectory` are set to `pi` and `/home/pi` by default. If you are using a different username on your Raspberry Pi (as is default on newer Raspberry Pi OS versions like Bookworm and Trixie), you will need to edit this file.  Set the `WorkingDirectory` to be the location of where you installed the nhl-led-scoreboard.
 
 1.  Open the file for editing: `sudo systemctl edit --full nls_controlhub.service`
 2.  Change the `User` and `WorkingDirectory` to match your username and home directory.

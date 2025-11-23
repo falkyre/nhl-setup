@@ -72,7 +72,7 @@ jobs:
               --add-data 'static:static' \
               --name nls_controlhub-${{ matrix.suffix }} \
               config_server.py
-            chown -R $(id -u):$(id -g) dist/
+            chown -R 0:0 dist/
           "
 
       - name: Upload Executable Artifact
@@ -146,7 +146,7 @@ jobs:
 
       - name: Build Debian package
         if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.target == 'all' || github.event.inputs.target == matrix.suffix }}
-        run: dpkg-deb --build debian nls-controlhub-deb-${{ matrix.suffix }}.deb
+        run: dpkg-deb --build --root-owner-group debian nls-controlhub-deb-${{ matrix.suffix }}.deb
 
       - name: Upload Debian package artifact
         if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.target == 'all' || github.event.inputs.target == matrix.suffix }}
