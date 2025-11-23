@@ -1,0 +1,178 @@
+name: Build and Package NLS Control Hub
+
+permissions:
+  contents: write
+
+on:
+  release:
+    types: [published]
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Target Platform'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - bookworm-armv7
+          - bookworm-arm64
+          - trixie-armv7
+          - trixie-arm64
+
+jobs:
+  build-executables:
+    name: Build Executable - ${{ matrix.suffix }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os_name: bookworm
+            docker_image: debian:bookworm
+            arch: linux/arm/v7
+            suffix: bookworm-armv7
+          - os_name: bookworm
+            docker_image: debian:bookworm
+            arch: linux/arm64
+            suffix: bookworm-arm64
+          - os_name: trixie
+            docker_image: debian:trixie
+            arch: linux/arm/v7
+            suffix: trixie-armv7
+          - os_name: trixie
+            docker_image: debian:trixie
+            arch: linux/arm64
+            suffix: trixie-arm64
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Build inside Docker Container
+        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.target == 'all' || github.event.inputs.target == matrix.suffix }}
+        run: |
+          docker run --rm --platform ${{ matrix.arch }} -v "$PWD":/app -w /app/web ${{ matrix.docker_image }} /bin/bash -c "
+            set -e
+            echo 'Installing dependencies...'
+            apt-get update && apt-get install -y python3 python3-pip python3-venv python3-dev build-essential binutils
+            echo 'Setting up Virtual Environment...'
+            python3 -m venv venv
+            source venv/bin/activate
+            echo 'Installing Python requirements...'
+            if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+            pip install pyinstaller
+            echo 'Building Executable...'
+            pyinstaller --onefile --clean \
+              --add-binary 'issue_upload.py:.' \
+              --add-data 'templates:templates' \
+              --add-data 'static:static' \
+              --name nls_controlhub-${{ matrix.suffix }} \
+              config_server.py
+            chown -R $(id -u):$(id -g) dist/
+          "
+
+      - name: Upload Executable Artifact
+        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.target == 'all' || github.event.inputs.target == matrix.suffix }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: nls_controlhub-${{ matrix.suffix }}
+          path: web/dist/nls_controlhub-${{ matrix.suffix }}
+
+  package-debians:
+    name: Package Debian - ${{ matrix.suffix }}
+    needs: build-executables
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - suffix: bookworm-armv7
+            deb_arch: armhf
+          - suffix: bookworm-arm64
+            deb_arch: arm64
+          - suffix: trixie-armv7
+            deb_arch: armhf
+          - suffix: trixie-arm64
+            deb_arch: arm64
+
+    steps:
+      - name: Checkout Repository
+        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.target == 'all' || github.event.inputs.target == matrix.suffix }}
+        uses: actions/checkout@v4
+
+      - name: Download Executable Artifact
+        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.target == 'all' || github.event.inputs.target == matrix.suffix }}
+        uses: actions/download-artifact@v4
+        with:
+          name: nls_controlhub-${{ matrix.suffix }}
+          path: ./executable
+
+      - name: Set up Debian package structure
+        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.target == 'all' || github.event.inputs.target == matrix.suffix }}
+        run: |
+          mkdir -p debian/DEBIAN
+          mkdir -p debian/etc/systemd/system
+          mkdir -p debian/etc/nls_controlhub
+          mkdir -p debian/usr/local/bin
+
+      - name: Get version from VERSION file
+        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.target == 'all' || github.event.inputs.target == matrix.suffix }}
+        id: version
+        run: echo "version=$(cat VERSION)" >> $GITHUB_OUTPUT
+
+      - name: Create control file
+        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.target == 'all' || github.event.inputs.target == matrix.suffix }}
+        run: |
+          cat <<EOF > debian/DEBIAN/control
+          Package: nls-controlhub
+          Version: ${{ steps.version.outputs.version }}
+          Architecture: ${{ matrix.deb_arch }}
+          Maintainer: falkyre <falkyre@example.com>
+          Description: NHL LED Scoreboard Control Hub.
+           A web-based control panel for the NHL LED Scoreboard.
+          EOF
+
+      - name: Copy files to package structure
+        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.target == 'all' || github.event.inputs.target == matrix.suffix }}
+        run: |
+          cp packaging/nls_controlhub.service debian/etc/systemd/system/
+          cp web/config.toml debian/etc/nls_controlhub/
+          mv ./executable/nls_controlhub-${{ matrix.suffix }} debian/usr/local/bin/nls_controlhub
+          chmod +x debian/usr/local/bin/nls_controlhub
+
+      - name: Build Debian package
+        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.target == 'all' || github.event.inputs.target == matrix.suffix }}
+        run: dpkg-deb --build debian nls-controlhub-deb-${{ matrix.suffix }}.deb
+
+      - name: Upload Debian package artifact
+        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.target == 'all' || github.event.inputs.target == matrix.suffix }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: nls-controlhub-deb-${{ matrix.suffix }}
+          path: nls-controlhub-deb-${{ matrix.suffix }}.deb
+
+  release-assets:
+    name: Upload Release Assets
+    if: github.event_name == 'release'
+    needs: package-debians
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all debian packages
+        uses: actions/download-artifact@v4
+        with:
+          path: ./deb-packages
+          pattern: nls-controlhub-deb-*
+          merge-multiple: true
+
+      - name: Upload to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ./deb-packages/*
