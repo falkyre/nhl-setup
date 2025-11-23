@@ -30,12 +30,12 @@ jobs:
         with:
           script: |
             let run_id;
-            if ('${{ github.event_name }}' === 'workflow_run') {
-              run_id = ${{ github.event.workflow_run.id }};
+            if (context.eventName === 'workflow_run') {
+              run_id = context.payload.workflow_run.id;
               console.log(`Triggered by workflow_run, run_id: ${run_id}`);
             } else { // workflow_dispatch
               console.log("Triggered by workflow_dispatch, finding last successful run...");
-              const workflow_name = '${{ github.event.inputs.workflow_name }}';
+              const workflow_name = context.payload.inputs.workflow_name;
               const runs = await github.rest.actions.listWorkflowRuns({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
