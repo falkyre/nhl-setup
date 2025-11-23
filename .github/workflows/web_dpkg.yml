@@ -131,7 +131,7 @@ jobs:
           Package: nls-controlhub
           Version: ${{ steps.version.outputs.version }}
           Architecture: ${{ matrix.deb_arch }}
-          Maintainer: falkyre <falkyre@example.com>
+          Maintainer: Sean Ostermann <falkyre@gmail.com>
           Description: NHL LED Scoreboard Control Hub.
            A web-based control panel for the NHL LED Scoreboard.
           EOF
