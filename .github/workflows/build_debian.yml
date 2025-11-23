@@ -26,7 +26,7 @@ jobs:
             let matrix = { include: [] };
             for (let artifact of all_artifacts.data.artifacts) {
               if (artifact.name.startsWith('nls_controlhub-')) {
-                const suffix = artifact.name.replace('nls_controlhub-', '');
+                const suffix = artifact.name.replace('nls_controlhub-', '').trim();
                 let arch = '';
                 if (suffix.includes('armv7')) {
                   arch = 'armhf';
