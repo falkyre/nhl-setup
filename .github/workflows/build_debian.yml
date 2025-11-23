@@ -78,7 +78,7 @@ jobs:
                 console.log(`  - Suffix: '${suffix}', Arch: '${arch}'`);
 
                 if (arch) {
-                  matrix.include.push({ suffix: suffix, arch: arch });
+                  matrix.include.push({ suffix: suffix, arch: arch, id: artifact.id });
                   console.log(`  - Added to matrix.`);
                 } else {
                   console.log("  - Skipped: No valid architecture found in suffix.");
@@ -113,8 +113,7 @@ jobs:
       - name: Download Executable Artifact
         uses: actions/download-artifact@v4
         with:
-          name: nls_controlhub-${{ matrix.suffix }}
-          run-id: ${{ needs.determine-matrix.outputs.run_id }}
+          artifact-ids: ${{ matrix.id }}
           path: ./executable
 
       - name: Set up Debian package structure
