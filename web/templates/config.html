@@ -288,6 +288,22 @@
                             </div>
                         </div>
 
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="disable_penalty_animation" value="">
+                            <label class="form-check-label" for="disable_penalty_animation">
+                                Disable Penalty Animation
+                            </label>
+                            <div class="form-text">If checked, penalty animations will be disabled.</div>
+                        </div>
+
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="show_power_play_details" value="">
+                            <label class="form-check-label" for="show_power_play_details">
+                                Show Power Play Details
+                            </label>
+                            <div class="form-text">If checked, show PP unit and time remaining.</div>
+                        </div>
+
                     </div>
                 </div>
             </div>
@@ -962,7 +978,9 @@
                     sog_display_frequency: getInt('pref_sog_display'),
                     goal_animations: {
                         pref_team_only: getBool('pref_goal_pref_team_only')
-                    }
+                    },
+                    disable_penalty_animation: getBool('disable_penalty_animation'),
+                    show_power_play_details: getBool('show_power_play_details')
                 };
                 
                 // 3. States
@@ -1175,6 +1193,8 @@
                     if (prefs.goal_animations) {
                         setBool('pref_goal_pref_team_only', prefs.goal_animations.pref_team_only);
                     }
+                    setBool('disable_penalty_animation', prefs.disable_penalty_animation);
+                    setBool('show_power_play_details', prefs.show_power_play_details);
                 }
 
                 // 3. States
