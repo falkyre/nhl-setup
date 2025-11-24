@@ -421,6 +421,26 @@ def preferences_settings(default_config,qmark):
 
     preferences['preferences'].update(goal_animations_dict)
 
+    penalty_questions = [
+        {
+            'type': 'confirm',
+            'name': 'disable_penalty_animation',
+            'qmark': qmark,
+            'message': 'Disable penalty animation?',
+            'default': get_default_value(default_config,['preferences','disable_penalty_animation'],"bool") or False
+        },
+        {
+            'type': 'confirm',
+            'name': 'show_power_play_details',
+            'qmark': qmark,
+            'message': 'Show power play details?',
+            'default': get_default_value(default_config,['preferences','show_power_play_details'],"bool") or False
+        }
+    ]
+
+    penalty_answers = prompt(penalty_questions, style=custom_style_dope)
+    preferences['preferences'].update(penalty_answers)
+
     return preferences
 
 def states_settings(default_config,qmark,setup_type):
@@ -578,6 +598,23 @@ def standings(default_config,qmark):
             'message' : "Select the conference to display",
             'choices' : ['eastern','western'],
             'default' : get_default_value(default_config,['boards','standings','conference'],"string") or 'eastern'
+        },
+        {
+            'type': 'confirm',
+            'name': 'large_font',
+            'qmark': qmark,
+            'message': 'Use large font for standings?',
+            'default': get_default_value(default_config,['boards','standings','large_font'],"bool") or False
+        },
+        {
+            'type': 'input',
+            'name': 'wildcard_limit',
+            'qmark': qmark,
+            'message': 'How many wildcard teams to show?',
+            'when': lambda x: x['standing_type'] == 'wild_card',
+            'validate': lambda val: True if val.isdecimal() and int(val) >= 1 else 'Must be a number and greater or equal than 1',
+            'filter': lambda val: int(val),
+            'default': get_default_value(default_config,['boards','standings','wildcard_limit'],"int") or '4'
         }
     ]
 
