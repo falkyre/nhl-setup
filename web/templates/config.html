@@ -419,28 +419,35 @@
                                                 <option value="wild_card">Wild Card</option>
                                             </select>
                                         </div>
-                                        <div class="mb-3">
-                                            <label for="boards_standings_conference" class="form-label">Preferred Conference</label>
-                                            <select id="boards_standings_conference" class="form-select">
-                                                <option value="eastern">Eastern</option>
-                                                <option value="western">Western</option>
-                                            </select>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label for="boards_standings_division" class="form-label">Preferred Division</label>
-                                            <select id="boards_standings_division" class="form-select">
-                                                <option value="central">Central</option>
-                                                <option value="atlantic">Atlantic</option>
-                                                <option value="metropolitan">Metropolitan</option>
-                                                <option value="pacific">Pacific</option>
-                                            </select>
-                                        </div>
                                         <div class="form-check mb-3">
                                             <input class="form-check-input" type="checkbox" id="boards_standings_pref_only" value="">
                                             <label class="form-check-label" for="boards_standings_pref_only">
                                                 Preferred Standings Only
                                             </label>
                                             <div class="form-text">Only show the preferred division/conference.</div>
+                                        </div>
+                                        <div id="preferred_standings_group">
+                                            <div class="mb-3" id="conference_section">
+                                                <label for="boards_standings_conference" class="form-label">Preferred Conference</label>
+                                                <select id="boards_standings_conference" class="form-select">
+                                                    <option value="eastern">Eastern</option>
+                                                    <option value="western">Western</option>
+                                                </select>
+                                            </div>
+                                            <div class="mb-3" id="division_section">
+                                                <label for="boards_standings_division" class="form-label">Preferred Division</label>
+                                                <select id="boards_standings_division" class="form-select">
+                                                    <option value="central">Central</option>
+                                                    <option value="atlantic">Atlantic</option>
+                                                    <option value="metropolitan">Metropolitan</option>
+                                                    <option value="pacific">Pacific</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="mb-3" id="wildcard_limit_section">
+                                            <label for="boards_standings_wildcard_limit" class="form-label">Wildcard Limit</label>
+                                            <input type="number" class="form-control" id="boards_standings_wildcard_limit" value="4" min="1" max="6">
+                                            <div class="form-text">The number of wildcard teams to show (defaults to 4).</div>
                                         </div>
                                         <div class="form-check mb-3">
                                             <input class="form-check-input" type="checkbox" id="boards_standings_large_font" value="">
@@ -1010,8 +1017,9 @@
                         preferred_standings_only: getBool('boards_standings_pref_only'),
                         large_font: getBool('boards_standings_large_font'),
                         standing_type: getVal('boards_standings_type'),
-                        divisions: getVal('boards_standings_division'),
-                        conference: getVal('boards_standings_conference')
+                        divisions: getVal('boards_standings_type') === 'division' ? getVal('boards_standings_division') : 'atlantic',
+                        conference: getVal('boards_standings_type') === 'conference' ? getVal('boards_standings_conference') : 'eastern',
+                        wildcard_limit: getVal('boards_standings_type') === 'wild_card' ? getInt('boards_standings_wildcard_limit') : 4
                     },
                     clock: {
                         duration: getInt('boards_clock_duration'),
@@ -1228,6 +1236,7 @@
                         setVal('boards_standings_type', b.standings.standing_type);
                         setVal('boards_standings_division', b.standings.divisions);
                         setVal('boards_standings_conference', b.standings.conference);
+                        setVal('boards_standings_wildcard_limit', b.standings.wildcard_limit);
                     }
                     if (b.clock) {
                         setVal('boards_clock_duration', b.clock.duration);
@@ -1525,6 +1534,42 @@
                     // Even if it fails, populate with an empty list
                     populateBoardSelects([]); 
                 });
+
+            const standingsType = document.getElementById('boards_standings_type');
+            const wildcardLimitSection = document.getElementById('wildcard_limit_section');
+            const conferenceSection = document.getElementById('conference_section');
+            const divisionSection = document.getElementById('division_section');
+            const prefOnlyCheckbox = document.getElementById('boards_standings_pref_only');
+            const prefStandingsGroup = document.getElementById('preferred_standings_group');
+
+            function updateStandingsVisibility() {
+                const selectedType = standingsType.value;
+                const isPrefOnly = prefOnlyCheckbox.checked;
+
+                // Rule 1: Wildcard limit is independent of the checkbox
+                wildcardLimitSection.style.display = selectedType === 'wild_card' ? 'block' : 'none';
+
+                // Rule 2: The entire preferred group's visibility is controlled by the checkbox
+                if (isPrefOnly) {
+                    prefStandingsGroup.style.display = 'block';
+                    // When the group is visible, what's inside also depends on the standing type.
+                    // This aligns with the original request to show/hide based on type.
+                    conferenceSection.style.display = selectedType === 'conference' ? 'block' : 'none';
+                    divisionSection.style.display = selectedType === 'division' ? 'block' : 'none';
+                } else {
+                    // If the checkbox is off, hide the group and its contents.
+                    prefStandingsGroup.style.display = 'none';
+                    conferenceSection.style.display = 'none';
+                    divisionSection.style.display = 'none';
+                }
+            }
+
+            // Initial setup on page load
+            updateStandingsVisibility();
+
+            // Listen for changes on both controls
+            standingsType.addEventListener('change', updateStandingsVisibility);
+            prefOnlyCheckbox.addEventListener('change', updateStandingsVisibility);
         });
     </script>
     
