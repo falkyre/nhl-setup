@@ -422,7 +422,6 @@
                                         <div class="mb-3">
                                             <label for="boards_standings_conference" class="form-label">Preferred Conference</label>
                                             <select id="boards_standings_conference" class="form-select">
-                                                <option value="">-- None --</option>
                                                 <option value="eastern">Eastern</option>
                                                 <option value="western">Western</option>
                                             </select>
@@ -430,7 +429,6 @@
                                         <div class="mb-3">
                                             <label for="boards_standings_division" class="form-label">Preferred Division</label>
                                             <select id="boards_standings_division" class="form-select">
-                                                <option value="">-- None --</option>
                                                 <option value="central">Central</option>
                                                 <option value="atlantic">Atlantic</option>
                                                 <option value="metropolitan">Metropolitan</option>
@@ -443,6 +441,13 @@
                                                 Preferred Standings Only
                                             </label>
                                             <div class="form-text">Only show the preferred division/conference.</div>
+                                        </div>
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="checkbox" id="boards_standings_large_font" value="">
+                                            <label class="form-check-label" for="boards_standings_large_font">
+                                                Large Font
+                                            </label>
+                                            <div class="form-text">Specifies whether to use a larger font for the standings board. Best for 128x64 boards or bigger.</div>
                                         </div>
                                     </div>
                                 </div>
@@ -1003,6 +1008,7 @@
                     },
                     standings: {
                         preferred_standings_only: getBool('boards_standings_pref_only'),
+                        large_font: getBool('boards_standings_large_font'),
                         standing_type: getVal('boards_standings_type'),
                         divisions: getVal('boards_standings_division'),
                         conference: getVal('boards_standings_conference')
@@ -1218,6 +1224,7 @@
                     }
                     if (b.standings) {
                         setBool('boards_standings_pref_only', b.standings.preferred_standings_only);
+                        setBool('boards_standings_large_font', b.standings.large_font);
                         setVal('boards_standings_type', b.standings.standing_type);
                         setVal('boards_standings_division', b.standings.divisions);
                         setVal('boards_standings_conference', b.standings.conference);
