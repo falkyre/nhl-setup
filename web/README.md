@@ -2,11 +2,19 @@
 
 This is the web-based control hub for the NHL LED Scoreboard project. It provides a user-friendly interface to configure the scoreboard, manage plugins, and view logs.
 
+### History
+* V2025.12.0 - December 1, 2025
+
+### Latest Changes
+
+#### V2025.12.0
+Initial release.  This is fully experimental web ui to handle the main configuration, a web front end for installing plugins, a utilities page (currently only has the issue upload utility), and a supervisor page if you are using supervisor.
+
 ## Installation
 
 ### Debian Package (Recommended)
 
-The easiest way to install the control hub is via the Debian package. This will install the control hub as a systemd service that starts on boot.
+The easiest way to install the control hub is via the Debian package. This will install the control hub as a systemd service that starts on boot.  The base install does require configuration prior to enabling and starting the systemd unit.  See the configuration section below.
 
 1.  Download the latest `.deb` package from the [releases page](https://github.com/falkyre/nhl-setup/releases).
 2.  Install the package:
