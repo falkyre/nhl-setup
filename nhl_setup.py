@@ -15,7 +15,7 @@ import shutil
 from time import sleep
 import fastjsonschema
 
-SCRIPT_VERSION = "2025.10.1"
+SCRIPT_VERSION = "2025.12.0"
 
 TEAMS = ['Avalanche','Blackhawks','Blues','Blue Jackets','Bruins','Canadiens','Canucks','Capitals','Devils','Ducks','Flames','Flyers',
     'Golden Knights','Hurricanes','Islanders','Jets','Kings','Kraken','Mammoth','Maple Leafs','Lightning','Oilers','Panthers','Penguins','Predators',

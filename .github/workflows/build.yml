@@ -19,7 +19,7 @@ on:
 
 jobs:
   build_32bit:
-    if: (github.event_name == 'release' && startsWith(github.event.release.tag_name, 'cli-')) || github.event.inputs.build_target == 'all' || github.event.inputs.build_target == '32bit'
+    if: (github.event_name == 'release' && (startsWith(github.event.release.tag_name, 'cli-') || startsWith(github.event.release.tag_name, 'V'))) || github.event.inputs.build_target == 'all' || github.event.inputs.build_target == '32bit'
     runs-on: ubuntu-22.04
     name: Build 32-bit binary
     steps:
@@ -50,7 +50,7 @@ jobs:
           path: dist/nhl_setup.32
 
   build_64bit:
-    if: (github.event_name == 'release' && startsWith(github.event.release.tag_name, 'cli-')) || github.event.inputs.build_target == 'all' || github.event.inputs.build_target == '64bit'
+    if: (github.event_name == 'release' && (startsWith(github.event.release.tag_name, 'cli-') || startsWith(github.event.release.tag_name, 'V'))) || github.event.inputs.build_target == 'all' || github.event.inputs.build_target == '64bit'
     runs-on: ubuntu-22.04
     name: Build 64-bit binary
     steps:
@@ -81,7 +81,7 @@ jobs:
           path: dist/nhl_setup.64
 
   build_32bit_bookworm:
-    if: (github.event_name == 'release' && startsWith(github.event.release.tag_name, 'cli-')) || github.event.inputs.build_target == 'all' || github.event.inputs.build_target == '32bit_bookworm'
+    if: (github.event_name == 'release' && (startsWith(github.event.release.tag_name, 'cli-') || startsWith(github.event.release.tag_name, 'V'))) || github.event.inputs.build_target == 'all' || github.event.inputs.build_target == '32bit_bookworm'
     runs-on: ubuntu-22.04
     name: Build 32-bit binary (Bookworm)
     steps:
@@ -112,7 +112,7 @@ jobs:
           path: dist/nhl_setup.bookworm.32
 
   build_64bit_bookworm:
-    if: (github.event_name == 'release' && startsWith(github.event.release.tag_name, 'cli-')) || github.event.inputs.build_target == 'all' || github.event.inputs.build_target == '64bit_bookworm'
+    if: (github.event_name == 'release' && (startsWith(github.event.release.tag_name, 'cli-') || startsWith(github.event.release.tag_name, 'V'))) || github.event.inputs.build_target == 'all' || github.event.inputs.build_target == '64bit_bookworm'
     runs-on: ubuntu-22.04
     name: Build 64-bit binary (Bookworm)
     steps:
@@ -143,7 +143,7 @@ jobs:
           path: dist/nhl_setup.bookworm.64
 
   release:
-    if: github.event_name == 'release' && startsWith(github.event.release.tag_name, 'cli-')
+    if: github.event_name == 'release' && (startsWith(github.event.release.tag_name, 'cli-') || startsWith(github.event.release.tag_name, 'V'))
     needs: [build_32bit, build_64bit, build_32bit_bookworm, build_64bit_bookworm]
     runs-on: ubuntu-latest
     name: Upload to release
@@ -157,7 +157,7 @@ jobs:
           merge-multiple: true
 
       - name: Upload to latest release
-        if: github.event_name == 'release' && startsWith(github.event.release.tag_name, 'cli-')
+        if: github.event_name == 'release' && (startsWith(github.event.release.tag_name, 'cli-') || startsWith(github.event.release.tag_name, 'V'))
         uses: softprops/action-gh-release@v2
         with:
           files: |
