@@ -684,6 +684,10 @@
                                                 Enable MQTT
                                             </label>
                                         </div>
+                                        <div id="mqtt-test-container" class="mb-3 align-items-center d-none">
+                                            <button type="button" class="btn btn-secondary btn-sm" id="test_mqtt_btn">Test Connection</button>
+                                            <span id="mqtt-status-indicator" class="ms-2" style="width: 1rem; height: 1rem; border-radius: 50%; background-color: #6c757d; transition: background-color 0.3s;"></span>
+                                        </div>
                                         <div class="row">
                                             <div class="col-md-8 mb-3">
                                                 <label for="sbio_mqtt_broker" class="form-label">Broker</label>
@@ -1624,6 +1628,70 @@
 
             setupColorPicker('boards_clock_clock_rgb_picker', 'boards_clock_clock_rgb');
             setupColorPicker('boards_clock_date_rgb_picker', 'boards_clock_date_rgb');
+        });
+    </script>
+
+    <script>
+        // --- MQTT Test Button Logic ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const mqttEnabledCheckbox = document.getElementById('sbio_mqtt_enabled');
+            const mqttTestContainer = document.getElementById('mqtt-test-container');
+            const testMqttBtn = document.getElementById('test_mqtt_btn');
+            const mqttStatusIndicator = document.getElementById('mqtt-status-indicator');
+
+            function toggleMqttTest() {
+                const is_checked = mqttEnabledCheckbox.checked;
+                mqttTestContainer.classList.toggle('d-none', !is_checked);
+                mqttTestContainer.classList.toggle('d-flex', is_checked);
+
+                if (is_checked) {
+                    const buttonHeight = testMqttBtn.offsetHeight;
+                    mqttStatusIndicator.style.height = `${buttonHeight}px`;
+                    mqttStatusIndicator.style.width = `${buttonHeight}px`;
+                }
+            }
+
+            mqttEnabledCheckbox.addEventListener('change', toggleMqttTest);
+
+            testMqttBtn.addEventListener('click', () => {
+                const broker = document.getElementById('sbio_mqtt_broker').value;
+                const port = document.getElementById('sbio_mqtt_port').value;
+                const username = document.getElementById('sbio_mqtt_username').value;
+                const password = document.getElementById('sbio_mqtt_password').value;
+
+                // Reset indicator
+                mqttStatusIndicator.style.backgroundColor = '#6c757d'; // Grey
+                testMqttBtn.disabled = true;
+                testMqttBtn.textContent = 'Testing...';
+
+
+                fetch('/api/mqtt-test', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ broker, port, username, password })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        mqttStatusIndicator.style.backgroundColor = '#198754'; // Green
+                    } else {
+                        mqttStatusIndicator.style.backgroundColor = '#dc3545'; // Red
+                        alert('MQTT Test Failed: ' + data.output);
+                    }
+                })
+                .catch(error => {
+                    console.error('MQTT Test failed:', error);
+                    mqttStatusIndicator.style.backgroundColor = '#dc3545'; // Red
+                    alert('MQTT Test failed. Check the console for details.');
+                })
+                .finally(() => {
+                    testMqttBtn.disabled = false;
+                    testMqttBtn.textContent = 'Test Connection';
+                });
+            });
+
+            // Initial state
+            toggleMqttTest();
         });
     </script>
     

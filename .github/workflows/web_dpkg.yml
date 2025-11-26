@@ -69,6 +69,7 @@ jobs:
             echo 'Building Executable...'
             pyinstaller --onefile --clean \
               --add-binary 'issue_upload.py:.' \
+              --add-binary 'mqtt_test.py:.' \
               --add-data 'templates:templates' \
               --add-data 'static:static' \
               --name nls_controlhub-${{ matrix.suffix }} \

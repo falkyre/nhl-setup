@@ -443,6 +443,40 @@ def save_config():
         app.logger.error(f"Error saving config: {e}")
         return jsonify({'success': False, 'message': f"An error occurred: {e}"}), 500
 
+@app.route('/api/mqtt-test', methods=['POST'])
+def mqtt_test():
+    """Runs the mqtt_test.py script."""
+    data = request.json
+    broker = data.get('broker')
+    port = data.get('port')
+    username = data.get('username')
+    password = data.get('password')
+
+    if not broker or not port:
+        return jsonify({'success': False, 'output': 'Error: "broker" and "port" are required.'}), 400
+
+    # The mqtt_test.py script is in the same directory as this server file (SCRIPT_DIR)
+    script_path = os.path.join(SCRIPT_DIR, 'mqtt_test.py')
+    if not os.path.exists(script_path):
+        app.logger.error(f"Script not found at {script_path}")
+        return jsonify({'success': False, 'output': f'Error: Script not found at {script_path}'}), 404
+
+    command = [PYTHON_EXEC, script_path, broker, str(port)]
+    if username and password:
+        command.extend(['-u', username, '-p', password])
+
+    # Use the generic run_shell_script helper which executes from SCOREBOARD_DIR
+    result = run_shell_script(command, timeout=30)
+    
+    # The mqtt_test.py script prints "yes" or "no".
+    # We need to check the output for the word "yes" for success.
+    if result['success'] and 'yes' in result['output'].lower():
+        return jsonify({'success': True, 'output': result['output']})
+    else:
+        # If the script failed or didn't return "yes", it's a failure.
+        return jsonify({'success': False, 'output': result['output']})
+
+
 @app.route('/api/run-issue-uploader', methods=['POST'])
 def run_issue_uploader():
     """Runs the issue_upload.py script and returns its output."""
