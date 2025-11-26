@@ -686,15 +686,30 @@
                                         </div>
                                         <div class="row">
                                             <div class="col-md-8 mb-3">
-                                                <label for="sbio_mqtt_animations" class="form-label">Broker</label>
-                                                <input type="text" class="form-control" id="sbio_mqtt_animations" placeholder="192.168.1.100">
+                                                <label for="sbio_mqtt_broker" class="form-label">Broker</label>
+                                                <input type="text" class="form-control" id="sbio_mqtt_broker" placeholder="192.168.1.100">
                                                 <div class="form-text">Hostname or IP address of MQTT server.</div>
                                             </div>
                                             <div class="col-md-4 mb-3">
-                                                <label for="sbio_mqtt_pin" class="form-label">Port</label>
-                                                <input type="number" class="form-control" id="sbio_mqtt_pin" value="1883">
+                                                <label for="sbio_mqtt_port" class="form-label">Port</label>
+                                                <input type="number" class="form-control" id="sbio_mqtt_port" value="1883">
                                                 <div class="form-text">MQTT server port.</div>
                                             </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="sbio_mqtt_username" class="form-label">Username</label>
+                                                <input type="text" class="form-control" id="sbio_mqtt_username" placeholder="Optional">
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="sbio_mqtt_password" class="form-label">Password</label>
+                                                <input type="password" class="form-control" id="sbio_mqtt_password" placeholder="Optional">
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="sbio_mqtt_main_topic" class="form-label">Main Topic</label>
+                                            <input type="text" class="form-control" id="sbio_mqtt_main_topic" value="scoreboard">
+                                            <div class="form-text">The main topic for the scoreboard.</div>
                                         </div>
                                     </div>
                                 </div>
@@ -1059,8 +1074,13 @@
                 config.sbio = {
                     mqtt: {
                         enabled: getBool('sbio_mqtt_enabled'),
-                        animations: getVal('sbio_mqtt_animations'),
-                        pin: getInt('sbio_mqtt_pin')
+                        broker: getVal('sbio_mqtt_broker'),
+                        port: getInt('sbio_mqtt_port'),
+                        auth: {
+                            username: getVal('sbio_mqtt_username'),
+                            password: getVal('sbio_mqtt_password')
+                        },
+                        main_topic: getVal('sbio_mqtt_main_topic')
                     },
                     screensaver: {
                         enabled: getBool('sbio_screensaver_enabled'),
@@ -1277,8 +1297,13 @@
                     const s = config.sbio;
                     if (s.mqtt) {
                         setBool('sbio_mqtt_enabled', s.mqtt.enabled);
-                        setVal('sbio_mqtt_animations', s.mqtt.animations);
-                        setVal('sbio_mqtt_pin', s.mqtt.pin);
+                        setVal('sbio_mqtt_broker', s.mqtt.broker);
+                        setVal('sbio_mqtt_port', s.mqtt.port);
+                        if (s.mqtt.auth) {
+                            setVal('sbio_mqtt_username', s.mqtt.auth.username);
+                            setVal('sbio_mqtt_password', s.mqtt.auth.password);
+                        }
+                        setVal('sbio_mqtt_main_topic', s.mqtt.main_topic);
                     }
                     if (s.screensaver) {
                         setBool('sbio_screensaver_enabled', s.screensaver.enabled);
