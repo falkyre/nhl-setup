@@ -79,7 +79,7 @@
         <img src="/assets/images/logo.svg" class="logo-header logo-dark" alt="Scoreboard Logo">
     </div>
     <div class="text-center">
-        <h1 class="mb-3">Welcome to the NHL Scoreboard!</h1>
+        <h1 class="mb-3">Welcome to the NHL Scoreboard Image!</h1>
         <p class="lead">To continue, you must complete the one-time interactive setup.</p>
         
         <div class="alert alert-info col-lg-8 mx-auto mt-4">
@@ -87,9 +87,9 @@
             <p>This server has detected that you are running the scoreboard for the first time. The initial setup requires interactive, system-level access and **must be run from a terminal on the Raspberry Pi**.</p>
             <hr>
             <p class="mb-0">
-                Please SSH into your Pi (or use a connected keyboard) and run the following command:
+                Please SSH into your Pi (as the pi user) and follow the prompts.  To run tool manually,
             </p>
-            <code class="d-block p-3 my-3 fs-5">sudo /home/pi/nhl-led-scoreboard/sb-tools do_firstrun</code>
+            <code class="d-block p-3 my-3 fs-5">/home/pi/nhl-led-scoreboard/sb-tools do_firstrun</code>
             <p>After you follow the on-screen prompts and reboot, this page will automatically redirect to the Control Hub.</p>
         </div>
 
