@@ -11,10 +11,13 @@ import xmlrpc.client
 import urllib.request
 import toml
 from datetime import datetime
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, send_file
 from richcolorlog import RichColorLogHandler
+import zipfile
+import io
 
 __version__ = "2025.12.0"
+
 
 def is_frozen():
     """Checks if the script is running in a frozen/packaged environment (e.g., PyInstaller)."""
@@ -764,6 +767,69 @@ def config_page():
 def utilities_page():
     """Serves the placeholder utilities page."""
     return send_from_directory(TEMPLATES_DIR, 'utilities.html') 
+
+@app.route('/download_config')
+def download_config():
+    """
+    Provides a download of configuration files.
+    If on a full scoreboard setup, it zips up multiple configs.
+    Otherwise, it just provides the config.json.
+    """
+    led_portal_dir = '/home/pi/.nhlledportal'
+    
+    try:
+        if os.path.exists(led_portal_dir):
+            app.logger.info(f"'{led_portal_dir}' found. Zipping multiple configuration files.")
+            
+            # Create an in-memory zip file
+            memory_file = io.BytesIO()
+            with zipfile.ZipFile(memory_file, 'w', zipfile.ZIP_DEFLATED) as zf:
+                
+                # 1. Add config.json
+                if os.path.exists(CONFIG_PATH):
+                    zf.write(CONFIG_PATH, os.path.basename(CONFIG_PATH))
+                    app.logger.info(f"Added {CONFIG_PATH} to zip.")
+                else:
+                    app.logger.warning(f"{CONFIG_PATH} not found, skipping.")
+
+                # 2. Add supervisor config
+                supervisor_conf_path = '/etc/supervisor/conf.d/scoreboard.conf'
+                if os.path.exists(supervisor_conf_path):
+                    zf.write(supervisor_conf_path, os.path.basename(supervisor_conf_path))
+                    app.logger.info(f"Added {supervisor_conf_path} to zip.")
+                else:
+                    app.logger.warning(f"{supervisor_conf_path} not found, skipping.")
+
+                # 3. Add testMatrix.sh script
+                matrix_sh_path = '/home/pi/sbtools/testMatrix.sh'
+                if os.path.exists(matrix_sh_path):
+                    zf.write(matrix_sh_path, os.path.basename(matrix_sh_path))
+                    app.logger.info(f"Added {matrix_sh_path} to zip.")
+                else:
+                    app.logger.warning(f"{matrix_sh_path} not found, skipping.")
+
+            memory_file.seek(0)
+            return send_file(
+                memory_file,
+                mimetype='application/zip',
+                as_attachment=True,
+                download_name='configs.zip'
+            )
+        else:
+            app.logger.info(f"'{led_portal_dir}' not found. Sending single config.json file.")
+            return send_file(
+                CONFIG_PATH,
+                mimetype='application/json',
+                as_attachment=True,
+                download_name='config.json'
+            )
+    except FileNotFoundError:
+        app.logger.error(f"Could not find {CONFIG_PATH} for download.")
+        return "config.json not found.", 404
+    except Exception as e:
+        app.logger.error(f"An error occurred during config download: {e}")
+        return "An internal error occurred.", 500
+
 
 @app.route('/plugins')
 def plugins_page():
