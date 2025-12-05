@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  nhl-config-hub:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nhl-config-hub
+    command: ["--debug"]
+    environment:
+      - TZ=America/Winnipeg
+    ports:
+      - "8000:8000"
+    volumes:
+      # This allows you to edit the code locally and have it reflect
+      # inside the container, which is useful for development.
+      # The installed dependencies from the initial build will be used.
+      - .:/app

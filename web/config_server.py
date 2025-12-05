@@ -16,7 +16,7 @@ from richcolorlog import RichColorLogHandler
 import zipfile
 import io
 
-__version__ = "2025.12.0"
+__version__ = "2025.12.1"
 
 
 def is_frozen():

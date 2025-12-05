@@ -185,3 +185,4 @@ config/*
 .devcontainer.json
 web/uv.lock
 web/.python-version
+web/plugins_index.json
