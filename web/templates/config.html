@@ -139,10 +139,16 @@
     </nav>
     <p class="lead">Fill out the options below, or load the existing server config to edit.</p>
     
-    <div class="mb-4">
+    <div class="mb-4 d-flex flex-wrap gap-2">
         <button id="load_from_server" class="btn btn-info">
             <i class="bi bi-arrow-down-square-fill me-2"></i> Load Config From Server
         </button>
+        <form id="upload-form" class="d-inline-block">
+            <input type="file" name="file" id="config-upload" class="d-none" accept=".json">
+            <button type="button" id="upload-button" class="btn btn-secondary">
+                <i class="bi bi-arrow-up-square-fill me-2"></i> Upload Config from PC
+            </button>
+        </form>
     </div>
     
     <form id="config-form">
@@ -1692,6 +1698,60 @@
 
             // Initial state
             toggleMqttTest();
+        });
+    </script>
+    
+    <script>
+        // --- File Upload Logic ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const uploadButton = document.getElementById('upload-button');
+            const fileInput = document.getElementById('config-upload');
+
+            uploadButton.addEventListener('click', () => {
+                fileInput.click();
+            });
+
+            fileInput.addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const formData = new FormData();
+                formData.append('file', file);
+
+                uploadButton.disabled = true;
+                uploadButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Uploading...';
+
+
+                fetch('/upload', {
+                    method: 'POST',
+                    body: formData,
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(err => {
+                            throw new Error(err.message || 'Server error');
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        populateForm(data.config);
+                        alert('Success: Configuration loaded from file!');
+                    } else {
+                        throw new Error(data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Upload failed:', error);
+                    alert(`Upload failed: ${error.message}`);
+                })
+                .finally(() => {
+                    uploadButton.disabled = false;
+                    uploadButton.innerHTML = '<i class="bi bi-arrow-up-square-fill me-2"></i> Upload Config from PC';
+                    fileInput.value = ''; // Reset file input
+                });
+            });
         });
     </script>
     

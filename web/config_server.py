@@ -446,6 +446,37 @@ def save_config():
         app.logger.error(f"Error saving config: {e}")
         return jsonify({'success': False, 'message': f"An error occurred: {e}"}), 500
 
+@app.route('/upload', methods=['POST'])
+def upload_config():
+    """Reads an uploaded config.json file and returns its content."""
+    try:
+        if 'file' not in request.files:
+            return jsonify({'success': False, 'message': 'No file part in the request.'}), 400
+
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'success': False, 'message': 'No file selected.'}), 400
+
+        if file:
+            app.logger.info(f"Processing uploaded file: {file.filename}")
+            
+            # Read file content
+            content = file.read().decode('utf-8')
+            
+            # Parse JSON to validate
+            data = json.loads(content)
+            
+            # Return the parsed config
+            return jsonify({'success': True, 'config': data})
+
+    except json.JSONDecodeError:
+        app.logger.error("Upload failed: Invalid JSON in the uploaded file.")
+        return jsonify({'success': False, 'message': 'Invalid JSON in file.'}), 400
+    except Exception as e:
+        app.logger.error(f"Error processing uploaded file: {e}")
+        return jsonify({'success': False, 'message': f"An error occurred: {e}"}), 500
+
+
 @app.route('/api/mqtt-test', methods=['POST'])
 def mqtt_test():
     """Runs the mqtt_test.py script."""
