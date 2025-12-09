@@ -156,7 +156,8 @@ jobs:
           path: dist
           merge-multiple: true
 
-      - name: Upload to latest release
+      # 1. Upload to the actual release (e.g., cli-v1.0.0)
+      - name: Upload to release
         if: github.event_name == 'release' && (startsWith(github.event.release.tag_name, 'cli-') || startsWith(github.event.release.tag_name, 'V'))
         uses: softprops/action-gh-release@v2
         with:
@@ -165,3 +166,25 @@ jobs:
             dist/nhl_setup.64
             dist/nhl_setup.bookworm.32
             dist/nhl_setup.bookworm.64
+
+      # 2. Delete the old 'latest-cli' tag/release to ensure clean assets
+      - name: Delete existing 'latest-cli' release
+        if: github.event_name == 'release' && (startsWith(github.event.release.tag_name, 'cli-') || startsWith(github.event.release.tag_name, 'V'))
+        run: gh release delete latest-cli --cleanup-tag --yes || true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # 3. Create/Update the 'latest-cli' floating release
+      - name: Update 'latest-cli' Release
+        if: github.event_name == 'release' && (startsWith(github.event.release.tag_name, 'cli-') || startsWith(github.event.release.tag_name, 'V'))
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest-cli
+          name: Latest CLI Build
+          files: |
+            dist/nhl_setup.32
+            dist/nhl_setup.64
+            dist/nhl_setup.bookworm.32
+            dist/nhl_setup.bookworm.64
+          make_latest: false
+          prerelease: true

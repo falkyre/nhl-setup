@@ -170,7 +170,24 @@ jobs:
           pattern: nls-controlhub-deb-*
           merge-multiple: true
 
-      - name: Upload to Release
+      # 1. Upload to the actual release (e.g., web-v2.0.0)
+      - name: Upload to release
         uses: softprops/action-gh-release@v2
         with:
           files: ./deb-packages/*
+
+      # 2. Delete the old 'latest-web' tag/release
+      - name: Delete existing 'latest-web' release
+        run: gh release delete latest-web --cleanup-tag --yes || true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # 3. Create/Update the 'latest-web' floating release
+      - name: Update 'latest-web' Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest-web
+          name: Latest Web Build
+          files: ./deb-packages/*
+          make_latest: false
+          prerelease: true
