@@ -3,9 +3,14 @@
 This is the web-based control hub for the NHL LED Scoreboard project. It provides a user-friendly interface to configure the scoreboard, manage plugins, and view logs.
 
 ### History
+* V2025.12.1 - December 9, 2025
 * V2025.12.0 - December 1, 2025
 
 ### Latest Changes
+
+#### V2025.12.1
+Add new utility to download the config.json for normal users and config.json, testMatrix.sh and scoreboard.conf in a zip file for image users.
+The zip file can be used to configure the image (V2025.12.1 and later) but placing it into the /boot/scoreboard folder.
 
 #### V2025.12.0
 Initial release.  This is fully experimental web ui to handle the main configuration, a web front end for installing plugins, a utilities page (currently only has the issue upload utility), and a supervisor page if you are using supervisor.
