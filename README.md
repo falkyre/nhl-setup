@@ -1,4 +1,4 @@
-![nhl_setup](../../assets/images/nhl_setup.gif)
+![nhl_setup](assets/images/nhl_setup.gif)
 ### History
 * V2025.12.0 - December 1, 2025
 * V2025.10.1 - October 14, 2025
@@ -10,7 +10,10 @@
 * V1.2.0 - covid 19 board configs - ntjoumas - March 31, 2020
 * V1.1.0 - Error Message and readme fix - March 24, 2020
 * V1.0.0 - Initial release - March 14, 2020
-  
+
+### Web UI History
+See [Web Readme](web/README.md)
+
 ### Latest Changes
 
 #### V2025.12.0
