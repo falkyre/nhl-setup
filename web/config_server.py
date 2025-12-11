@@ -839,6 +839,14 @@ def download_config():
                 else:
                     app.logger.warning(f"{matrix_sh_path} not found, skipping.")
 
+                # 4. Add splash.sh script
+                splash_sh_path = '/home/pi/sbtools/splash.sh'
+                if os.path.exists(splash_sh_path):
+                    zf.write(splash_sh_path, os.path.basename(splash_sh_path))
+                    app.logger.info(f"Added {splash_sh_path} to zip.")
+                else:
+                    app.logger.warning(f"{splash_sh_path} not found, skipping.")
+
             memory_file.seek(0)
             return send_file(
                 memory_file,
