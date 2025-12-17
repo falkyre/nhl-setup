@@ -923,7 +923,7 @@ def supervisor_page():
 @login_required
 def terminal_page():
     """Serves the terminal page."""
-    return render_template('terminal.html')
+    return render_template('term.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
