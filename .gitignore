@@ -186,8 +186,4 @@ config/*
 web/uv.lock
 web/.python-version
 web/plugins_index.json
-web/logs/terminal_activities.log.1
-web/logs/terminal_activities.log.2
-web/logs/terminal_activities.log.3
-web/logs/terminal_activities.log.4
-web/logs/terminal_activities.log.5
+web/logs/*
