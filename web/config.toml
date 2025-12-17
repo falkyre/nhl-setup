@@ -9,3 +9,12 @@
 # eg /home/pi/nhlsb-venv/bin/python3
 # PYTHON_EXEC = "/usr/bin/python3"
 # scoreboard_dir = "."
+
+[login]
+# The default username and password for the terminal.
+# It is recommended to change these values.
+USERNAME = "admin"
+PASSWORD = "password"
+# A secret key for the web application. This should be a long, random string.
+# You can generate one using: python -c 'import os; print(os.urandom(24).hex())'
+SECRET_KEY = "supersecretkey"

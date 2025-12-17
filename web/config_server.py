@@ -11,7 +11,9 @@ import xmlrpc.client
 import urllib.request
 import toml
 from datetime import datetime
-from flask import Flask, request, jsonify, send_from_directory, send_file
+from flask import Flask, request, jsonify, send_from_directory, send_file, redirect, url_for, current_app, render_template
+from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
+from flask_terminal import terminal_blueprint, configure_logger
 from richcolorlog import RichColorLogHandler
 import zipfile
 import io
@@ -133,6 +135,10 @@ PORT = toml_config.get('PORT', PORT)
 PYTHON_EXEC = toml_config.get('PYTHON_EXEC', PYTHON_EXEC)
 SUPERVISOR_URL = toml_config.get('SUPERVISOR_URL', SUPERVISOR_URL)
 SUPERVISOR_PORT = toml_config.get('SUPERVISOR_PORT', SUPERVISOR_PORT)
+LOGIN_USERNAME = toml_config.get('login', {}).get('USERNAME', 'admin')
+LOGIN_PASSWORD = toml_config.get('login', {}).get('PASSWORD', 'password')
+SECRET_KEY = toml_config.get('login', {}).get('SECRET_KEY', 'supersecretkey')
+
 
 # scoreboard_dir from config is used if the command-line arg is not provided
 if args.scoreboard_dir is None:
@@ -169,6 +175,39 @@ SETUP_FILE = '/home/pi/.nhlledportal/SETUP'
 
 # --- Flask App Initialization ---
 app = Flask(__name__, template_folder=TEMPLATES_DIR, static_folder=ASSETS_DIR)
+app.config['SECRET_KEY'] = SECRET_KEY
+login_manager = LoginManager(app)
+login_manager.login_view = 'login'
+
+@terminal_blueprint.before_request
+def before_request_func():
+    if not current_user.is_authenticated:
+        # Redirect to login page or return an error
+        current_app.logger.info("User not authenticated for terminal, redirecting to login.")
+        return redirect(url_for('login'))
+
+# Register the terminal blueprint
+app.register_blueprint(terminal_blueprint, url_prefix='/terminal')
+
+class User(UserMixin):
+    def __init__(self, id):
+        self.id = id
+
+    def is_authenticated(self):
+        return True
+
+    def is_active(self):
+        return True
+
+    def is_anonymous(self):
+        return False
+
+    def get_id(self):
+        return self.id
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User(user_id)
 
 
 # The root logger is configured by basicConfig.
@@ -879,6 +918,35 @@ def plugins_page():
 def supervisor_page():
     """Serves the supervisor embed page."""
     return send_from_directory(TEMPLATES_DIR, 'supervisor_rpc.html') 
+
+@app.route('/term')
+@login_required
+def terminal_page():
+    """Serves the terminal page."""
+    return render_template('terminal.html')
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    """Handles user login."""
+    if current_user.is_authenticated:
+        return redirect(url_for('terminal_page'))
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        if username == LOGIN_USERNAME and password == LOGIN_PASSWORD:
+            user = User(username)
+            login_user(user)
+            return redirect(url_for('terminal_page'))
+        else:
+            return "Invalid credentials", 401
+    return send_from_directory(TEMPLATES_DIR, 'login.html')
+
+@app.route('/logout')
+@login_required
+def logout():
+    """Handles user logout."""
+    logout_user()
+    return redirect(url_for('index'))
 
 @app.route('/assets/<path:path>')
 def send_asset(path):

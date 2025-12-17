@@ -2,3 +2,5 @@ flask
 richcolorlog
 toml
 paho-mqtt
+flask-login
+flask-terminal
