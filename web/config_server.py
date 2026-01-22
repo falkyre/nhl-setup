@@ -260,31 +260,58 @@ def get_version():
         return "Error"
 
 def get_plugin_boards():
-    """Reads plugins.json and returns a list of board names."""
-    
-    # Run check to create plugins.json if it's missing
-    check_and_create_installed_plugins_file()
-    
+    """
+    Scans src/boards/plugins directory for plugins.json files and extracts board IDs.
+    Skips 'example_board' directory.
+    """
     board_names = []
-    try:
-        with open(PLUGINS_INSTALLED_FILE, 'r') as f:
-            data = json.load(f)
-            # Check if 'plugins' key exists and is a list
-            if 'plugins' in data and isinstance(data['plugins'], list):
-                for plugin in data['plugins']:
-                    # Get the name from each plugin object
-                    if 'name' in plugin:
-                        board_names.append(plugin['name'])
-                app.logger.info(f"Loaded {len(board_names)} plugin boards: {board_names}")
-            else:
-                app.logger.warning(f"{PLUGINS_INSTALLED_FILE} is missing 'plugins' key or it's not a list.")
-    except FileNotFoundError:
-        app.logger.info(f"{PLUGINS_INSTALLED_FILE} not found, no custom boards loaded.")
-    except json.JSONDecodeError:
-        app.logger.error(f"Could not decode {PLUGINS_INSTALLED_FILE}. Check for JSON syntax errors.")
-    except Exception as e:
-        app.logger.error(f"Error reading {PLUGINS_INSTALLED_FILE}: {e}")
     
+    # Define the plugins directory path
+    plugins_dir = os.path.join(SCOREBOARD_DIR, 'src', 'boards', 'plugins')
+    
+    if not os.path.exists(plugins_dir):
+        app.logger.info(f"Plugins directory not found at: {plugins_dir}")
+        return board_names
+
+    app.logger.info(f"Scanning for plugins in: {plugins_dir}")
+
+    # Walk through the directory structure
+    # We only look one level deep for simplicity as per standard plugin structure, 
+    # or we can walk. The user said "recurse through the directories", but 
+    # typically these are in src/boards/plugins/<plugin_name>/plugins.json
+    
+    try:
+        # iterate over directories in plugins_dir
+        for item in os.listdir(plugins_dir):
+            plugin_path = os.path.join(plugins_dir, item)
+            
+            # Skip example_board
+            if item == 'example_board':
+                continue
+                
+            if os.path.isdir(plugin_path):
+                plugin_json_path = os.path.join(plugin_path, 'plugins.json')
+                
+                if os.path.exists(plugin_json_path):
+                    try:
+                        with open(plugin_json_path, 'r') as f:
+                            data = json.load(f)
+                            
+                            # Check for 'boards' array
+                            if 'boards' in data and isinstance(data['boards'], list):
+                                for board in data['boards']:
+                                    if 'id' in board:
+                                        board_names.append(board['id'])
+                    except json.JSONDecodeError:
+                        app.logger.error(f"Invalid JSON in {plugin_json_path}")
+                    except Exception as e:
+                        app.logger.error(f"Error reading {plugin_json_path}: {e}")
+                        
+        app.logger.info(f"Loaded {len(board_names)} plugin boards: {board_names}")
+        
+    except Exception as e:
+        app.logger.error(f"Error scanning plugins directory: {e}")
+
     return board_names
 
 def check_supervisor():
