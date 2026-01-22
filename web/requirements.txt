@@ -2,3 +2,7 @@ flask
 richcolorlog
 toml
 paho-mqtt
+gevent
+gevent-websocket
+flask-socketio
+paramiko

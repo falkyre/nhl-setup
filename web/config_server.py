@@ -1,3 +1,8 @@
+import gevent
+from gevent import monkey
+# Monkey patch for gevent
+monkey.patch_all()
+
 import os
 import json
 import socket
@@ -11,10 +16,16 @@ import xmlrpc.client
 import urllib.request
 import toml
 from datetime import datetime
+import uuid
+import time
 from flask import Flask, request, jsonify, send_from_directory, send_file
 from richcolorlog import RichColorLogHandler
 import zipfile
 import io
+import threading
+from flask_socketio import SocketIO, emit, disconnect, join_room, leave_room
+import paramiko
+
 
 __version__ = "2025.12.2"
 
@@ -169,6 +180,8 @@ SETUP_FILE = '/home/pi/.nhlledportal/SETUP'
 
 # --- Flask App Initialization ---
 app = Flask(__name__, template_folder=TEMPLATES_DIR, static_folder=ASSETS_DIR)
+app.config['SECRET_KEY'] = 'nhl-led-scoreboard-secret!'
+socketio = SocketIO(app, async_mode='gevent')
 
 
 # The root logger is configured by basicConfig.
@@ -886,6 +899,187 @@ def send_asset(path):
     return send_from_directory(ASSETS_DIR, path) 
 
 
+# =============================================
+# Web Terminal Logic
+# =============================================
+
+# Store active sessions: 
+# { 
+#   token: {
+#       'client': paramiko.SSHClient, 
+#       'shell': channel, 
+#       'sid': str (current connected sid, or None),
+#       'cleanup_timer': gevent.Greenlet (or None)
+#   } 
+# }
+ssh_sessions = {}
+SESSION_TIMEOUT = 600  # 10 minutes
+
+def cleanup_session(token):
+    """
+    Background task to clean up a session after timeout.
+    """
+    app.logger.info(f"Cleanup task started for token {token}...")
+    # Wait for the timeout
+    gevent.sleep(SESSION_TIMEOUT)
+    
+    # Check if still disconnected
+    if token in ssh_sessions:
+        session = ssh_sessions[token]
+        if session.get('sid') is None:
+            app.logger.info(f"Session {token} timed out. Closing connection.")
+            try:
+                session['shell'].close()
+                session['client'].close()
+            except Exception:
+                pass
+            del ssh_sessions[token]
+        else:
+            app.logger.info(f"Session {token} reconnected. Cleanup aborted.")
+
+def read_from_ssh(token, shell):
+    """
+    Background thread/task to read from the SSH shell
+    and emit 'response' events to the specific room (token).
+    """
+    while True:
+        try:
+            # Check if there is data to read
+            if shell.recv_ready():
+                data = shell.recv(1024).decode('utf-8')
+                # Emit to the room named by the token
+                socketio.emit('response', {'data': data}, room=token)
+            
+            # Check if the process has exited
+            if shell.exit_status_ready():
+                break
+            
+            # Use socketio.sleep for async compatibility
+            socketio.sleep(0.01)
+        except Exception as e:
+            app.logger.error(f"Error reading from SSH for token {token}: {e}")
+            break
+
+@app.route('/terminal')
+def terminal_page():
+    """Serves the web terminal page."""
+    return send_from_directory(TEMPLATES_DIR, 'ssh_index.html')
+
+@socketio.on('ssh_login')
+def handle_ssh_login(data):
+    sid = request.sid
+    # HARDCODED ACROSS-THE-BOARD
+    hostname = '127.0.0.1'
+    port = 22
+    
+    username = data.get('username')
+    password = data.get('password')
+
+    try:
+        client = paramiko.SSHClient()
+        client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        
+        # Connect to localhost
+        client.connect(hostname, port=port, username=username, password=password)
+        
+        # 'xterm-256color' is often better for zsh/powerlevel10k than standard 'xterm'
+        shell = client.invoke_shell(term='xterm-256color')
+        
+        # Generate a unique token for this session
+        token = str(uuid.uuid4())
+        
+        ssh_sessions[token] = {
+            'client': client,
+            'shell': shell,
+            'sid': sid,
+            'cleanup_timer': None
+        }
+        
+        # Join the room specific to this session
+        join_room(token)
+        
+        # Start the background task to read output
+        socketio.start_background_task(target=read_from_ssh, token=token, shell=shell)
+        
+        emit('login_status', {'status': 'success', 'token': token})
+        app.logger.info(f"SSH login successful for user '{username}'. Token: {token}")
+        
+    except Exception as e:
+        app.logger.error(f"SSH login failed for user '{username}': {e}")
+        emit('login_status', {'status': 'error', 'message': str(e)})
+
+@socketio.on('ssh_resume')
+def handle_ssh_resume(data):
+    sid = request.sid
+    token = data.get('token')
+    
+    if token in ssh_sessions:
+        session = ssh_sessions[token]
+        
+        # Cancel any cleanup timer if it exists
+        if session.get('cleanup_timer'):
+            try:
+                session['cleanup_timer'].kill()
+            except Exception:
+                pass
+            session['cleanup_timer'] = None
+            
+        # Update SID and join room
+        session['sid'] = sid
+        join_room(token)
+        
+        emit('login_status', {'status': 'success', 'token': token})
+        app.logger.info(f"Session resumed for token {token}")
+        
+        # Determine if shell is active?
+        if not session['shell'].active:
+             emit('response', {'data': '\r\nSession closed by server.\r\n'})
+    else:
+        emit('login_status', {'status': 'error', 'message': 'Session expired or invalid'})
+
+@socketio.on('input')
+def handle_input(message):
+    token = message.get('token') # Client must send token with input
+    if token in ssh_sessions:
+        session = ssh_sessions[token]
+        try:
+            session['shell'].send(message['data'])
+        except Exception as e:
+            app.logger.error(f"Error sending input to SSH for token {token}: {e}")
+
+@socketio.on('disconnect')
+def disconnect_user():
+    sid = request.sid
+    # Find which token belongs to this SID
+    target_token = None
+    for token, session in ssh_sessions.items():
+        if session['sid'] == sid:
+            target_token = token
+            break
+            
+    if target_token:
+        # Mark as disconnected but don't close yet
+        ssh_sessions[target_token]['sid'] = None
+        leave_room(target_token)
+        
+        # Start cleanup timer
+        ssh_sessions[target_token]['cleanup_timer'] = gevent.spawn(cleanup_session, target_token)
+        
+        app.logger.info(f"Client disconnected. Session {target_token} will be kept alive for {SESSION_TIMEOUT}s.")
+
+@socketio.on('ssh_logout')
+def handle_logout(data):
+    token = data.get('token')
+    if token in ssh_sessions:
+        session = ssh_sessions[token]
+        try:
+            session['shell'].close()
+            session['client'].close()
+        except Exception:
+            pass
+        del ssh_sessions[token]
+        app.logger.info(f"User logged out. Session {token} terminated.")
+
 # --- Run the Server ---
 if __name__ == '__main__':
     if args.debug:
@@ -899,5 +1093,5 @@ if __name__ == '__main__':
     app.logger.info(f"Serving Assets from: {ASSETS_DIR}")
     app.logger.info(f"Access at http://[YOUR_PI_IP]:{PORT} in your browser.")
     
-    # Use the debug flag from args
-    app.run(host='0.0.0.0', port=PORT, debug=args.debug)
+    # Use socketio.run instead of app.run
+    socketio.run(app, host='0.0.0.0', port=PORT, debug=args.debug)

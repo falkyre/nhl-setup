@@ -186,3 +186,5 @@ config/*
 web/uv.lock
 web/.python-version
 web/plugins_index.json
+
+.DS_Store
