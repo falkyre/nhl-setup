@@ -158,6 +158,30 @@
             </div>
         </div>
 
+        <div class="card col-lg-8 mx-auto mt-4" id="logo-editor-card" style="display: none;">
+            <div class="card-body">
+                <h5 class="card-title">Launch Logo Editor</h5>
+                <p class="card-text">
+                    Launch the graphical Logo Editor tool on port 5000.
+                </p>
+                <div class="mb-3">
+                    <label for="venv_path" class="form-label">Virtual Environment Path</label>
+                    <input type="text" class="form-control" id="venv_path" placeholder="/home/pi/nhlsb-venv/">
+                    <div class="form-text">Path to the python virtual environment where dependencies are installed.
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="logo_editor_port" class="form-label">Port</label>
+                    <input type="number" class="form-control" id="logo_editor_port" value="5000">
+                    <div class="form-text">Port to run the Logo Editor on (default 5000).</div>
+                </div>
+                <button class="btn btn-success" id="launch_logo_editor_btn">
+                    <i class="bi bi-window-plus me-2"></i> <span id="launch_btn_text">Open Logo Editor</span>
+                </button>
+                <div id="editor_status_msg" class="mt-2 text-info" style="display: none;"></div>
+            </div>
+        </div>
+
     </div>
 
     <div class="modal fade" id="outputModal" tabindex="-1" aria-labelledby="outputModalLabel" aria-hidden="true">
@@ -272,6 +296,149 @@
                         console.error('Error running issue uploader:', err);
                         modalBody.textContent = 'A client-side error occurred. Could not run script.\n' + err;
                         modalBody.classList.add('text-danger');
+                    });
+            });
+
+            // =============================================
+            // NEW: Logo Editor Logic
+            // =============================================
+            const logoEditorCard = document.getElementById('logo-editor-card');
+            const launchLogoEditorBtn = document.getElementById('launch_logo_editor_btn');
+            const venvInput = document.getElementById('venv_path');
+            const portInput = document.getElementById('logo_editor_port');
+            const launchBtnText = document.getElementById('launch_btn_text');
+            const statusMsg = document.getElementById('editor_status_msg');
+            let pollInterval = null;
+
+            // Reusable function to check status
+            const checkLogoEditorStatus = () => {
+                const port = portInput.value || 5000;
+                fetch(`/api/logo-editor/status?port=${port}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success && data.available) {
+                            logoEditorCard.style.display = 'block';
+
+                            // Reset classes
+                            launchLogoEditorBtn.classList.remove('btn-success', 'btn-primary', 'btn-danger');
+
+                            if (data.status === 'running') {
+                                // Running & Verified (Blue)
+                                launchBtnText.textContent = "Open Logo Editor";
+                                launchLogoEditorBtn.classList.add('btn-primary');
+                                launchLogoEditorBtn.disabled = false;
+                                statusMsg.style.display = 'none';
+                                venvInput.disabled = true; // Lock inputs while running
+                                portInput.disabled = true;
+                            } else if (data.status === 'conflict') {
+                                // Port Conflict (Red)
+                                launchBtnText.textContent = "Port In Use";
+                                launchLogoEditorBtn.classList.add('btn-danger');
+                                launchLogoEditorBtn.disabled = true;
+                                statusMsg.textContent = "Port " + port + " is currently in use by another process.";
+                                statusMsg.classList.remove('text-info');
+                                statusMsg.classList.add('text-danger');
+                                statusMsg.style.display = 'block';
+                                venvInput.disabled = false;
+                                portInput.disabled = false;
+                            } else {
+                                // Available (Green)
+                                launchBtnText.textContent = "Launch Logo Editor";
+                                launchLogoEditorBtn.classList.add('btn-success');
+                                launchLogoEditorBtn.disabled = false;
+                                statusMsg.style.display = 'none';
+                                venvInput.disabled = false;
+                                portInput.disabled = false;
+                            }
+                        }
+                    })
+                    .catch(err => console.error("Error checking logo editor status:", err));
+            };
+
+            // Check on load
+            checkLogoEditorStatus();
+
+            // Check when port changes
+            portInput.addEventListener('change', checkLogoEditorStatus);
+
+            launchLogoEditorBtn.addEventListener('click', () => {
+                const venv = venvInput.value;
+                const port = portInput.value || 5000;
+                const hostname = window.location.hostname;
+                const editorUrl = `http://${hostname}:${port}`;
+
+                // Check status before deciding action
+                fetch(`/api/logo-editor/status?port=${port}`)
+                    .then(res => res.json())
+                    .then(statusData => {
+                        if (statusData.status === 'running') {
+                            window.open(editorUrl, '_blank');
+                            return;
+                        }
+
+                        // Not running, launch it (only if not conflict, though conflicting button is disabled)
+                        if (statusData.status === 'conflict') {
+                            return; // Should be impossible if button is disabled, but good safety
+                        }
+
+                        launchBtnText.textContent = "Starting...";
+                        launchLogoEditorBtn.disabled = true;
+                        statusMsg.textContent = "Launching background process...";
+                        statusMsg.classList.remove('text-danger');
+                        statusMsg.classList.add('text-info');
+                        statusMsg.style.display = 'block';
+
+                        fetch('/api/logo-editor/launch', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ venv: venv, port: port })
+                        })
+                            .then(res => res.json())
+                            .then(launchData => {
+                                if (launchData.success) {
+                                    statusMsg.textContent = "Waiting for editor to be ready...";
+                                    // Poll for status
+                                    let attempts = 0;
+                                    const maxAttempts = 15; // 15 seconds
+
+                                    pollInterval = setInterval(() => {
+                                        attempts++;
+                                        fetch(`/api/logo-editor/status?port=${port}`)
+                                            .then(r => r.json())
+                                            .then(s => {
+                                                if (s.status === 'running') {
+                                                    clearInterval(pollInterval);
+                                                    checkLogoEditorStatus(); // Update UI state
+
+                                                    // Open in new window
+                                                    window.open(editorUrl, '_blank');
+                                                } else if (attempts >= maxAttempts) {
+                                                    clearInterval(pollInterval);
+                                                    launchBtnText.textContent = "Launch Failed / Timed Out";
+                                                    launchLogoEditorBtn.disabled = false;
+                                                    statusMsg.textContent = "Timed out waiting for editor to start.";
+                                                    statusMsg.classList.remove('text-info');
+                                                    statusMsg.classList.add('text-danger');
+                                                }
+                                            })
+                                            .catch(e => {
+                                                console.error("Polling error", e);
+                                            });
+                                    }, 1000);
+                                } else {
+                                    statusMsg.textContent = "Error: " + launchData.message;
+                                    statusMsg.classList.add('text-danger');
+                                    launchLogoEditorBtn.disabled = false;
+                                    launchBtnText.textContent = "Try Again";
+                                }
+                            })
+                            .catch(err => {
+                                console.error(err);
+                                statusMsg.textContent = "Error launching: " + err;
+                                statusMsg.classList.add('text-danger');
+                                launchLogoEditorBtn.disabled = false;
+                                launchBtnText.textContent = "Try Again";
+                            });
                     });
             });
 

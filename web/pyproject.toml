@@ -1,6 +1,6 @@
 [project]
 name = "nls-controlhub"
-version = "2025.12.2"
+version = "2026.02.0"
 description = "Small Web UI to control and config NHL scoreboard"
 readme = "README.md"
 requires-python = ">=3.14"
@@ -8,4 +8,9 @@ dependencies = [
     "flask>=3.1.2",
     "richcolorlog>=1.44.17",
     "toml>=0.10.2",
+    "paho-mqtt>=1.6.1",
+    "gevent>=23.12.2",
+    "gevent-websocket>=0.10.1",
+    "flask-socketio>=5.3.6",
+    "paramiko>=3.3.0",
 ]

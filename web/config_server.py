@@ -27,7 +27,7 @@ from flask_socketio import SocketIO, emit, disconnect, join_room, leave_room
 import paramiko
 
 
-__version__ = "2025.12.2"
+__version__ = "2026.02.0"
 
 
 def is_frozen():
@@ -745,6 +745,145 @@ def sync_plugins():
     
 # =============================================
 # End of Plugin API Section
+# =============================================
+
+# =============================================
+# Logo Editor API Section
+# =============================================
+
+def get_logo_editor_path():
+    """Returns the absolute path to the logo_editor.py script."""
+    return os.path.join(SCOREBOARD_DIR, 'src', 'logo_editor.py')
+
+def check_port_open(port, host='127.0.0.1', timeout=1):
+    """Checks if a port is open on the given host."""
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.settimeout(timeout)
+    try:
+        result = sock.connect_ex((host, port))
+        return result == 0
+    except socket.error as e:
+        app.logger.debug(f"Port check failed: {e}")
+        return False
+    finally:
+        sock.close()
+
+LOGO_EDITOR_STATE_FILE = os.path.join(SCOREBOARD_DIR, 'logo_editor_state.json')
+
+@app.route('/api/logo-editor/status', methods=['GET'])
+def logo_editor_status():
+    """Checks if the logo editor script exists and if it's running."""
+    path = get_logo_editor_path()
+    exists = os.path.exists(path)
+    
+    # Get port from query parameters, default to 5000
+    try:
+        port = int(request.args.get('port', 5000))
+    except ValueError:
+        port = 5000
+
+    port_open = check_port_open(port)
+    
+    # Determine Status
+    status = 'unavailable'
+    if exists:
+        if not port_open:
+            status = 'available'
+            # Cleanup state file if port is closed, as it means it stopped
+            if os.path.exists(LOGO_EDITOR_STATE_FILE):
+                try:
+                    os.remove(LOGO_EDITOR_STATE_FILE)
+                except:
+                    pass
+        else:
+            # Port is open. Check if it's us or something else.
+            status = 'conflict' # Default to conflict unless proven otherwise
+            
+            if os.path.exists(LOGO_EDITOR_STATE_FILE):
+                try:
+                    with open(LOGO_EDITOR_STATE_FILE, 'r') as f:
+                        state = json.load(f)
+                        if state.get('port') == port:
+                            status = 'running'
+                except Exception as e:
+                    app.logger.warning(f"Failed to read logo editor state: {e}")
+            
+            if status == 'conflict':
+                 app.logger.info(f"Port {port} is in use by another process (Conflict).")
+
+    app.logger.debug(f"Logo Editor Status Check: port={port}, exists={exists}, port_open={port_open}, status={status}")
+    
+    return jsonify({
+        'success': True,
+        'available': exists,
+        'running': (status == 'running'), # For backwards compatibility if any
+        'status': status,
+        'port': port
+    })
+
+@app.route('/api/logo-editor/launch', methods=['POST'])
+def launch_logo_editor():
+    """Launches the logo editor script in the background."""
+    app.logger.info("Request received to launch Logo Editor...")
+    
+    path = get_logo_editor_path()
+    if not os.path.exists(path):
+        return jsonify({'success': False, 'message': 'logo_editor.py not found.'}), 404
+
+    # Determine Virtual Environment Path and Port
+    data = request.json or {}
+    venv_path = data.get('venv')
+    try:
+        port = int(data.get('port', 5000))
+    except (ValueError, TypeError):
+        port = 5000
+
+    if not venv_path:
+        # Try to guess the user to construct the default path
+        # If running as root (e.g. systemd), finding the "real" user is tricky without hints.
+        # But commonly we assume 'pi' or the user who owns the scoreboard dir.
+        # Let's try to get user from environment or fallback to 'pi'
+        user = os.environ.get('SUDO_USER') or os.environ.get('USER') or 'pi'
+        venv_path = f"/home/{user}/nhlsb-venv/"
+        app.logger.info(f"No venv provided. Defaulting to: {venv_path}")
+
+    # Construct the command
+    # python3 src/logo_editor.py --venv VENV --dir SCOREBOARDDIR --port PORT
+    command = [
+        PYTHON_EXEC, 
+        path, 
+        '--venv', venv_path, 
+        '--dir', SCOREBOARD_DIR,
+        '--port', str(port)
+    ]
+    
+    app.logger.info(f"Launching command: {' '.join(command)}")
+
+    try:
+        # Launch as a detached process (start_new_session=True) so it survives if the server restarts (optional)
+        # and doesn't block this request.
+        process = subprocess.Popen(
+            command, 
+            cwd=SCOREBOARD_DIR,
+            stdout=subprocess.DEVNULL, # Access logs via other means if needed, or redirect to file
+            stderr=subprocess.DEVNULL,
+            start_new_session=True
+        )
+        
+        # Save state
+        try:
+            with open(LOGO_EDITOR_STATE_FILE, 'w') as f:
+                json.dump({'port': port, 'pid': process.pid}, f)
+        except Exception as e:
+            app.logger.error(f"Failed to write logo editor state file: {e}")
+
+        return jsonify({'success': True, 'message': 'Logo Editor launch command issued.', 'port': port})
+    except Exception as e:
+        app.logger.error(f"Failed to launch Logo Editor: {e}")
+        return jsonify({'success': False, 'message': f"Failed to launch: {e}"}), 500
+
+# =============================================
+# End of Logo Editor API Section
 # =============================================
 
 # =============================================
