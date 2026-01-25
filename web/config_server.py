@@ -838,19 +838,47 @@ def launch_logo_editor():
     except (ValueError, TypeError):
         port = 5000
 
-    if not venv_path:
-        # Try to guess the user to construct the default path
-        # If running as root (e.g. systemd), finding the "real" user is tricky without hints.
-        # But commonly we assume 'pi' or the user who owns the scoreboard dir.
-        # Let's try to get user from environment or fallback to 'pi'
+    python_to_use = PYTHON_EXEC
+
+    if venv_path:
+        # If the user provided a venv path, we want to try to use the python inside it
+        # Common locations: venv/bin/python, venv/bin/python3
+        possible_pythons = [
+            os.path.join(venv_path, 'bin', 'python'),
+            os.path.join(venv_path, 'bin', 'python3'),
+            os.path.join(venv_path, 'Scripts', 'python.exe'), # Windows just in case
+        ]
+        
+        found_python = False
+        for p in possible_pythons:
+            if os.path.exists(p):
+                python_to_use = p
+                found_python = True
+                app.logger.info(f"Using venv python: {python_to_use}")
+                break
+        
+        if not found_python:
+            app.logger.warning(f"Could not find python in provided venv: {venv_path}. Falling back to default: {PYTHON_EXEC}")
+
+    elif not venv_path: 
+        # Only guess/default venv path if NOT provided (and thus we are using system python as base for now, unless we change that too)
+        # However, the user request says "if the user provides a virtual environment path, the editor should be launched with the python in that venv"
+        # Logic:
+        # 1. If venv provided -> Clean it, check for python, use that python.
+        # 2. If venv NOT provided -> Default logic (maybe try to guess valid venv for --venv arg, but keep running with default python? 
+        #    Actually, the current code WAS running 'python3 src/logo_editor.py --venv ...' using PYTHON_EXEC.
+        #    So we should stick to using PYTHON_EXEC unless venv is explicit.
+        
+        # Try to guess the user to construct the default path for the argument to pass to the script
         user = os.environ.get('SUDO_USER') or os.environ.get('USER') or 'pi'
         venv_path = f"/home/{user}/nhlsb-venv/"
         app.logger.info(f"No venv provided. Defaulting to: {venv_path}")
 
     # Construct the command
-    # python3 src/logo_editor.py --venv VENV --dir SCOREBOARDDIR --port PORT
+    # If we found a specific python in the venv, we use that as the executable.
+    # We still pass --venv to the script because the script likely uses it for other things (like hot-reloading or internal logic).
     command = [
-        PYTHON_EXEC, 
+        python_to_use, 
         path, 
         '--venv', venv_path, 
         '--dir', SCOREBOARD_DIR,
@@ -862,13 +890,31 @@ def launch_logo_editor():
     try:
         # Launch as a detached process (start_new_session=True) so it survives if the server restarts (optional)
         # and doesn't block this request.
+        
+        stdout_dest = subprocess.DEVNULL
+        stderr_dest = subprocess.DEVNULL
+        debug_log_file = None
+
+        if args.debug:
+            try:
+                log_path = os.path.join(SCOREBOARD_DIR, 'logo_editor_debug.log')
+                app.logger.info(f"Debug mode enabled: Redirecting Logo Editor output to {log_path}")
+                debug_log_file = open(log_path, 'w')
+                stdout_dest = debug_log_file
+                stderr_dest = subprocess.STDOUT
+            except Exception as e:
+                app.logger.error(f"Failed to open debug log file: {e}")
+
         process = subprocess.Popen(
             command, 
             cwd=SCOREBOARD_DIR,
-            stdout=subprocess.DEVNULL, # Access logs via other means if needed, or redirect to file
-            stderr=subprocess.DEVNULL,
+            stdout=stdout_dest,
+            stderr=stderr_dest,
             start_new_session=True
         )
+
+        if debug_log_file:
+            debug_log_file.close()
         
         # Save state
         try:
