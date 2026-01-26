@@ -178,6 +178,9 @@
                 <button class="btn btn-success" id="launch_logo_editor_btn">
                     <i class="bi bi-window-plus me-2"></i> <span id="launch_btn_text">Open Logo Editor</span>
                 </button>
+                <button class="btn btn-danger ms-2" id="stop_logo_editor_btn" style="display: none;">
+                    <i class="bi bi-stop-circle me-2"></i> Stop Editor
+                </button>
                 <div id="editor_status_msg" class="mt-2 text-info" style="display: none;"></div>
             </div>
         </div>
@@ -304,6 +307,7 @@
             // =============================================
             const logoEditorCard = document.getElementById('logo-editor-card');
             const launchLogoEditorBtn = document.getElementById('launch_logo_editor_btn');
+            const stopLogoEditorBtn = document.getElementById('stop_logo_editor_btn');
             const venvInput = document.getElementById('venv_path');
             const portInput = document.getElementById('logo_editor_port');
             const launchBtnText = document.getElementById('launch_btn_text');
@@ -327,6 +331,7 @@
                                 launchBtnText.textContent = "Open Logo Editor";
                                 launchLogoEditorBtn.classList.add('btn-primary');
                                 launchLogoEditorBtn.disabled = false;
+                                stopLogoEditorBtn.style.display = 'inline-block';
                                 statusMsg.style.display = 'none';
                                 venvInput.disabled = true; // Lock inputs while running
                                 portInput.disabled = true;
@@ -335,6 +340,7 @@
                                 launchBtnText.textContent = "Port In Use";
                                 launchLogoEditorBtn.classList.add('btn-danger');
                                 launchLogoEditorBtn.disabled = true;
+                                stopLogoEditorBtn.style.display = 'none';
                                 statusMsg.textContent = "Port " + port + " is currently in use by another process.";
                                 statusMsg.classList.remove('text-info');
                                 statusMsg.classList.add('text-danger');
@@ -346,6 +352,7 @@
                                 launchBtnText.textContent = "Launch Logo Editor";
                                 launchLogoEditorBtn.classList.add('btn-success');
                                 launchLogoEditorBtn.disabled = false;
+                                stopLogoEditorBtn.style.display = 'none';
                                 statusMsg.style.display = 'none';
                                 venvInput.disabled = false;
                                 portInput.disabled = false;
@@ -439,6 +446,37 @@
                                 launchLogoEditorBtn.disabled = false;
                                 launchBtnText.textContent = "Try Again";
                             });
+                    });
+            });
+
+            // Stop Button Logic
+            stopLogoEditorBtn.addEventListener('click', () => {
+                if (!confirm("Are you sure you want to stop the Logo Editor?")) return;
+
+                stopLogoEditorBtn.disabled = true;
+                stopLogoEditorBtn.textContent = "Stopping...";
+
+                fetch('/api/logo-editor/stop', { method: 'POST' })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Wait a moment for process to actually die
+                            setTimeout(() => {
+                                checkLogoEditorStatus();
+                                stopLogoEditorBtn.textContent = "Stop Editor";
+                                stopLogoEditorBtn.disabled = false;
+                            }, 1000);
+                        } else {
+                            alert("Failed to stop: " + data.message);
+                            stopLogoEditorBtn.textContent = "Stop Editor";
+                            stopLogoEditorBtn.disabled = false;
+                        }
+                    })
+                    .catch(e => {
+                        console.error(e);
+                        alert("Error: " + e);
+                        stopLogoEditorBtn.textContent = "Stop Editor";
+                        stopLogoEditorBtn.disabled = false;
                     });
             });
 

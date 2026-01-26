@@ -887,9 +887,22 @@ def launch_logo_editor():
     
     app.logger.info(f"Launching command: {' '.join(command)}")
 
+    # Prepare environment for the subprocess
+    env = os.environ.copy()
+    # Remove Flask reloader variables to prevent KeyError/Conflict in subprocess
+    env.pop('WERKZEUG_SERVER_FD', None)
+    env.pop('WERKZEUG_RUN_MAIN', None)
+    
+    if venv_path:
+        # Explicitly set VIRTUAL_ENV and update PATH
+        env['VIRTUAL_ENV'] = venv_path
+        # Prepend venv bin to PATH
+        env['PATH'] = os.path.join(venv_path, 'bin') + os.pathsep + env.get('PATH', '')
+        # Unset PYTHONHOME if it exists to avoid conflicts
+        env.pop('PYTHONHOME', None)
+
     try:
-        # Launch as a detached process (start_new_session=True) so it survives if the server restarts (optional)
-        # and doesn't block this request.
+        # Launch as detached process
         
         stdout_dest = subprocess.DEVNULL
         stderr_dest = subprocess.DEVNULL
@@ -910,7 +923,8 @@ def launch_logo_editor():
             cwd=SCOREBOARD_DIR,
             stdout=stdout_dest,
             stderr=stderr_dest,
-            start_new_session=True
+            start_new_session=True,
+            env=env
         )
 
         if debug_log_file:
@@ -927,6 +941,41 @@ def launch_logo_editor():
     except Exception as e:
         app.logger.error(f"Failed to launch Logo Editor: {e}")
         return jsonify({'success': False, 'message': f"Failed to launch: {e}"}), 500
+
+@app.route('/api/logo-editor/stop', methods=['POST'])
+def stop_logo_editor():
+    """Stops the running Logo Editor process."""
+    app.logger.info("Request received to stop Logo Editor...")
+    
+    if not os.path.exists(LOGO_EDITOR_STATE_FILE):
+        return jsonify({'success': False, 'message': 'No running Logo Editor tracked.'}), 404
+
+    try:
+        with open(LOGO_EDITOR_STATE_FILE, 'r') as f:
+            state = json.load(f)
+            pid = state.get('pid')
+            
+        if pid:
+            try:
+                # Terminate the process
+                os.kill(pid, 15) # SIGTERM
+                # Optionally wait loop could go here, but for now we just send the signal
+                app.logger.info(f"Sent SIGTERM to process {pid}")
+            except ProcessLookupError:
+                app.logger.warning(f"Process {pid} not found. Cleaning up state file.")
+            except Exception as e:
+                app.logger.error(f"Failed to kill process {pid}: {e}")
+                return jsonify({'success': False, 'message': f"Failed to stop process: {e}"}), 500
+        
+        # Clean up state file on success or if process was missing
+        if os.path.exists(LOGO_EDITOR_STATE_FILE):
+             os.remove(LOGO_EDITOR_STATE_FILE)
+
+        return jsonify({'success': True, 'message': 'Logo Editor stopped.'})
+
+    except Exception as e:
+        app.logger.error(f"Error stopping Logo Editor: {e}")
+        return jsonify({'success': False, 'message': f"An error occurred: {e}"}), 500
 
 # =============================================
 # End of Logo Editor API Section
