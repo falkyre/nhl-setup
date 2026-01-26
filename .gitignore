@@ -188,3 +188,4 @@ web/.python-version
 web/plugins_index.json
 
 .DS_Store
+download_assets.py
