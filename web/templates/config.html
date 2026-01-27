@@ -82,6 +82,62 @@
         }
 
         /* ============================================= */
+        
+        /* Dual Listbox Styles */
+        .dual-listbox-container {
+            display: flex;
+            gap: 0.5rem;
+            align-items: stretch;
+        }
+        .dual-listbox-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .dual-listbox-panel .list-box {
+            flex: 1;
+            min-height: 200px;
+            overflow-y: auto;
+            border: 1px solid var(--bs-border-color);
+            border-radius: 0.375rem;
+            padding: 0.25rem;
+        }
+        .dual-listbox-panel .list-box-item {
+            padding: 0.375rem 0.5rem;
+            cursor: pointer;
+            border-radius: 0.25rem;
+            user-select: none;
+            margin-bottom: 0.125rem;
+        }
+        .dual-listbox-panel .list-box-item:hover {
+            background-color: var(--bs-secondary-bg);
+        }
+        .dual-listbox-panel .list-box-item.selected {
+            background-color: var(--bs-primary);
+            color: white;
+        }
+        .dual-listbox-controls {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0 0.25rem;
+        }
+        .dual-listbox-order-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        @media (max-width: 767px) {
+            .dual-listbox-container {
+                flex-direction: column;
+            }
+            .dual-listbox-controls {
+                flex-direction: row;
+                justify-content: center;
+            }
+        }
 
         #load_from_server {
             margin-bottom: 0.5rem;
@@ -376,29 +432,187 @@
                 <div id="collapseStates" class="accordion-collapse collapse" aria-labelledby="headingStates"
                     data-bs-parent="#mainAccordion">
                     <div class="accordion-body">
-                        <p class="form-text">For each state, select the boards you want to display. Hold Ctrl/Cmd to
-                            select multiple.</p>
+                        <p class="form-text">For each state, select the boards you want to display. Use the arrow buttons to add/remove boards and reorder them.</p>
+                        
+                        <div class="accordion" id="statesAccordion">
+                            <!-- Off Day Boards -->
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="headingStateOffDay">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseStateOffDay" aria-expanded="false" aria-controls="collapseStateOffDay">
+                                        Off Day Boards
+                                    </button>
+                                </h2>
+                                <div id="collapseStateOffDay" class="accordion-collapse collapse" aria-labelledby="headingStateOffDay" data-bs-parent="#statesAccordion">
+                                    <div class="accordion-body">
+                                        <div class="dual-listbox-container" data-dual-listbox="state_off_day">
+                                <div class="dual-listbox-panel">
+                                    <label class="form-label small">Available</label>
+                                    <div class="list-box" data-role="available"></div>
+                                </div>
+                                <div class="dual-listbox-controls">
+                                    <button type="button" class="btn btn-sm btn-outline-primary" data-action="add" title="Add selected">
+                                        <i class="bi bi-chevron-right"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" data-action="add-all" title="Add all">
+                                        <i class="bi bi-chevron-double-right"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" data-action="remove" title="Remove selected">
+                                        <i class="bi bi-chevron-left"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" data-action="remove-all" title="Remove all">
+                                        <i class="bi bi-chevron-double-left"></i>
+                                    </button>
+                                </div>
+                                <div class="dual-listbox-panel">
+                                    <label class="form-label small">Selected (in order)</label>
+                                    <div class="list-box" data-role="selected"></div>
+                                    <div class="dual-listbox-order-controls">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" data-action="move-up" title="Move up">
+                                            <i class="bi bi-arrow-up"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" data-action="move-down" title="Move down">
+                                            <i class="bi bi-arrow-down"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                                    </div>
+                                </div>
+                            </div>
 
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="state_off_day" class="form-label">Off Day Boards</label>
-                                <select id="state_off_day" class="form-select" multiple size="8">
-                                </select>
+                            <!-- Scheduled Game Boards -->
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="headingStateScheduled">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseStateScheduled" aria-expanded="false" aria-controls="collapseStateScheduled">
+                                        Scheduled Game Boards
+                                    </button>
+                                </h2>
+                                <div id="collapseStateScheduled" class="accordion-collapse collapse" aria-labelledby="headingStateScheduled" data-bs-parent="#statesAccordion">
+                                    <div class="accordion-body">
+                                        <div class="dual-listbox-container" data-dual-listbox="state_scheduled">
+                                <div class="dual-listbox-panel">
+                                    <label class="form-label small">Available</label>
+                                    <div class="list-box" data-role="available"></div>
+                                </div>
+                                <div class="dual-listbox-controls">
+                                    <button type="button" class="btn btn-sm btn-outline-primary" data-action="add" title="Add selected">
+                                        <i class="bi bi-chevron-right"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" data-action="add-all" title="Add all">
+                                        <i class="bi bi-chevron-double-right"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" data-action="remove" title="Remove selected">
+                                        <i class="bi bi-chevron-left"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" data-action="remove-all" title="Remove all">
+                                        <i class="bi bi-chevron-double-left"></i>
+                                    </button>
+                                </div>
+                                <div class="dual-listbox-panel">
+                                    <label class="form-label small">Selected (in order)</label>
+                                    <div class="list-box" data-role="selected"></div>
+                                    <div class="dual-listbox-order-controls">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" data-action="move-up" title="Move up">
+                                            <i class="bi bi-arrow-up"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" data-action="move-down" title="Move down">
+                                            <i class="bi bi-arrow-down"></i>
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="state_scheduled" class="form-label">Scheduled Game Boards</label>
-                                <select id="state_scheduled" class="form-select" multiple size="8">
-                                </select>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="state_intermission" class="form-label">Intermission Boards</label>
-                                <select id="state_intermission" class="form-select" multiple size="8">
-                                </select>
+
+                            <!-- Intermission Boards -->
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="headingStateIntermission">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseStateIntermission" aria-expanded="false" aria-controls="collapseStateIntermission">
+                                        Intermission Boards
+                                    </button>
+                                </h2>
+                                <div id="collapseStateIntermission" class="accordion-collapse collapse" aria-labelledby="headingStateIntermission" data-bs-parent="#statesAccordion">
+                                    <div class="accordion-body">
+                                        <div class="dual-listbox-container" data-dual-listbox="state_intermission">
+                                <div class="dual-listbox-panel">
+                                    <label class="form-label small">Available</label>
+                                    <div class="list-box" data-role="available"></div>
+                                </div>
+                                <div class="dual-listbox-controls">
+                                    <button type="button" class="btn btn-sm btn-outline-primary" data-action="add" title="Add selected">
+                                        <i class="bi bi-chevron-right"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" data-action="add-all" title="Add all">
+                                        <i class="bi bi-chevron-double-right"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" data-action="remove" title="Remove selected">
+                                        <i class="bi bi-chevron-left"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" data-action="remove-all" title="Remove all">
+                                        <i class="bi bi-chevron-double-left"></i>
+                                    </button>
+                                </div>
+                                <div class="dual-listbox-panel">
+                                    <label class="form-label small">Selected (in order)</label>
+                                    <div class="list-box" data-role="selected"></div>
+                                    <div class="dual-listbox-order-controls">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" data-action="move-up" title="Move up">
+                                            <i class="bi bi-arrow-up"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" data-action="move-down" title="Move down">
+                                            <i class="bi bi-arrow-down"></i>
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="state_post_game" class="form-label">Post-Game Boards</label>
-                                <select id="state_post_game" class="form-select" multiple size="8">
-                                </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Post-Game Boards -->
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="headingStatePostGame">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseStatePostGame" aria-expanded="false" aria-controls="collapseStatePostGame">
+                                        Post-Game Boards
+                                    </button>
+                                </h2>
+                                <div id="collapseStatePostGame" class="accordion-collapse collapse" aria-labelledby="headingStatePostGame" data-bs-parent="#statesAccordion">
+                                    <div class="accordion-body">
+                                        <div class="dual-listbox-container" data-dual-listbox="state_post_game">
+                                <div class="dual-listbox-panel">
+                                    <label class="form-label small">Available</label>
+                                    <div class="list-box" data-role="available"></div>
+                                </div>
+                                <div class="dual-listbox-controls">
+                                    <button type="button" class="btn btn-sm btn-outline-primary" data-action="add" title="Add selected">
+                                        <i class="bi bi-chevron-right"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" data-action="add-all" title="Add all">
+                                        <i class="bi bi-chevron-double-right"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" data-action="remove" title="Remove selected">
+                                        <i class="bi bi-chevron-left"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" data-action="remove-all" title="Remove all">
+                                        <i class="bi bi-chevron-double-left"></i>
+                                    </button>
+                                </div>
+                                <div class="dual-listbox-panel">
+                                    <label class="form-label small">Selected (in order)</label>
+                                    <div class="list-box" data-role="selected"></div>
+                                    <div class="dual-listbox-order-controls">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" data-action="move-up" title="Move up">
+                                            <i class="bi bi-arrow-up"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" data-action="move-down" title="Move down">
+                                            <i class="bi bi-arrow-down"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -1179,6 +1393,13 @@
     <script>
         // --- Helper functions for GETTING data from form ---
         function getMultiSelectValues(elementId) {
+            // Check if it's a dual listbox
+            const dualListbox = document.querySelector(`[data-dual-listbox="${elementId}"]`);
+            if (dualListbox) {
+                const selectedBox = dualListbox.querySelector('[data-role="selected"]');
+                return Array.from(selectedBox.querySelectorAll('.list-box-item')).map(item => item.dataset.value);
+            }
+            // Fallback to regular multiselect
             const select = document.getElementById(elementId);
             return Array.from(select.selectedOptions).map(option => option.value);
         }
@@ -1407,6 +1628,15 @@
         }
         function setMultiSelectValues(elementId, valuesArray) {
             if (!valuesArray || !Array.isArray(valuesArray)) return;
+            
+            // Check if it's a dual listbox
+            const dualListbox = document.querySelector(`[data-dual-listbox="${elementId}"]`);
+            if (dualListbox && window.dualListboxInstances && window.dualListboxInstances[elementId]) {
+                window.dualListboxInstances[elementId].setSelected(valuesArray);
+                return;
+            }
+            
+            // Fallback to regular multiselect
             const select = document.getElementById(elementId);
             Array.from(select.options).forEach(option => {
                 option.selected = valuesArray.includes(option.value);
@@ -1604,6 +1834,201 @@
 
     <script>
         /**
+         * Dual Listbox Component
+         * Provides a two-panel interface for selecting and ordering items
+         */
+        class DualListbox {
+            constructor(container, id) {
+                this.container = container;
+                this.id = id;
+                this.availableBox = container.querySelector('[data-role="available"]');
+                this.selectedBox = container.querySelector('[data-role="selected"]');
+                this.options = [];
+                this.selectedValues = [];
+                
+                // Bind event handlers
+                this.setupEventHandlers();
+            }
+            
+            setupEventHandlers() {
+                // Add/remove buttons
+                const addBtn = this.container.querySelector('[data-action="add"]');
+                const addAllBtn = this.container.querySelector('[data-action="add-all"]');
+                const removeBtn = this.container.querySelector('[data-action="remove"]');
+                const removeAllBtn = this.container.querySelector('[data-action="remove-all"]');
+                const moveUpBtn = this.container.querySelector('[data-action="move-up"]');
+                const moveDownBtn = this.container.querySelector('[data-action="move-down"]');
+                
+                if (addBtn) addBtn.addEventListener('click', () => this.addSelected());
+                if (addAllBtn) addAllBtn.addEventListener('click', () => this.addAll());
+                if (removeBtn) removeBtn.addEventListener('click', () => this.removeSelected());
+                if (removeAllBtn) removeAllBtn.addEventListener('click', () => this.removeAll());
+                if (moveUpBtn) moveUpBtn.addEventListener('click', () => this.moveUp());
+                if (moveDownBtn) moveDownBtn.addEventListener('click', () => this.moveDown());
+                
+                // Click handlers for list items
+                this.availableBox.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('list-box-item')) {
+                        this.toggleSelection(e.target);
+                    }
+                });
+                
+                this.selectedBox.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('list-box-item')) {
+                        this.toggleSelection(e.target);
+                    }
+                });
+                
+                // Double-click to move items
+                this.availableBox.addEventListener('dblclick', (e) => {
+                    if (e.target.classList.contains('list-box-item')) {
+                        e.target.classList.add('selected');
+                        this.addSelected();
+                    }
+                });
+                
+                this.selectedBox.addEventListener('dblclick', (e) => {
+                    if (e.target.classList.contains('list-box-item')) {
+                        e.target.classList.add('selected');
+                        this.removeSelected();
+                    }
+                });
+            }
+            
+            toggleSelection(item) {
+                if (item.classList.contains('selected')) {
+                    item.classList.remove('selected');
+                } else {
+                    // For multi-select, allow multiple selections
+                    item.classList.add('selected');
+                }
+            }
+            
+            setOptions(options) {
+                this.options = options;
+                this.render();
+            }
+            
+            setSelected(values) {
+                this.selectedValues = values || [];
+                this.render();
+            }
+            
+            getSelected() {
+                return this.selectedValues;
+            }
+            
+            addSelected() {
+                const selected = this.availableBox.querySelectorAll('.list-box-item.selected');
+                selected.forEach(item => {
+                    const value = item.dataset.value;
+                    if (!this.selectedValues.includes(value)) {
+                        this.selectedValues.push(value);
+                    }
+                });
+                this.render();
+            }
+            
+            addAll() {
+                this.selectedValues = this.options.map(opt => opt.v);
+                this.render();
+            }
+            
+            removeSelected() {
+                const selected = this.selectedBox.querySelectorAll('.list-box-item.selected');
+                selected.forEach(item => {
+                    const value = item.dataset.value;
+                    const index = this.selectedValues.indexOf(value);
+                    if (index > -1) {
+                        this.selectedValues.splice(index, 1);
+                    }
+                });
+                this.render();
+            }
+            
+            removeAll() {
+                this.selectedValues = [];
+                this.render();
+            }
+            
+            moveUp() {
+                const selected = this.selectedBox.querySelector('.list-box-item.selected');
+                if (!selected) return;
+                
+                const value = selected.dataset.value;
+                const index = this.selectedValues.indexOf(value);
+                if (index > 0) {
+                    // Swap with previous item
+                    [this.selectedValues[index - 1], this.selectedValues[index]] = 
+                    [this.selectedValues[index], this.selectedValues[index - 1]];
+                    this.render();
+                    // Re-select the item
+                    const newItem = this.selectedBox.querySelector(`[data-value="${value}"]`);
+                    if (newItem) newItem.classList.add('selected');
+                }
+            }
+            
+            moveDown() {
+                const selected = this.selectedBox.querySelector('.list-box-item.selected');
+                if (!selected) return;
+                
+                const value = selected.dataset.value;
+                const index = this.selectedValues.indexOf(value);
+                if (index < this.selectedValues.length - 1) {
+                    // Swap with next item
+                    [this.selectedValues[index], this.selectedValues[index + 1]] = 
+                    [this.selectedValues[index + 1], this.selectedValues[index]];
+                    this.render();
+                    // Re-select the item
+                    const newItem = this.selectedBox.querySelector(`[data-value="${value}"]`);
+                    if (newItem) newItem.classList.add('selected');
+                }
+            }
+            
+            render() {
+                // Clear both boxes
+                this.availableBox.innerHTML = '';
+                this.selectedBox.innerHTML = '';
+                
+                // Render available items (not selected)
+                const availableOptions = this.options.filter(opt => !this.selectedValues.includes(opt.v));
+                availableOptions.forEach(opt => {
+                    const item = document.createElement('div');
+                    item.className = 'list-box-item';
+                    item.dataset.value = opt.v;
+                    item.textContent = opt.n;
+                    this.availableBox.appendChild(item);
+                });
+                
+                // Render selected items (in order)
+                this.selectedValues.forEach(value => {
+                    const opt = this.options.find(o => o.v === value);
+                    if (opt) {
+                        const item = document.createElement('div');
+                        item.className = 'list-box-item';
+                        item.dataset.value = opt.v;
+                        item.textContent = opt.n;
+                        this.selectedBox.appendChild(item);
+                    }
+                });
+            }
+        }
+        
+        // Global storage for dual listbox instances
+        window.dualListboxInstances = {};
+        
+        // Initialize all dual listboxes on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const containers = document.querySelectorAll('[data-dual-listbox]');
+            containers.forEach(container => {
+                const id = container.dataset.dualListbox;
+                window.dualListboxInstances[id] = new DualListbox(container, id);
+            });
+        });
+    </script>
+
+    <script>
+        /**
          * Attempts to get the user's location from their public IP address.
          */
         function autofillLocationFromIP() {
@@ -1643,21 +2068,18 @@
         }
 
         /**
-         * Populates the states dropdowns with board options.
+         * Populates the states dual listboxes with board options.
          */
         function populateBoardSelects(boardOptions) {
             const selectIds = ['state_off_day', 'state_scheduled', 'state_intermission', 'state_post_game'];
-            // Generate the HTML string for the options
-            const optionsHtml = boardOptions
-                .sort((a, b) => a.n.localeCompare(b.n)) // Sort alphabetically by name
-                .map(o => `<option value="${o.v}">${o.n}</option>`)
-                .join('');
 
-            // Populate all four select boxes
+            // Sort boards alphabetically by name
+            const sortedBoards = boardOptions.sort((a, b) => a.n.localeCompare(b.n));
+            
+            // Initialize dual listboxes
             selectIds.forEach(id => {
-                const selectEl = document.getElementById(id);
-                if (selectEl) {
-                    selectEl.innerHTML = optionsHtml;
+                if (window.dualListboxInstances && window.dualListboxInstances[id]) {
+                    window.dualListboxInstances[id].setOptions(sortedBoards);
                 }
             });
         }
