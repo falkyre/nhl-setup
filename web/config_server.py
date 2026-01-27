@@ -259,6 +259,52 @@ def get_version():
         app.logger.error(f"Error reading {VERSION_FILE}: {e}")
         return "Error"
 
+def get_builtin_boards():
+    """
+    Scans src/boards/builtins directory for plugin.json files and extracts board IDs.
+    This finds all built-in boards that have configuration.
+    """
+    board_names = []
+    
+    # Define the builtin boards directory path
+    boards_dir = os.path.join(SCOREBOARD_DIR, 'src', 'boards', "builtins")
+    
+    if not os.path.exists(boards_dir):
+        app.logger.info(f"Boards directory not found at: {boards_dir}")
+        return board_names
+    
+    app.logger.info(f"Scanning for builtin boards in: {boards_dir}")
+    
+    try:
+        # Iterate over directories in boards_dir
+        for item in os.listdir(boards_dir):
+            board_path = os.path.join(boards_dir, item)
+                
+            if os.path.isdir(board_path):
+                board_json_path = os.path.join(board_path, 'plugin.json')
+                
+                if os.path.exists(board_json_path):
+                    try:
+                        with open(board_json_path, 'r') as f:
+                            data = json.load(f)
+                            
+                            # Check for 'boards' array
+                            if 'boards' in data and isinstance(data['boards'], list):
+                                for board in data['boards']:
+                                    if 'id' in board:
+                                        board_names.append(board['id'])
+                    except json.JSONDecodeError:
+                        app.logger.error(f"Invalid JSON in {board_json_path}")
+                    except Exception as e:
+                        app.logger.error(f"Error reading {board_json_path}: {e}")
+                        
+        app.logger.info(f"Loaded {len(board_names)} builtin boards: {board_names}")
+        
+    except Exception as e:
+        app.logger.error(f"Error scanning builtin boards directory: {e}")
+
+    return board_names
+
 def get_plugin_boards():
     """
     Scans src/boards/plugins directory for plugins.json files and extracts board IDs.
@@ -427,25 +473,33 @@ def api_status():
 
 @app.route('/api/boards')
 def api_boards():
-    """Provides a list of all available boards (built-in + plugins)."""
+    """Returns a list of available boards in the format [{"v": "id", "n": "Name"}]"""
     
-    # Base list (as requested, "holiday_countdown" is removed)
+    # Hardcoded fallback list - kept for backwards compatibility
+    # If a board appears both here AND in scanned builtin boards, an error will be logged
     base_boards_list = [
-        "wxalert", "wxforecast", "scoreticker", "seriesticker", "standings",
-        "team_summary", "stanley_cup_champions", "christmas",
-        "season_countdown", "clock", "weather", "player_stats", "ovi_tracker", "stats_leaders"
+        'wxalert', 'wxforecast', 'seriesticker',
+        'stanley_cup_champions', 'christmas'
     ]
     
-    # Get custom boards from plugins.json
+    # Get scanned boards
+    builtin_boards = get_builtin_boards()
     plugin_boards = get_plugin_boards()
     
-    # Combine and return the lists
-    all_boards = base_boards_list + plugin_boards
+    # Check for duplicates between hardcoded and scanned builtin boards
+    duplicates = set(base_boards_list) & set(builtin_boards)
+    if duplicates:
+        app.logger.warning(f"Duplicate boards found in hardcoded list and scanned builtin boards: {sorted(duplicates)}. "
+                        f"Remove these from base_boards_list as they are now auto-discovered.")
     
-    # Create the object format the front-end expects
-    board_options = [{"v": name, "n": name.replace("_", " ").title()} for name in all_boards]
+    # Combine all boards and deduplicate (set removes duplicates)
+    all_board_ids = list(set(base_boards_list + builtin_boards + plugin_boards))
+    all_board_ids.sort()  # Sort alphabetically for consistency
     
-    return jsonify(board_options)
+    # Convert to format expected by frontend: [{"v": "id", "n": "Name"}]
+    boards = [{"v": board_id, "n": board_id.replace('_', ' ').title()} for board_id in all_board_ids]
+    
+    return jsonify(boards)
 
 @app.route('/load', methods=['GET'])
 def load_config():
