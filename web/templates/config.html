@@ -1920,13 +1920,24 @@
             
             addSelected() {
                 const selected = this.availableBox.querySelectorAll('.list-box-item.selected');
+                const newIndices = [];
+                
                 selected.forEach(item => {
                     const value = item.dataset.value;
-                    if (!this.selectedValues.includes(value)) {
-                        this.selectedValues.push(value);
+                    // Always add, even if it already exists (allow duplicates)
+                    this.selectedValues.push(value);
+                    newIndices.push(this.selectedValues.length - 1);
+                });
+                
+                this.render();
+                
+                // Re-select the newly added items in the selected box
+                const selectedItems = this.selectedBox.querySelectorAll('.list-box-item');
+                newIndices.forEach(index => {
+                    if (selectedItems[index]) {
+                        selectedItems[index].classList.add('selected');
                     }
                 });
-                this.render();
             }
             
             addAll() {
@@ -1936,13 +1947,16 @@
             
             removeSelected() {
                 const selected = this.selectedBox.querySelectorAll('.list-box-item.selected');
-                selected.forEach(item => {
-                    const value = item.dataset.value;
-                    const index = this.selectedValues.indexOf(value);
-                    if (index > -1) {
-                        this.selectedValues.splice(index, 1);
-                    }
+                // Collect indices to remove (in reverse order to avoid index shifting issues)
+                const indices = Array.from(selected)
+                    .map(item => parseInt(item.dataset.index))
+                    .sort((a, b) => b - a); // Sort descending
+                
+                // Remove from highest index to lowest
+                indices.forEach(index => {
+                    this.selectedValues.splice(index, 1);
                 });
+                
                 this.render();
             }
             
@@ -1955,16 +1969,18 @@
                 const selected = this.selectedBox.querySelector('.list-box-item.selected');
                 if (!selected) return;
                 
-                const value = selected.dataset.value;
-                const index = this.selectedValues.indexOf(value);
+                const index = parseInt(selected.dataset.index);
                 if (index > 0) {
                     // Swap with previous item
-                    [this.selectedValues[index - 1], this.selectedValues[index]] = 
-                    [this.selectedValues[index], this.selectedValues[index - 1]];
+                    const temp = this.selectedValues[index];
+                    this.selectedValues[index] = this.selectedValues[index - 1];
+                    this.selectedValues[index - 1] = temp;
                     this.render();
-                    // Re-select the item
-                    const newItem = this.selectedBox.querySelector(`[data-value="${value}"]`);
-                    if (newItem) newItem.classList.add('selected');
+                    // Re-select the moved item
+                    const items = this.selectedBox.querySelectorAll('.list-box-item');
+                    if (items[index - 1]) {
+                        items[index - 1].classList.add('selected');
+                    }
                 }
             }
             
@@ -1972,16 +1988,18 @@
                 const selected = this.selectedBox.querySelector('.list-box-item.selected');
                 if (!selected) return;
                 
-                const value = selected.dataset.value;
-                const index = this.selectedValues.indexOf(value);
+                const index = parseInt(selected.dataset.index);
                 if (index < this.selectedValues.length - 1) {
                     // Swap with next item
-                    [this.selectedValues[index], this.selectedValues[index + 1]] = 
-                    [this.selectedValues[index + 1], this.selectedValues[index]];
+                    const temp = this.selectedValues[index];
+                    this.selectedValues[index] = this.selectedValues[index + 1];
+                    this.selectedValues[index + 1] = temp;
                     this.render();
-                    // Re-select the item
-                    const newItem = this.selectedBox.querySelector(`[data-value="${value}"]`);
-                    if (newItem) newItem.classList.add('selected');
+                    // Re-select the moved item
+                    const items = this.selectedBox.querySelectorBox.querySelectorAll('.list-box-item');
+                    if (items[index + 1]) {
+                        items[index + 1].classList.add('selected');
+                    }
                 }
             }
             
@@ -1990,9 +2008,8 @@
                 this.availableBox.innerHTML = '';
                 this.selectedBox.innerHTML = '';
                 
-                // Render available items (not selected)
-                const availableOptions = this.options.filter(opt => !this.selectedValues.includes(opt.v));
-                availableOptions.forEach(opt => {
+                // Render ALL available items (don't filter out selected ones)
+                this.options.forEach(opt => {
                     const item = document.createElement('div');
                     item.className = 'list-box-item';
                     item.dataset.value = opt.v;
@@ -2000,13 +2017,15 @@
                     this.availableBox.appendChild(item);
                 });
                 
-                // Render selected items (in order)
-                this.selectedValues.forEach(value => {
+                // Render selected items (in order, can have duplicates)
+                // Store the index in dataset for proper removal/reordering
+                this.selectedValues.forEach((value, index) => {
                     const opt = this.options.find(o => o.v === value);
                     if (opt) {
                         const item = document.createElement('div');
                         item.className = 'list-box-item';
                         item.dataset.value = opt.v;
+                        item.dataset.index = index; // Store the actual position
                         item.textContent = opt.n;
                         this.selectedBox.appendChild(item);
                     }
