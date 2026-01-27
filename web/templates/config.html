@@ -2184,11 +2184,15 @@
                 .then(response => response.json())
                 .then(boardOptions => {
                     populateBoardSelects(boardOptions);
+                    // Auto-load config from server on page load
+                    loadFromServer();
                 })
                 .catch(err => {
                     console.error("Error fetching boards list:", err);
                     // Even if it fails, populate with an empty list
                     populateBoardSelects([]);
+                    // Still try to load config even if boards fetch failed
+                    loadFromServer();
                 });
 
             const standingsType = document.getElementById('boards_standings_type');
