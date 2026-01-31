@@ -180,6 +180,7 @@
                             button will launch the first.</div>
                         <div class="font-monospace mt-1">
                             <span id="text_local">http://127.0.0.1:5000</span> | <span
+                                id="text_localhost">http://localhost:5000</span> | <span
                                 id="text_host">http://hostname:5000</span>
                         </div>
                     </div>
@@ -322,6 +323,7 @@
             const launchBtnText = document.getElementById('launch_btn_text');
             const statusMsg = document.getElementById('editor_status_msg');
             const textLocal = document.getElementById('text_local');
+            const textLocalhost = document.getElementById('text_localhost');
             const textHost = document.getElementById('text_host');
             let pollInterval = null;
 
@@ -331,9 +333,11 @@
                 const hostname = window.location.hostname;
 
                 const localUrl = `http://127.0.0.1:${port}`;
+                const localhostUrl = `http://localhost:${port}`;
                 const hostUrl = `http://${hostname}:${port}`;
 
                 textLocal.textContent = localUrl;
+                textLocalhost.textContent = localhostUrl;
                 textHost.textContent = hostUrl;
             };
 

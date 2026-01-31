@@ -941,6 +941,22 @@ def launch_logo_editor():
     
     app.logger.info(f"Launching command: {' '.join(command)}")
 
+    # Check for Flask in the target environment
+    try:
+        check_cmd = [python_to_use, '-c', 'import flask']
+        app.logger.info(f"Checking for flask in {python_to_use}...")
+        check_result = subprocess.run(check_cmd, capture_output=True, text=True)
+        
+        if check_result.returncode != 0:
+            error_msg = f"Flask is not installed in the selected environment. Check output: {check_result.stderr or check_result.stdout}"
+            app.logger.error(error_msg)
+            return jsonify({'success': False, 'message': f'Flask is not installed in the selected environment ({venv_path or "default"}). Please install it or choose a valid venv.'}), 400
+            
+    except Exception as e:
+        app.logger.error(f"Failed to check for flask: {e}")
+        # Proceed with caution or fail? Failsafe to fail is probably better to avoid silent failure of the main process
+        return jsonify({'success': False, 'message': f'Failed to validate environment: {e}'}), 500
+
     # Prepare environment for the subprocess
     env = os.environ.copy()
     # Remove Flask reloader variables to prevent KeyError/Conflict in subprocess
