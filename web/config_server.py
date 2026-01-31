@@ -1,3 +1,8 @@
+import gevent
+from gevent import monkey
+# Monkey patch for gevent
+monkey.patch_all()
+
 import os
 import json
 import socket
@@ -11,12 +16,18 @@ import xmlrpc.client
 import urllib.request
 import toml
 from datetime import datetime
+import uuid
+import time
 from flask import Flask, request, jsonify, send_from_directory, send_file
 from richcolorlog import RichColorLogHandler
 import zipfile
 import io
+import threading
+from flask_socketio import SocketIO, emit, disconnect, join_room, leave_room
+import paramiko
 
-__version__ = "2025.12.2"
+
+__version__ = "2026.02.0"
 
 
 def is_frozen():
@@ -169,6 +180,8 @@ SETUP_FILE = '/home/pi/.nhlledportal/SETUP'
 
 # --- Flask App Initialization ---
 app = Flask(__name__, template_folder=TEMPLATES_DIR, static_folder=ASSETS_DIR)
+app.config['SECRET_KEY'] = 'nhl-led-scoreboard-secret!'
+socketio = SocketIO(app, async_mode='gevent')
 
 
 # The root logger is configured by basicConfig.
@@ -246,32 +259,105 @@ def get_version():
         app.logger.error(f"Error reading {VERSION_FILE}: {e}")
         return "Error"
 
-def get_plugin_boards():
-    """Reads plugins.json and returns a list of board names."""
-    
-    # Run check to create plugins.json if it's missing
-    check_and_create_installed_plugins_file()
-    
+def get_builtin_boards():
+    """
+    Scans src/boards/builtins directory for plugin.json files and extracts board IDs.
+    This finds all built-in boards that have configuration.
+    """
     board_names = []
-    try:
-        with open(PLUGINS_INSTALLED_FILE, 'r') as f:
-            data = json.load(f)
-            # Check if 'plugins' key exists and is a list
-            if 'plugins' in data and isinstance(data['plugins'], list):
-                for plugin in data['plugins']:
-                    # Get the name from each plugin object
-                    if 'name' in plugin:
-                        board_names.append(plugin['name'])
-                app.logger.info(f"Loaded {len(board_names)} plugin boards: {board_names}")
-            else:
-                app.logger.warning(f"{PLUGINS_INSTALLED_FILE} is missing 'plugins' key or it's not a list.")
-    except FileNotFoundError:
-        app.logger.info(f"{PLUGINS_INSTALLED_FILE} not found, no custom boards loaded.")
-    except json.JSONDecodeError:
-        app.logger.error(f"Could not decode {PLUGINS_INSTALLED_FILE}. Check for JSON syntax errors.")
-    except Exception as e:
-        app.logger.error(f"Error reading {PLUGINS_INSTALLED_FILE}: {e}")
     
+    # Define the builtin boards directory path
+    boards_dir = os.path.join(SCOREBOARD_DIR, 'src', 'boards', "builtins")
+    
+    if not os.path.exists(boards_dir):
+        app.logger.info(f"Boards directory not found at: {boards_dir}")
+        return board_names
+    
+    app.logger.info(f"Scanning for builtin boards in: {boards_dir}")
+    
+    try:
+        # Iterate over directories in boards_dir
+        for item in os.listdir(boards_dir):
+            board_path = os.path.join(boards_dir, item)
+                
+            if os.path.isdir(board_path):
+                board_json_path = os.path.join(board_path, 'plugin.json')
+                
+                if os.path.exists(board_json_path):
+                    try:
+                        with open(board_json_path, 'r') as f:
+                            data = json.load(f)
+                            
+                            # Check for 'boards' array
+                            if 'boards' in data and isinstance(data['boards'], list):
+                                for board in data['boards']:
+                                    if 'id' in board:
+                                        board_names.append(board['id'])
+                    except json.JSONDecodeError:
+                        app.logger.error(f"Invalid JSON in {board_json_path}")
+                    except Exception as e:
+                        app.logger.error(f"Error reading {board_json_path}: {e}")
+                        
+        app.logger.info(f"Loaded {len(board_names)} builtin boards: {board_names}")
+        
+    except Exception as e:
+        app.logger.error(f"Error scanning builtin boards directory: {e}")
+
+    return board_names
+
+def get_plugin_boards():
+    """
+    Scans src/boards/plugins directory for plugins.json files and extracts board IDs.
+    Skips 'example_board' directory.
+    """
+    board_names = []
+    
+    # Define the plugins directory path
+    plugins_dir = os.path.join(SCOREBOARD_DIR, 'src', 'boards', 'plugins')
+    
+    if not os.path.exists(plugins_dir):
+        app.logger.info(f"Plugins directory not found at: {plugins_dir}")
+        return board_names
+
+    app.logger.info(f"Scanning for plugins in: {plugins_dir}")
+
+    # Walk through the directory structure
+    # We only look one level deep for simplicity as per standard plugin structure, 
+    # or we can walk. The user said "recurse through the directories", but 
+    # typically these are in src/boards/plugins/<plugin_name>/plugins.json
+    
+    try:
+        # iterate over directories in plugins_dir
+        for item in os.listdir(plugins_dir):
+            plugin_path = os.path.join(plugins_dir, item)
+            
+            # Skip example_board
+            if item == 'example_board':
+                continue
+                
+            if os.path.isdir(plugin_path):
+                plugin_json_path = os.path.join(plugin_path, 'plugins.json')
+                
+                if os.path.exists(plugin_json_path):
+                    try:
+                        with open(plugin_json_path, 'r') as f:
+                            data = json.load(f)
+                            
+                            # Check for 'boards' array
+                            if 'boards' in data and isinstance(data['boards'], list):
+                                for board in data['boards']:
+                                    if 'id' in board:
+                                        board_names.append(board['id'])
+                    except json.JSONDecodeError:
+                        app.logger.error(f"Invalid JSON in {plugin_json_path}")
+                    except Exception as e:
+                        app.logger.error(f"Error reading {plugin_json_path}: {e}")
+                        
+        app.logger.info(f"Loaded {len(board_names)} plugin boards: {board_names}")
+        
+    except Exception as e:
+        app.logger.error(f"Error scanning plugins directory: {e}")
+
     return board_names
 
 def check_supervisor():
@@ -387,25 +473,33 @@ def api_status():
 
 @app.route('/api/boards')
 def api_boards():
-    """Provides a list of all available boards (built-in + plugins)."""
+    """Returns a list of available boards in the format [{"v": "id", "n": "Name"}]"""
     
-    # Base list (as requested, "holiday_countdown" is removed)
+    # Hardcoded fallback list - kept for backwards compatibility
+    # If a board appears both here AND in scanned builtin boards, an error will be logged
     base_boards_list = [
-        "wxalert", "wxforecast", "scoreticker", "seriesticker", "standings",
-        "team_summary", "stanley_cup_champions", "christmas",
-        "season_countdown", "clock", "weather", "player_stats", "ovi_tracker", "stats_leaders"
+        'wxalert', 'wxforecast', 'seriesticker',
+        'stanley_cup_champions', 'christmas'
     ]
     
-    # Get custom boards from plugins.json
+    # Get scanned boards
+    builtin_boards = get_builtin_boards()
     plugin_boards = get_plugin_boards()
     
-    # Combine and return the lists
-    all_boards = base_boards_list + plugin_boards
+    # Check for duplicates between hardcoded and scanned builtin boards
+    duplicates = set(base_boards_list) & set(builtin_boards)
+    if duplicates:
+        app.logger.warning(f"Duplicate boards found in hardcoded list and scanned builtin boards: {sorted(duplicates)}. "
+                        f"Remove these from base_boards_list as they are now auto-discovered.")
     
-    # Create the object format the front-end expects
-    board_options = [{"v": name, "n": name.replace("_", " ").title()} for name in all_boards]
+    # Combine all boards and deduplicate (set removes duplicates)
+    all_board_ids = list(set(base_boards_list + builtin_boards + plugin_boards))
+    all_board_ids.sort()  # Sort alphabetically for consistency
     
-    return jsonify(board_options)
+    # Convert to format expected by frontend: [{"v": "id", "n": "Name"}]
+    boards = [{"v": board_id, "n": board_id.replace('_', ' ').title()} for board_id in all_board_ids]
+    
+    return jsonify(boards)
 
 @app.route('/load', methods=['GET'])
 def load_config():
@@ -708,6 +802,256 @@ def sync_plugins():
 # =============================================
 
 # =============================================
+# Logo Editor API Section
+# =============================================
+
+def get_logo_editor_path():
+    """Returns the absolute path to the logo_editor.py script."""
+    return os.path.join(SCOREBOARD_DIR, 'src', 'logo_editor.py')
+
+def check_port_open(port, host='127.0.0.1', timeout=1):
+    """Checks if a port is open on the given host."""
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.settimeout(timeout)
+    try:
+        result = sock.connect_ex((host, port))
+        return result == 0
+    except socket.error as e:
+        app.logger.debug(f"Port check failed: {e}")
+        return False
+    finally:
+        sock.close()
+
+LOGO_EDITOR_STATE_FILE = os.path.join(SCOREBOARD_DIR, 'logo_editor_state.json')
+
+@app.route('/api/logo-editor/status', methods=['GET'])
+def logo_editor_status():
+    """Checks if the logo editor script exists and if it's running."""
+    path = get_logo_editor_path()
+    exists = os.path.exists(path)
+    
+    # Get port from query parameters, default to 5000
+    try:
+        port = int(request.args.get('port', 5000))
+    except ValueError:
+        port = 5000
+
+    port_open = check_port_open(port)
+    
+    # Determine Status
+    status = 'unavailable'
+    if exists:
+        if not port_open:
+            status = 'available'
+            # Cleanup state file if port is closed, as it means it stopped
+            if os.path.exists(LOGO_EDITOR_STATE_FILE):
+                try:
+                    os.remove(LOGO_EDITOR_STATE_FILE)
+                except:
+                    pass
+        else:
+            # Port is open. Check if it's us or something else.
+            status = 'conflict' # Default to conflict unless proven otherwise
+            
+            if os.path.exists(LOGO_EDITOR_STATE_FILE):
+                try:
+                    with open(LOGO_EDITOR_STATE_FILE, 'r') as f:
+                        state = json.load(f)
+                        if state.get('port') == port:
+                            status = 'running'
+                except Exception as e:
+                    app.logger.warning(f"Failed to read logo editor state: {e}")
+            
+            if status == 'conflict':
+                 app.logger.info(f"Port {port} is in use by another process (Conflict).")
+
+    app.logger.debug(f"Logo Editor Status Check: port={port}, exists={exists}, port_open={port_open}, status={status}")
+    
+    return jsonify({
+        'success': True,
+        'available': exists,
+        'running': (status == 'running'), # For backwards compatibility if any
+        'status': status,
+        'port': port
+    })
+
+@app.route('/api/logo-editor/launch', methods=['POST'])
+def launch_logo_editor():
+    """Launches the logo editor script in the background."""
+    app.logger.info("Request received to launch Logo Editor...")
+    
+    path = get_logo_editor_path()
+    if not os.path.exists(path):
+        return jsonify({'success': False, 'message': 'logo_editor.py not found.'}), 404
+
+    # Determine Virtual Environment Path and Port
+    data = request.json or {}
+    venv_path = data.get('venv')
+    try:
+        port = int(data.get('port', 5000))
+    except (ValueError, TypeError):
+        port = 5000
+
+    python_to_use = PYTHON_EXEC
+
+    if venv_path:
+        # If the user provided a venv path, we want to try to use the python inside it
+        # Common locations: venv/bin/python, venv/bin/python3
+        possible_pythons = [
+            os.path.join(venv_path, 'bin', 'python'),
+            os.path.join(venv_path, 'bin', 'python3'),
+            os.path.join(venv_path, 'Scripts', 'python.exe'), # Windows just in case
+        ]
+        
+        found_python = False
+        for p in possible_pythons:
+            if os.path.exists(p):
+                python_to_use = p
+                found_python = True
+                app.logger.info(f"Using venv python: {python_to_use}")
+                break
+        
+        if not found_python:
+            app.logger.warning(f"Could not find python in provided venv: {venv_path}. Falling back to default: {PYTHON_EXEC}")
+
+    elif not venv_path: 
+        # Only guess/default venv path if NOT provided (and thus we are using system python as base for now, unless we change that too)
+        # However, the user request says "if the user provides a virtual environment path, the editor should be launched with the python in that venv"
+        # Logic:
+        # 1. If venv provided -> Clean it, check for python, use that python.
+        # 2. If venv NOT provided -> Default logic (maybe try to guess valid venv for --venv arg, but keep running with default python? 
+        #    Actually, the current code WAS running 'python3 src/logo_editor.py --venv ...' using PYTHON_EXEC.
+        #    So we should stick to using PYTHON_EXEC unless venv is explicit.
+        
+        # Try to guess the user to construct the default path for the argument to pass to the script
+        user = os.environ.get('SUDO_USER') or os.environ.get('USER') or 'pi'
+        venv_path = f"/home/{user}/nhlsb-venv/"
+        app.logger.info(f"No venv provided. Defaulting to: {venv_path}")
+
+    # Construct the command
+    # If we found a specific python in the venv, we use that as the executable.
+    # We still pass --venv to the script because the script likely uses it for other things (like hot-reloading or internal logic).
+    command = [
+        python_to_use, 
+        path, 
+        '--venv', venv_path, 
+        '--dir', SCOREBOARD_DIR,
+        '--port', str(port)
+    ]
+    
+    app.logger.info(f"Launching command: {' '.join(command)}")
+
+    # Check for Flask in the target environment
+    try:
+        check_cmd = [python_to_use, '-c', 'import flask']
+        app.logger.info(f"Checking for flask in {python_to_use}...")
+        check_result = subprocess.run(check_cmd, capture_output=True, text=True)
+        
+        if check_result.returncode != 0:
+            error_msg = f"Flask is not installed in the selected environment. Check output: {check_result.stderr or check_result.stdout}"
+            app.logger.error(error_msg)
+            return jsonify({'success': False, 'message': f'Flask is not installed in the selected environment ({venv_path or "default"}). Please install it or choose a valid venv.'}), 400
+            
+    except Exception as e:
+        app.logger.error(f"Failed to check for flask: {e}")
+        # Proceed with caution or fail? Failsafe to fail is probably better to avoid silent failure of the main process
+        return jsonify({'success': False, 'message': f'Failed to validate environment: {e}'}), 500
+
+    # Prepare environment for the subprocess
+    env = os.environ.copy()
+    # Remove Flask reloader variables to prevent KeyError/Conflict in subprocess
+    env.pop('WERKZEUG_SERVER_FD', None)
+    env.pop('WERKZEUG_RUN_MAIN', None)
+    
+    if venv_path:
+        # Explicitly set VIRTUAL_ENV and update PATH
+        env['VIRTUAL_ENV'] = venv_path
+        # Prepend venv bin to PATH
+        env['PATH'] = os.path.join(venv_path, 'bin') + os.pathsep + env.get('PATH', '')
+        # Unset PYTHONHOME if it exists to avoid conflicts
+        env.pop('PYTHONHOME', None)
+
+    try:
+        # Launch as detached process
+        
+        stdout_dest = subprocess.DEVNULL
+        stderr_dest = subprocess.DEVNULL
+        debug_log_file = None
+
+        if args.debug:
+            try:
+                log_path = os.path.join(SCOREBOARD_DIR, 'logo_editor_debug.log')
+                app.logger.info(f"Debug mode enabled: Redirecting Logo Editor output to {log_path}")
+                debug_log_file = open(log_path, 'w')
+                stdout_dest = debug_log_file
+                stderr_dest = subprocess.STDOUT
+            except Exception as e:
+                app.logger.error(f"Failed to open debug log file: {e}")
+
+        process = subprocess.Popen(
+            command, 
+            cwd=SCOREBOARD_DIR,
+            stdout=stdout_dest,
+            stderr=stderr_dest,
+            start_new_session=True,
+            env=env
+        )
+
+        if debug_log_file:
+            debug_log_file.close()
+        
+        # Save state
+        try:
+            with open(LOGO_EDITOR_STATE_FILE, 'w') as f:
+                json.dump({'port': port, 'pid': process.pid}, f)
+        except Exception as e:
+            app.logger.error(f"Failed to write logo editor state file: {e}")
+
+        return jsonify({'success': True, 'message': 'Logo Editor launch command issued.', 'port': port})
+    except Exception as e:
+        app.logger.error(f"Failed to launch Logo Editor: {e}")
+        return jsonify({'success': False, 'message': f"Failed to launch: {e}"}), 500
+
+@app.route('/api/logo-editor/stop', methods=['POST'])
+def stop_logo_editor():
+    """Stops the running Logo Editor process."""
+    app.logger.info("Request received to stop Logo Editor...")
+    
+    if not os.path.exists(LOGO_EDITOR_STATE_FILE):
+        return jsonify({'success': False, 'message': 'No running Logo Editor tracked.'}), 404
+
+    try:
+        with open(LOGO_EDITOR_STATE_FILE, 'r') as f:
+            state = json.load(f)
+            pid = state.get('pid')
+            
+        if pid:
+            try:
+                # Terminate the process
+                os.kill(pid, 15) # SIGTERM
+                # Optionally wait loop could go here, but for now we just send the signal
+                app.logger.info(f"Sent SIGTERM to process {pid}")
+            except ProcessLookupError:
+                app.logger.warning(f"Process {pid} not found. Cleaning up state file.")
+            except Exception as e:
+                app.logger.error(f"Failed to kill process {pid}: {e}")
+                return jsonify({'success': False, 'message': f"Failed to stop process: {e}"}), 500
+        
+        # Clean up state file on success or if process was missing
+        if os.path.exists(LOGO_EDITOR_STATE_FILE):
+             os.remove(LOGO_EDITOR_STATE_FILE)
+
+        return jsonify({'success': True, 'message': 'Logo Editor stopped.'})
+
+    except Exception as e:
+        app.logger.error(f"Error stopping Logo Editor: {e}")
+        return jsonify({'success': False, 'message': f"An error occurred: {e}"}), 500
+
+# =============================================
+# End of Logo Editor API Section
+# =============================================
+
+# =============================================
 # Supervisor XML-RPC API Endpoints
 # =============================================
 @app.route('/api/supervisor/processes', methods=['GET'])
@@ -886,6 +1230,187 @@ def send_asset(path):
     return send_from_directory(ASSETS_DIR, path) 
 
 
+# =============================================
+# Web Terminal Logic
+# =============================================
+
+# Store active sessions: 
+# { 
+#   token: {
+#       'client': paramiko.SSHClient, 
+#       'shell': channel, 
+#       'sid': str (current connected sid, or None),
+#       'cleanup_timer': gevent.Greenlet (or None)
+#   } 
+# }
+ssh_sessions = {}
+SESSION_TIMEOUT = 600  # 10 minutes
+
+def cleanup_session(token):
+    """
+    Background task to clean up a session after timeout.
+    """
+    app.logger.info(f"Cleanup task started for token {token}...")
+    # Wait for the timeout
+    gevent.sleep(SESSION_TIMEOUT)
+    
+    # Check if still disconnected
+    if token in ssh_sessions:
+        session = ssh_sessions[token]
+        if session.get('sid') is None:
+            app.logger.info(f"Session {token} timed out. Closing connection.")
+            try:
+                session['shell'].close()
+                session['client'].close()
+            except Exception:
+                pass
+            del ssh_sessions[token]
+        else:
+            app.logger.info(f"Session {token} reconnected. Cleanup aborted.")
+
+def read_from_ssh(token, shell):
+    """
+    Background thread/task to read from the SSH shell
+    and emit 'response' events to the specific room (token).
+    """
+    while True:
+        try:
+            # Check if there is data to read
+            if shell.recv_ready():
+                data = shell.recv(1024).decode('utf-8')
+                # Emit to the room named by the token
+                socketio.emit('response', {'data': data}, room=token)
+            
+            # Check if the process has exited
+            if shell.exit_status_ready():
+                break
+            
+            # Use socketio.sleep for async compatibility
+            socketio.sleep(0.01)
+        except Exception as e:
+            app.logger.error(f"Error reading from SSH for token {token}: {e}")
+            break
+
+@app.route('/terminal')
+def terminal_page():
+    """Serves the web terminal page."""
+    return send_from_directory(TEMPLATES_DIR, 'ssh_index.html')
+
+@socketio.on('ssh_login')
+def handle_ssh_login(data):
+    sid = request.sid
+    # HARDCODED ACROSS-THE-BOARD
+    hostname = '127.0.0.1'
+    port = 22
+    
+    username = data.get('username')
+    password = data.get('password')
+
+    try:
+        client = paramiko.SSHClient()
+        client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        
+        # Connect to localhost
+        client.connect(hostname, port=port, username=username, password=password)
+        
+        # 'xterm-256color' is often better for zsh/powerlevel10k than standard 'xterm'
+        shell = client.invoke_shell(term='xterm-256color')
+        
+        # Generate a unique token for this session
+        token = str(uuid.uuid4())
+        
+        ssh_sessions[token] = {
+            'client': client,
+            'shell': shell,
+            'sid': sid,
+            'cleanup_timer': None
+        }
+        
+        # Join the room specific to this session
+        join_room(token)
+        
+        # Start the background task to read output
+        socketio.start_background_task(target=read_from_ssh, token=token, shell=shell)
+        
+        emit('login_status', {'status': 'success', 'token': token})
+        app.logger.info(f"SSH login successful for user '{username}'. Token: {token}")
+        
+    except Exception as e:
+        app.logger.error(f"SSH login failed for user '{username}': {e}")
+        emit('login_status', {'status': 'error', 'message': str(e)})
+
+@socketio.on('ssh_resume')
+def handle_ssh_resume(data):
+    sid = request.sid
+    token = data.get('token')
+    
+    if token in ssh_sessions:
+        session = ssh_sessions[token]
+        
+        # Cancel any cleanup timer if it exists
+        if session.get('cleanup_timer'):
+            try:
+                session['cleanup_timer'].kill()
+            except Exception:
+                pass
+            session['cleanup_timer'] = None
+            
+        # Update SID and join room
+        session['sid'] = sid
+        join_room(token)
+        
+        emit('login_status', {'status': 'success', 'token': token})
+        app.logger.info(f"Session resumed for token {token}")
+        
+        # Determine if shell is active?
+        if not session['shell'].active:
+             emit('response', {'data': '\r\nSession closed by server.\r\n'})
+    else:
+        emit('login_status', {'status': 'error', 'message': 'Session expired or invalid'})
+
+@socketio.on('input')
+def handle_input(message):
+    token = message.get('token') # Client must send token with input
+    if token in ssh_sessions:
+        session = ssh_sessions[token]
+        try:
+            session['shell'].send(message['data'])
+        except Exception as e:
+            app.logger.error(f"Error sending input to SSH for token {token}: {e}")
+
+@socketio.on('disconnect')
+def disconnect_user():
+    sid = request.sid
+    # Find which token belongs to this SID
+    target_token = None
+    for token, session in ssh_sessions.items():
+        if session['sid'] == sid:
+            target_token = token
+            break
+            
+    if target_token:
+        # Mark as disconnected but don't close yet
+        ssh_sessions[target_token]['sid'] = None
+        leave_room(target_token)
+        
+        # Start cleanup timer
+        ssh_sessions[target_token]['cleanup_timer'] = gevent.spawn(cleanup_session, target_token)
+        
+        app.logger.info(f"Client disconnected. Session {target_token} will be kept alive for {SESSION_TIMEOUT}s.")
+
+@socketio.on('ssh_logout')
+def handle_logout(data):
+    token = data.get('token')
+    if token in ssh_sessions:
+        session = ssh_sessions[token]
+        try:
+            session['shell'].close()
+            session['client'].close()
+        except Exception:
+            pass
+        del ssh_sessions[token]
+        app.logger.info(f"User logged out. Session {token} terminated.")
+
 # --- Run the Server ---
 if __name__ == '__main__':
     if args.debug:
@@ -899,5 +1424,5 @@ if __name__ == '__main__':
     app.logger.info(f"Serving Assets from: {ASSETS_DIR}")
     app.logger.info(f"Access at http://[YOUR_PI_IP]:{PORT} in your browser.")
     
-    # Use the debug flag from args
-    app.run(host='0.0.0.0', port=PORT, debug=args.debug)
+    # Use socketio.run instead of app.run
+    socketio.run(app, host='0.0.0.0', port=PORT, debug=args.debug)

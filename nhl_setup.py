@@ -15,7 +15,7 @@ import shutil
 from time import sleep
 import fastjsonschema
 
-SCRIPT_VERSION = "2025.12.0"
+SCRIPT_VERSION = "2026.02.0"
 
 TEAMS = ['Avalanche','Blackhawks','Blues','Blue Jackets','Bruins','Canadiens','Canucks','Capitals','Devils','Ducks','Flames','Flyers',
     'Golden Knights','Hurricanes','Islanders','Jets','Kings','Kraken','Mammoth','Maple Leafs','Lightning','Oilers','Panthers','Penguins','Predators',
@@ -443,6 +443,53 @@ def preferences_settings(default_config,qmark):
 
     return preferences
 
+def get_plugin_boards():
+    """
+    Scans src/boards/plugins directory for plugins.json files and extracts board IDs.
+    Skips 'example_board' directory.
+    """
+    board_names = []
+    
+    # Define the plugins directory path
+    # Using relative path from current working directory as is standard in this script
+    plugins_dir = os.path.join(os.getcwd(), 'src', 'boards', 'plugins')
+    
+    if not os.path.exists(plugins_dir):
+        # Fail silently or log if possible, but this script mostly prints to stdout
+        return board_names
+
+    try:
+        # iterate over directories in plugins_dir
+        for item in os.listdir(plugins_dir):
+            plugin_path = os.path.join(plugins_dir, item)
+            
+            # Skip example_board
+            if item == 'example_board':
+                continue
+                
+            if os.path.isdir(plugin_path):
+                plugin_json_path = os.path.join(plugin_path, 'plugins.json')
+                
+                if os.path.exists(plugin_json_path):
+                    try:
+                        with open(plugin_json_path, 'r') as f:
+                            data = json.load(f)
+                            
+                            # Check for 'boards' array
+                            if 'boards' in data and isinstance(data['boards'], list):
+                                for board in data['boards']:
+                                    if 'id' in board:
+                                        board_names.append(board['id'])
+                    except json.JSONDecodeError:
+                        print(f"Invalid JSON in {plugin_json_path}", RED)
+                    except Exception as e:
+                        print(f"Error reading {plugin_json_path}: {e}", RED)
+        
+    except Exception as e:
+        print(f"Error scanning plugins directory: {e}", RED)
+
+    return board_names
+
 def states_settings(default_config,qmark,setup_type):
     states = STATES
     temp_dict = {}
@@ -464,12 +511,7 @@ def states_settings(default_config,qmark,setup_type):
         board_list = ['clock','weather','wxalert','wxforecast','scoreticker','seriesticker','standings','team_summary','stanley_cup_champions','christmas','season_countdown']
 
         # Check for plugins
-        plugins_board = []
-        if os.path.exists('plugins.lock.json'):
-            with open('plugins.lock.json') as f:
-                plugins = json.load(f)
-                for plugin in plugins['locked']:
-                    plugins_board.append(plugin['name'])
+        plugins_board = get_plugin_boards()
         
         if len(plugins_board) > 0:
             board_list.extend(plugins_board)

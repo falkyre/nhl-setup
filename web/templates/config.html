@@ -1,18 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NLS Control Hub</title>
     <link rel="icon" type="image/x-icon" href="/assets/images/favicon.ico">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    
+
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
-    <link id="prism-light-theme" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism.min.css" rel="stylesheet" />
-    <link id="prism-dark-theme" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
+    <link id="prism-light-theme" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism.min.css"
+        rel="stylesheet" />
+    <link id="prism-dark-theme" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-okaidia.min.css"
+        rel="stylesheet" />
 
-    <link href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/match-braces/prism-match-braces.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/match-braces/prism-match-braces.css"
+        rel="stylesheet" />
     <link href="https://cdn.jsdelivr.net/npm/prismjs-rainbow-braces@1.0.2/prism-rainbow-braces.css" rel="stylesheet" />
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
@@ -21,11 +25,23 @@
 
 
     <style>
-        .form-text { font-size: 0.875em; }
-        .form-label { font-weight: 500; }
-        .accordion-item .accordion-item { border-left: 0; border-right: 0; }
-        .dropdown-item.active { font-weight: bold; }
-        
+        .form-text {
+            font-size: 0.875em;
+        }
+
+        .form-label {
+            font-weight: 500;
+        }
+
+        .accordion-item .accordion-item {
+            border-left: 0;
+            border-right: 0;
+        }
+
+        .dropdown-item.active {
+            font-weight: bold;
+        }
+
         /* ============================================= */
         /* MODIFIED: Logo Header CSS */
         /* ============================================= */
@@ -40,6 +56,7 @@
             border-radius: 0;
             transition: background-color 0.2s ease-in-out, padding 0.2s ease-in-out;
         }
+
         /* Light mode style */
         [data-bs-theme="light"] .logo-header {
             background-color: #ffffff;
@@ -48,38 +65,116 @@
         }
 
         /* NEW: CSS to toggle logos */
-        .logo-light { display: none; }
-        .logo-dark { display: inline-block; }
-        [data-bs-theme="light"] .logo-light { display: inline-block; }
-        [data-bs-theme="light"] .logo-dark { display: none; }
+        .logo-light {
+            display: none;
+        }
+
+        .logo-dark {
+            display: inline-block;
+        }
+
+        [data-bs-theme="light"] .logo-light {
+            display: inline-block;
+        }
+
+        [data-bs-theme="light"] .logo-dark {
+            display: none;
+        }
+
         /* ============================================= */
         
-        #load_from_server { margin-bottom: 0.5rem; }
+        /* Dual Listbox Styles */
+        .dual-listbox-container {
+            display: flex;
+            gap: 0.5rem;
+            align-items: stretch;
+        }
+        .dual-listbox-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .dual-listbox-panel .list-box {
+            flex: 1;
+            min-height: 200px;
+            overflow-y: auto;
+            border: 1px solid var(--bs-border-color);
+            border-radius: 0.375rem;
+            padding: 0.25rem;
+        }
+        .dual-listbox-panel .list-box-item {
+            padding: 0.375rem 0.5rem;
+            cursor: pointer;
+            border-radius: 0.25rem;
+            user-select: none;
+            margin-bottom: 0.125rem;
+        }
+        .dual-listbox-panel .list-box-item:hover {
+            background-color: var(--bs-secondary-bg);
+        }
+        .dual-listbox-panel .list-box-item.selected {
+            background-color: var(--bs-primary);
+            color: white;
+        }
+        .dual-listbox-controls {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0 0.25rem;
+        }
+        .dual-listbox-order-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        @media (max-width: 767px) {
+            .dual-listbox-container {
+                flex-direction: column;
+            }
+            .dual-listbox-controls {
+                flex-direction: row;
+                justify-content: center;
+            }
+        }
+
+        #load_from_server {
+            margin-bottom: 0.5rem;
+        }
+
         @media (min-width: 768px) {
-            #load_from_server { margin-bottom: 0; }
+            #load_from_server {
+                margin-bottom: 0;
+            }
         }
 
         /* Styles for the syntax highlighting block */
         pre[class*="language-"] {
             padding: 1rem;
-            border-radius: 0.375rem; /* Bootstrap's form-control border-radius */
+            border-radius: 0.375rem;
+            /* Bootstrap's form-control border-radius */
             font-family: monospace;
             font-size: 0.9em;
-            max-height: 600px; /* ~30 rows */
+            max-height: 600px;
+            /* ~30 rows */
             overflow: auto;
-            white-space: pre-wrap; /* Wrap long lines */
-            word-break: break-all; /* Break long strings */
+            white-space: pre-wrap;
+            /* Wrap long lines */
+            word-break: break-all;
+            /* Break long strings */
         }
+
         /* Make sure code block has correct background */
         code[class*="language-"] {
             background-color: transparent !important;
-            white-space: pre-wrap; 
+            white-space: pre-wrap;
             word-break: break-all;
         }
     </style>
 
     <script>
-        (function() {
+        (function () {
             // Get light/dark theme elements
             const lightTheme = document.getElementById('prism-light-theme');
             const darkTheme = document.getElementById('prism-dark-theme');
@@ -96,12 +191,12 @@
                     if (darkTheme) darkTheme.disabled = true;
                 }
             };
-            
+
             const savedTheme = localStorage.getItem('theme') || 'auto';
-            
+
             if (savedTheme === 'light' || savedTheme === 'dark') {
                 applyTheme(savedTheme);
-            } else { 
+            } else {
                 // 'auto' mode: check system preference
                 const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
                 applyTheme(prefersDark ? 'dark' : 'light');
@@ -110,16 +205,21 @@
     </script>
 
 </head>
+
 <body class="container my-4">
 
     <div class="d-flex justify-content-end mb-2">
         <div class="dropdown">
-            <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="theme-toggle-button" data-bs-toggle="dropdown" aria-expanded="false">
-                </button>
+            <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="theme-toggle-button"
+                data-bs-toggle="dropdown" aria-expanded="false">
+            </button>
             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="theme-toggle-button">
-                <li><a class="dropdown-item" href="#" data-theme-value="light"><i class="bi bi-sun-fill me-2"></i> Light</a></li>
-                <li><a class="dropdown-item" href="#" data-theme-value="dark"><i class="bi bi-moon-stars-fill me-2"></i> Dark</a></li>
-                <li><a class="dropdown-item" href="#" data-theme-value="auto"><i class="bi bi-circle-half me-2"></i> Auto</a></li>
+                <li><a class="dropdown-item" href="#" data-theme-value="light"><i class="bi bi-sun-fill me-2"></i>
+                        Light</a></li>
+                <li><a class="dropdown-item" href="#" data-theme-value="dark"><i class="bi bi-moon-stars-fill me-2"></i>
+                        Dark</a></li>
+                <li><a class="dropdown-item" href="#" data-theme-value="auto"><i class="bi bi-circle-half me-2"></i>
+                        Auto</a></li>
             </ul>
         </div>
     </div>
@@ -135,10 +235,11 @@
         <a class="nav-link" id="nav-config" href="/config">CONFIGURATOR</a>
         <a class="nav-link" id="nav-plugins" href="/plugins">PLUGINS</a>
         <a class="nav-link" id="nav-utilities" href="/utilities">UTILITIES</a>
+        <a class="nav-link" id="nav-terminal" href="/terminal">TERMINAL</a>
         <a class="nav-link" id="nav-supervisor" href="/supervisor" style="display: none;">SUPERVISOR</a>
     </nav>
     <p class="lead">Fill out the options below, or load the existing server config to edit.</p>
-    
+
     <div class="mb-4 d-flex flex-wrap gap-2">
         <button id="load_from_server" class="btn btn-info">
             <i class="bi bi-arrow-down-square-fill me-2"></i> Load Config From Server
@@ -150,19 +251,21 @@
             </button>
         </form>
     </div>
-    
+
     <form id="config-form">
 
         <div class="accordion" id="mainAccordion">
             <div class="accordion-item">
                 <h2 class="accordion-header" id="headingGeneral">
-                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseGeneral" aria-expanded="true" aria-controls="collapseGeneral">
+                    <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#collapseGeneral" aria-expanded="true" aria-controls="collapseGeneral">
                         <strong>General Settings</strong>
                     </button>
                 </h2>
-                <div id="collapseGeneral" class="accordion-collapse collapse show" aria-labelledby="headingGeneral" data-bs-parent="#mainAccordion">
+                <div id="collapseGeneral" class="accordion-collapse collapse show" aria-labelledby="headingGeneral"
+                    data-bs-parent="#mainAccordion">
                     <div class="accordion-body">
-                        
+
                         <div class="row">
                             <div class="col-md-4 mb-3">
                                 <label for="loglevel" class="form-label">Log Level</label>
@@ -199,13 +302,15 @@
 
             <div class="accordion-item">
                 <h2 class="accordion-header" id="headingPreferences">
-                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePreferences" aria-expanded="false" aria-controls="collapsePreferences">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#collapsePreferences" aria-expanded="false" aria-controls="collapsePreferences">
                         <strong>Preferences</strong>
                     </button>
                 </h2>
-                <div id="collapsePreferences" class="accordion-collapse collapse" aria-labelledby="headingPreferences" data-bs-parent="#mainAccordion">
+                <div id="collapsePreferences" class="accordion-collapse collapse" aria-labelledby="headingPreferences"
+                    data-bs-parent="#mainAccordion">
                     <div class="accordion-body">
-                        
+
                         <div class="mb-3">
                             <label for="pref_teams" class="form-label">Preferred Teams</label>
                             <select id="pref_teams" class="form-select" multiple size="10">
@@ -242,7 +347,8 @@
                                 <option value="Stars">Stars</option>
                                 <option value="Wild">Wild</option>
                             </select>
-                            <div class="form-text">First team is favorite. Hold Ctrl (or Cmd on Mac) to select multiple teams.</div>
+                            <div class="form-text">First team is favorite. Hold Ctrl (or Cmd on Mac) to select multiple
+                                teams.</div>
                         </div>
 
                         <div class="row">
@@ -252,9 +358,10 @@
                                     <a href="#" id="autofill_location_btn" class="small">Autofill Lat/Lon from IP</a>
                                 </label>
                                 <input type="text" class="form-control" id="pref_location" placeholder="Winnipeg, MB">
-                                <div class="form-text">Used by dimmer and weather. E.g., "City,State" or "Lat,Long".</div>
+                                <div class="form-text">Used by dimmer and weather. E.g., "City,State" or "Lat,Long".
+                                </div>
                             </div>
-                            
+
                             <div class="col-md-6 mb-3">
                                 <label for="pref_time_format" class="form-label">Time Format</label>
                                 <select id="pref_time_format" class="form-select">
@@ -273,7 +380,8 @@
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label for="pref_live_game_refresh" class="form-label">Live Refresh Rate (sec)</label>
-                                <input type="number" class="form-control" id="pref_live_game_refresh" value="15" min="10">
+                                <input type="number" class="form-control" id="pref_live_game_refresh" value="15"
+                                    min="10">
                                 <div class="form-text">API poll rate during live games (min 10).</div>
                             </div>
                             <div class="col-md-4 mb-3">
@@ -282,7 +390,7 @@
                                 <div class="form-text">How often shots on goal are updated.</div>
                             </div>
                         </div>
-                        
+
                         <div class_=("mb-3">
                             <label class="form-label">Goal Animations</label>
                             <div class="form-check">
@@ -316,34 +424,195 @@
 
             <div class="accordion-item">
                 <h2 class="accordion-header" id="headingStates">
-                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseStates" aria-expanded="false" aria-controls="collapseStates">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#collapseStates" aria-expanded="false" aria-controls="collapseStates">
                         <strong>States</strong>
                     </button>
                 </h2>
-                <div id="collapseStates" class="accordion-collapse collapse" aria-labelledby="headingStates" data-bs-parent="#mainAccordion">
+                <div id="collapseStates" class="accordion-collapse collapse" aria-labelledby="headingStates"
+                    data-bs-parent="#mainAccordion">
                     <div class="accordion-body">
-                        <p class="form-text">For each state, select the boards you want to display. Hold Ctrl/Cmd to select multiple.</p>
+                        <p class="form-text">For each state, select the boards you want to display. Use the arrow buttons to add/remove boards and reorder them.</p>
                         
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="state_off_day" class="form-label">Off Day Boards</label>
-                                <select id="state_off_day" class="form-select" multiple size="8">
-                                    </select>
+                        <div class="accordion" id="statesAccordion">
+                            <!-- Off Day Boards -->
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="headingStateOffDay">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseStateOffDay" aria-expanded="false" aria-controls="collapseStateOffDay">
+                                        Off Day Boards
+                                    </button>
+                                </h2>
+                                <div id="collapseStateOffDay" class="accordion-collapse collapse" aria-labelledby="headingStateOffDay" data-bs-parent="#statesAccordion">
+                                    <div class="accordion-body">
+                                        <div class="dual-listbox-container" data-dual-listbox="state_off_day">
+                                <div class="dual-listbox-panel">
+                                    <label class="form-label small">Available</label>
+                                    <div class="list-box" data-role="available"></div>
+                                </div>
+                                <div class="dual-listbox-controls">
+                                    <button type="button" class="btn btn-sm btn-outline-primary" data-action="add" title="Add selected">
+                                        <i class="bi bi-chevron-right"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" data-action="add-all" title="Add all">
+                                        <i class="bi bi-chevron-double-right"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" data-action="remove" title="Remove selected">
+                                        <i class="bi bi-chevron-left"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" data-action="remove-all" title="Remove all">
+                                        <i class="bi bi-chevron-double-left"></i>
+                                    </button>
+                                </div>
+                                <div class="dual-listbox-panel">
+                                    <label class="form-label small">Selected (in order)</label>
+                                    <div class="list-box" data-role="selected"></div>
+                                    <div class="dual-listbox-order-controls">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" data-action="move-up" title="Move up">
+                                            <i class="bi bi-arrow-up"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" data-action="move-down" title="Move down">
+                                            <i class="bi bi-arrow-down"></i>
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="state_scheduled" class="form-label">Scheduled Game Boards</label>
-                                <select id="state_scheduled" class="form-select" multiple size="8">
-                                    </select>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="state_intermission" class="form-label">Intermission Boards</label>
-                                <select id="state_intermission" class="form-select" multiple size="8">
-                                    </select>
+
+                            <!-- Scheduled Game Boards -->
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="headingStateScheduled">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseStateScheduled" aria-expanded="false" aria-controls="collapseStateScheduled">
+                                        Scheduled Game Boards
+                                    </button>
+                                </h2>
+                                <div id="collapseStateScheduled" class="accordion-collapse collapse" aria-labelledby="headingStateScheduled" data-bs-parent="#statesAccordion">
+                                    <div class="accordion-body">
+                                        <div class="dual-listbox-container" data-dual-listbox="state_scheduled">
+                                <div class="dual-listbox-panel">
+                                    <label class="form-label small">Available</label>
+                                    <div class="list-box" data-role="available"></div>
+                                </div>
+                                <div class="dual-listbox-controls">
+                                    <button type="button" class="btn btn-sm btn-outline-primary" data-action="add" title="Add selected">
+                                        <i class="bi bi-chevron-right"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" data-action="add-all" title="Add all">
+                                        <i class="bi bi-chevron-double-right"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" data-action="remove" title="Remove selected">
+                                        <i class="bi bi-chevron-left"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" data-action="remove-all" title="Remove all">
+                                        <i class="bi bi-chevron-double-left"></i>
+                                    </button>
+                                </div>
+                                <div class="dual-listbox-panel">
+                                    <label class="form-label small">Selected (in order)</label>
+                                    <div class="list-box" data-role="selected"></div>
+                                    <div class="dual-listbox-order-controls">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" data-action="move-up" title="Move up">
+                                            <i class="bi bi-arrow-up"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" data-action="move-down" title="Move down">
+                                            <i class="bi bi-arrow-down"></i>
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="state_post_game" class="form-label">Post-Game Boards</label>
-                                <select id="state_post_game" class="form-select" multiple size="8">
-                                    </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Intermission Boards -->
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="headingStateIntermission">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseStateIntermission" aria-expanded="false" aria-controls="collapseStateIntermission">
+                                        Intermission Boards
+                                    </button>
+                                </h2>
+                                <div id="collapseStateIntermission" class="accordion-collapse collapse" aria-labelledby="headingStateIntermission" data-bs-parent="#statesAccordion">
+                                    <div class="accordion-body">
+                                        <div class="dual-listbox-container" data-dual-listbox="state_intermission">
+                                <div class="dual-listbox-panel">
+                                    <label class="form-label small">Available</label>
+                                    <div class="list-box" data-role="available"></div>
+                                </div>
+                                <div class="dual-listbox-controls">
+                                    <button type="button" class="btn btn-sm btn-outline-primary" data-action="add" title="Add selected">
+                                        <i class="bi bi-chevron-right"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" data-action="add-all" title="Add all">
+                                        <i class="bi bi-chevron-double-right"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" data-action="remove" title="Remove selected">
+                                        <i class="bi bi-chevron-left"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" data-action="remove-all" title="Remove all">
+                                        <i class="bi bi-chevron-double-left"></i>
+                                    </button>
+                                </div>
+                                <div class="dual-listbox-panel">
+                                    <label class="form-label small">Selected (in order)</label>
+                                    <div class="list-box" data-role="selected"></div>
+                                    <div class="dual-listbox-order-controls">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" data-action="move-up" title="Move up">
+                                            <i class="bi bi-arrow-up"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" data-action="move-down" title="Move down">
+                                            <i class="bi bi-arrow-down"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Post-Game Boards -->
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="headingStatePostGame">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseStatePostGame" aria-expanded="false" aria-controls="collapseStatePostGame">
+                                        Post-Game Boards
+                                    </button>
+                                </h2>
+                                <div id="collapseStatePostGame" class="accordion-collapse collapse" aria-labelledby="headingStatePostGame" data-bs-parent="#statesAccordion">
+                                    <div class="accordion-body">
+                                        <div class="dual-listbox-container" data-dual-listbox="state_post_game">
+                                <div class="dual-listbox-panel">
+                                    <label class="form-label small">Available</label>
+                                    <div class="list-box" data-role="available"></div>
+                                </div>
+                                <div class="dual-listbox-controls">
+                                    <button type="button" class="btn btn-sm btn-outline-primary" data-action="add" title="Add selected">
+                                        <i class="bi bi-chevron-right"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" data-action="add-all" title="Add all">
+                                        <i class="bi bi-chevron-double-right"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" data-action="remove" title="Remove selected">
+                                        <i class="bi bi-chevron-left"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" data-action="remove-all" title="Remove all">
+                                        <i class="bi bi-chevron-double-left"></i>
+                                    </button>
+                                </div>
+                                <div class="dual-listbox-panel">
+                                    <label class="form-label small">Selected (in order)</label>
+                                    <div class="list-box" data-role="selected"></div>
+                                    <div class="dual-listbox-order-controls">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" data-action="move-up" title="Move up">
+                                            <i class="bi bi-arrow-up"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" data-action="move-down" title="Move down">
+                                            <i class="bi bi-arrow-down"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -353,57 +622,73 @@
 
             <div class="accordion-item">
                 <h2 class="accordion-header" id="headingBoards">
-                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseBoards" aria-expanded="false" aria-controls="collapseBoards">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#collapseBoards" aria-expanded="false" aria-controls="collapseBoards">
                         <strong>Board Settings</strong>
                     </button>
                 </h2>
-                <div id="collapseBoards" class="accordion-collapse collapse" aria-labelledby="headingBoards" data-bs-parent="#mainAccordion">
+                <div id="collapseBoards" class="accordion-collapse collapse" aria-labelledby="headingBoards"
+                    data-bs-parent="#mainAccordion">
                     <div class="accordion-body">
-                        
+
                         <div class="accordion" id="boardsAccordion">
                             <div class="accordion-item">
                                 <h2 class="accordion-header" id="headingBoardScoreticker">
-                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseBoardScoreticker" aria-expanded="false" aria-controls="collapseBoardScoreticker">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                        data-bs-target="#collapseBoardScoreticker" aria-expanded="false"
+                                        aria-controls="collapseBoardScoreticker">
                                         Score Ticker
                                     </button>
                                 </h2>
-                                <div id="collapseBoardScoreticker" class="accordion-collapse collapse" aria-labelledby="headingBoardScoreticker" data-bs-parent="#boardsAccordion">
+                                <div id="collapseBoardScoreticker" class="accordion-collapse collapse"
+                                    aria-labelledby="headingBoardScoreticker" data-bs-parent="#boardsAccordion">
                                     <div class="accordion-body">
                                         <div class="mb-3">
-                                            <label for="boards_scoreticker_rotation_rate" class="form-label">Rotation Rate (sec)</label>
-                                            <input type="number" class="form-control" id="boards_scoreticker_rotation_rate" value="5">
+                                            <label for="boards_scoreticker_rotation_rate" class="form-label">Rotation
+                                                Rate (sec)</label>
+                                            <input type="number" class="form-control"
+                                                id="boards_scoreticker_rotation_rate" value="5">
                                             <div class="form-text">Duration each game is shown on screen.</div>
                                         </div>
                                         <div class="form-check mb-3">
-                                            <input class="form-check-input" type="checkbox" id="boards_scoreticker_pref_teams_only" value="">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="boards_scoreticker_pref_teams_only" value="">
                                             <label class="form-check-label" for="boards_scoreticker_pref_teams_only">
                                                 Preferred Teams Only
                                             </label>
-                                            <div class="form-text">Show only games your preferred teams are playing.</div>
+                                            <div class="form-text">Show only games your preferred teams are playing.
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div class="accordion-item">
                                 <h2 class="accordion-header" id="headingBoardSeriesticker">
-                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseBoardSeriesticker" aria-expanded="false" aria-controls="collapseBoardSeriesticker">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                        data-bs-target="#collapseBoardSeriesticker" aria-expanded="false"
+                                        aria-controls="collapseBoardSeriesticker">
                                         Series Ticker
                                     </button>
                                 </h2>
-                                <div id="collapseBoardSeriesticker" class="accordion-collapse collapse" aria-labelledby="headingBoardSeriesticker" data-bs-parent="#boardsAccordion">
+                                <div id="collapseBoardSeriesticker" class="accordion-collapse collapse"
+                                    aria-labelledby="headingBoardSeriesticker" data-bs-parent="#boardsAccordion">
                                     <div class="accordion-body">
                                         <div class="mb-3">
-                                            <label for="boards_seriesticker_rotation_rate" class="form-label">Rotation Rate (sec)</label>
-                                            <input type="number" class="form-control" id="boards_seriesticker_rotation_rate" value="5">
+                                            <label for="boards_seriesticker_rotation_rate" class="form-label">Rotation
+                                                Rate (sec)</label>
+                                            <input type="number" class="form-control"
+                                                id="boards_seriesticker_rotation_rate" value="5">
                                             <div class="form-text">Duration each series is shown on screen.</div>
                                         </div>
                                         <div class="form-check mb-3">
-                                            <input class="form-check-input" type="checkbox" id="boards_seriesticker_pref_teams_only" value="">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="boards_seriesticker_pref_teams_only" value="">
                                             <label class="form-check-label" for="boards_seriesticker_pref_teams_only">
                                                 Preferred Teams Only
                                             </label>
-                                            <div class="form-text">Show only series your preferred teams are part of.</div>
+                                            <div class="form-text">Show only series your preferred teams are part of.
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -411,11 +696,14 @@
 
                             <div class="accordion-item">
                                 <h2 class="accordion-header" id="headingBoardStandings">
-                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseBoardStandings" aria-expanded="false" aria-controls="collapseBoardStandings">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                        data-bs-target="#collapseBoardStandings" aria-expanded="false"
+                                        aria-controls="collapseBoardStandings">
                                         Standings
                                     </button>
                                 </h2>
-                                <div id="collapseBoardStandings" class="accordion-collapse collapse" aria-labelledby="headingBoardStandings" data-bs-parent="#boardsAccordion">
+                                <div id="collapseBoardStandings" class="accordion-collapse collapse"
+                                    aria-labelledby="headingBoardStandings" data-bs-parent="#boardsAccordion">
                                     <div class="accordion-body">
                                         <div class="mb-3">
                                             <label for="boards_standings_type" class="form-label">Standing Type</label>
@@ -426,7 +714,8 @@
                                             </select>
                                         </div>
                                         <div class="form-check mb-3">
-                                            <input class="form-check-input" type="checkbox" id="boards_standings_pref_only" value="">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="boards_standings_pref_only" value="">
                                             <label class="form-check-label" for="boards_standings_pref_only">
                                                 Preferred Standings Only
                                             </label>
@@ -434,14 +723,16 @@
                                         </div>
                                         <div id="preferred_standings_group">
                                             <div class="mb-3" id="conference_section">
-                                                <label for="boards_standings_conference" class="form-label">Preferred Conference</label>
+                                                <label for="boards_standings_conference" class="form-label">Preferred
+                                                    Conference</label>
                                                 <select id="boards_standings_conference" class="form-select">
                                                     <option value="eastern">Eastern</option>
                                                     <option value="western">Western</option>
                                                 </select>
                                             </div>
                                             <div class="mb-3" id="division_section">
-                                                <label for="boards_standings_division" class="form-label">Preferred Division</label>
+                                                <label for="boards_standings_division" class="form-label">Preferred
+                                                    Division</label>
                                                 <select id="boards_standings_division" class="form-select">
                                                     <option value="central">Central</option>
                                                     <option value="atlantic">Atlantic</option>
@@ -451,16 +742,21 @@
                                             </div>
                                         </div>
                                         <div class="mb-3" id="wildcard_limit_section">
-                                            <label for="boards_standings_wildcard_limit" class="form-label">Wildcard Limit</label>
-                                            <input type="number" class="form-control" id="boards_standings_wildcard_limit" value="4" min="1" max="6">
-                                            <div class="form-text">The number of wildcard teams to show (defaults to 4).</div>
+                                            <label for="boards_standings_wildcard_limit" class="form-label">Wildcard
+                                                Limit</label>
+                                            <input type="number" class="form-control"
+                                                id="boards_standings_wildcard_limit" value="4" min="1" max="6">
+                                            <div class="form-text">The number of wildcard teams to show (defaults to 4).
+                                            </div>
                                         </div>
                                         <div class="form-check mb-3">
-                                            <input class="form-check-input" type="checkbox" id="boards_standings_large_font" value="">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="boards_standings_large_font" value="">
                                             <label class="form-check-label" for="boards_standings_large_font">
                                                 Large Font
                                             </label>
-                                            <div class="form-text">Specifies whether to use a larger font for the standings board. Best for 128x64 boards or bigger.</div>
+                                            <div class="form-text">Specifies whether to use a larger font for the
+                                                standings board. Best for 128x64 boards or bigger.</div>
                                         </div>
                                     </div>
                                 </div>
@@ -468,49 +764,64 @@
 
                             <div class="accordion-item">
                                 <h2 class="accordion-header" id="headingBoardClock">
-                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseBoardClock" aria-expanded="false" aria-controls="collapseBoardClock">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                        data-bs-target="#collapseBoardClock" aria-expanded="false"
+                                        aria-controls="collapseBoardClock">
                                         Clock
                                     </button>
                                 </h2>
-                                <div id="collapseBoardClock" class="accordion-collapse collapse" aria-labelledby="headingBoardClock" data-bs-parent="#boardsAccordion">
+                                <div id="collapseBoardClock" class="accordion-collapse collapse"
+                                    aria-labelledby="headingBoardClock" data-bs-parent="#boardsAccordion">
                                     <div class="accordion-body">
                                         <div class="mb-3">
                                             <label for="boards_clock_duration" class="form-label">Duration (sec)</label>
-                                            <input type="number" class="form-control" id="boards_clock_duration" value="60">
+                                            <input type="number" class="form-control" id="boards_clock_duration"
+                                                value="60">
                                             <div class="form-text">How long to show the clock.</div>
                                         </div>
                                         <div class="row">
                                             <div class="col-md-6 mb-3">
                                                 <label for="boards_clock_clock_rgb" class="form-label">Clock RGB</label>
                                                 <div class="input-group">
-                                                    <input type="text" class="form-control" id="boards_clock_clock_rgb" placeholder="255,255,255">
-                                                    <input type="color" class="form-control form-control-color" id="boards_clock_clock_rgb_picker" value="#FFFFFF" title="Choose your color">
+                                                    <input type="text" class="form-control" id="boards_clock_clock_rgb"
+                                                        placeholder="255,255,255">
+                                                    <input type="color" class="form-control form-control-color"
+                                                        id="boards_clock_clock_rgb_picker" value="#FFFFFF"
+                                                        title="Choose your color">
                                                 </div>
-                                                <div class="form-text">R,G,B for clock numbers (if team colors off).</div>
+                                                <div class="form-text">R,G,B for clock numbers (if team colors off).
+                                                </div>
                                             </div>
                                             <div class="col-md-6 mb-3">
                                                 <label for="boards_clock_date_rgb" class="form-label">Date RGB</label>
                                                 <div class="input-group">
-                                                    <input type="text" class="form-control" id="boards_clock_date_rgb" placeholder="200,200,200">
-                                                    <input type="color" class="form-control form-control-color" id="boards_clock_date_rgb_picker" value="#C8C8C8" title="Choose your color">
+                                                    <input type="text" class="form-control" id="boards_clock_date_rgb"
+                                                        placeholder="200,200,200">
+                                                    <input type="color" class="form-control form-control-color"
+                                                        id="boards_clock_date_rgb_picker" value="#C8C8C8"
+                                                        title="Choose your color">
                                                 </div>
-                                                <div class="form-text">R,G,B for date/weather text (if team colors off).</div>
+                                                <div class="form-text">R,G,B for date/weather text (if team colors off).
+                                                </div>
                                             </div>
                                         </div>
                                         <div class="form-check mb-3">
-                                            <input class="form-check-input" type="checkbox" id="boards_clock_pref_team_colors" value="">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="boards_clock_pref_team_colors" value="">
                                             <label class="form-check-label" for="boards_clock_pref_team_colors">
                                                 Use Preferred Team Colors
                                             </label>
                                         </div>
                                         <div class="form-check mb-3">
-                                            <input class="form-check-input" type="checkbox" id="boards_clock_flash_seconds" value="">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="boards_clock_flash_seconds" value="">
                                             <label class="form-check-label" for="boards_clock_flash_seconds">
                                                 Flash Seconds (:)
                                             </label>
                                         </div>
                                         <div class="form-check mb-3">
-                                            <input class="form-check-input" type="checkbox" id="boards_clock_hide_indicator" value="">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="boards_clock_hide_indicator" value="">
                                             <label class="form-check-label" for="boards_clock_hide_indicator">
                                                 Hide 'No Network' Indicator
                                             </label>
@@ -521,26 +832,33 @@
 
                             <div class="accordion-item">
                                 <h2 class="accordion-header" id="headingBoardWeather">
-                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseBoardWeather" aria-expanded="false" aria-controls="collapseBoardWeather">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                        data-bs-target="#collapseBoardWeather" aria-expanded="false"
+                                        aria-controls="collapseBoardWeather">
                                         Weather
                                     </button>
                                 </h2>
-                                <div id="collapseBoardWeather" class="accordion-collapse collapse" aria-labelledby="headingBoardWeather" data-bs-parent="#boardsAccordion">
+                                <div id="collapseBoardWeather" class="accordion-collapse collapse"
+                                    aria-labelledby="headingBoardWeather" data-bs-parent="#boardsAccordion">
                                     <div class="accordion-body">
                                         <div class="form-check mb-3">
-                                            <input class="form-check-input" type="checkbox" id="boards_weather_enabled" value="">
+                                            <input class="form-check-input" type="checkbox" id="boards_weather_enabled"
+                                                value="">
                                             <label class="form-check-label" for="boards_weather_enabled">
                                                 Enable Weather
                                             </label>
                                         </div>
                                         <div class="row">
                                             <div class="col-md-4 mb-3">
-                                                <label for="boards_weather_data_feed" class="form-label">Data Feed</label>
-                                                <input type="text" class="form-control" id="boards_weather_data_feed" placeholder="EC">
+                                                <label for="boards_weather_data_feed" class="form-label">Data
+                                                    Feed</label>
+                                                <input type="text" class="form-control" id="boards_weather_data_feed"
+                                                    placeholder="EC">
                                                 <div class="form-text">e.g., EC or OWM.</div>
                                             </div>
                                             <div class="col-md-8 mb-3">
-                                                <label for="boards_weather_owm_apikey" class="form-label">OpenWeatherMap API Key</label>
+                                                <label for="boards_weather_owm_apikey" class="form-label">OpenWeatherMap
+                                                    API Key</label>
                                                 <input type="text" class="form-control" id="boards_weather_owm_apikey">
                                                 <div class="form-text">Required if Data Feed is OWM.</div>
                                             </div>
@@ -548,50 +866,63 @@
                                         <div class="row">
                                             <div class="col-md-4 mb-3">
                                                 <label for="boards_weather_view" class="form-label">View</label>
-                                                <input type="text" class="form-control" id="boards_weather_view" value="full">
+                                                <input type="text" class="form-control" id="boards_weather_view"
+                                                    value="full">
                                                 <div class="form-text">full or summary.</div>
                                             </div>
                                             <div class="col-md-4 mb-3">
                                                 <label for="boards_weather_units" class="form-label">Units</label>
-                                                <input type="text" class="form-control" id="boards_weather_units" value="metric">
+                                                <input type="text" class="form-control" id="boards_weather_units"
+                                                    value="metric">
                                                 <div class="form-text">metric or imperial.</div>
                                             </div>
                                             <div class="col-md-4 mb-3">
-                                                <label for="boards_weather_duration" class="form-label">Duration (sec)</label>
-                                                <input type="number" class="form-control" id="boards_weather_duration" value="30">
+                                                <label for="boards_weather_duration" class="form-label">Duration
+                                                    (sec)</label>
+                                                <input type="number" class="form-control" id="boards_weather_duration"
+                                                    value="30">
                                                 <div class="form-text">Time to flip through pages (min 30).</div>
                                             </div>
                                         </div>
                                         <div class="row">
                                             <div class="col-md-4 mb-3">
-                                                <label for="boards_weather_update_freq" class="form-label">Update Freq (min)</label>
-                                                <input type="number" class="form-control" id="boards_weather_update_freq" value="5" min=""1">
+                                                <label for="boards_weather_update_freq" class="form-label">Update Freq
+                                                    (min)</label>
+                                                <input type="number" class="form-control"
+                                                    id="boards_weather_update_freq" value="5" min="" 1">
                                             </div>
                                             <div class="col-md-4 mb-3">
-                                                <label for="boards_weather_forecast_days" class="form-label">Forecast Days</label>
-                                                <input type="number" class="form-control" id="boards_weather_forecast_days" value="3" min="1" max="3">
+                                                <label for="boards_weather_forecast_days" class="form-label">Forecast
+                                                    Days</label>
+                                                <input type="number" class="form-control"
+                                                    id="boards_weather_forecast_days" value="3" min="1" max="3">
                                                 <div class="form-text">Max 3.</div>
                                             </div>
                                             <div class="col-md-4 mb-3">
-                                                <label for="boards_weather_forecast_update" class="form-label">Forecast Update (hours)</label>
-                                                <input type="number" class="form-control" id="boards_weather_forecast_update" value="3" min="1">
+                                                <label for="boards_weather_forecast_update" class="form-label">Forecast
+                                                    Update (hours)</label>
+                                                <input type="number" class="form-control"
+                                                    id="boards_weather_forecast_update" value="3" min="1">
                                             </div>
                                         </div>
                                         <div class="form-check mb-3">
-                                            <input class="form-check-input" type="checkbox" id="boards_weather_show_on_clock" value="">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="boards_weather_show_on_clock" value="">
                                             <label class="form-check-label" for="boards_weather_show_on_clock">
                                                 Show on Clock
                                             </label>
                                             <div class="form-text">Add temp/humidity to clock board.</div>
                                         </div>
                                         <div class="form-check mb-3">
-                                            <input class="form-check-input" type="checkbox" id="boards_weather_forecast_enabled" value="">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="boards_weather_forecast_enabled" value="">
                                             <label class="form-check-label" for="boards_weather_forecast_enabled">
                                                 Enable Forecast
                                             </label>
                                         </div>
                                         <div class="form-check mb-3">
-                                            <input class="form-check-input" type="checkbox" id="boards_weather_forecast_show_today" value="">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="boards_weather_forecast_show_today" value="">
                                             <label class="form-check-label" for="boards_weather_forecast_show_today">
                                                 Show Today in Forecast
                                             </label>
@@ -599,58 +930,72 @@
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div class="accordion-item">
                                 <h2 class="accordion-header" id="headingBoardWxalert">
-                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseBoardWxalert" aria-expanded="false" aria-controls="collapseBoardWxalert">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                        data-bs-target="#collapseBoardWxalert" aria-expanded="false"
+                                        aria-controls="collapseBoardWxalert">
                                         Weather Alert (wxalert)
                                     </button>
                                 </h2>
-                                <div id="collapseBoardWxalert" class="accordion-collapse collapse" aria-labelledby="headingBoardWxalert" data-bs-parent="#boardsAccordion">
+                                <div id="collapseBoardWxalert" class="accordion-collapse collapse"
+                                    aria-labelledby="headingBoardWxalert" data-bs-parent="#boardsAccordion">
                                     <div class="accordion-body">
                                         <div class="form-check mb-3">
-                                            <input class="form-check-input" type="checkbox" id="boards_wxalert_show_alerts" value="">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="boards_wxalert_show_alerts" value="">
                                             <label class="form-check-label" for="boards_wxalert_show_alerts">
                                                 Show Alerts
                                             </label>
                                         </div>
                                         <div class="row">
                                             <div class="col-md-4 mb-3">
-                                                <label for="boards_wxalert_alert_feed" class="form-label">Alert Feed</label>
-                                                <input type="text" class="form-control" id="boards_wxalert_alert_feed" placeholder="EC">
+                                                <label for="boards_wxalert_alert_feed" class="form-label">Alert
+                                                    Feed</label>
+                                                <input type="text" class="form-control" id="boards_wxalert_alert_feed"
+                                                    placeholder="EC">
                                                 <div class="form-text">e.g., EC or NWS.</div>
                                             </div>
                                             <div class="col-md-4 mb-3">
-                                                <label for="boards_wxalert_update_freq" class="form-label">Update Freq (min)</label>
-                                                <input type="number" class="form-control" id="boards_wxalert_update_freq" value="5">
+                                                <label for="boards_wxalert_update_freq" class="form-label">Update Freq
+                                                    (min)</label>
+                                                <input type="number" class="form-control"
+                                                    id="boards_wxalert_update_freq" value="5">
                                             </div>
                                             <div class="col-md-4 mb-3">
-                                                <label for="boards_wxalert_alert_duration" class="form-label">Alert Duration (sec)</label>
-                                                <input type="number" class="form-control" id="boards_wxalert_alert_duration" value="5">
+                                                <label for="boards_wxalert_alert_duration" class="form-label">Alert
+                                                    Duration (sec)</label>
+                                                <input type="number" class="form-control"
+                                                    id="boards_wxalert_alert_duration" value="5">
                                             </div>
                                         </div>
                                         <div class="form-check mb-3">
-                                            <input class="form-check-input" type="checkbox" id="boards_wxalert_nws_show_expire" value="">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="boards_wxalert_nws_show_expire" value="">
                                             <label class="form-check-label" for="boards_wxalert_nws_show_expire">
                                                 NWS: Show Expire Time
                                             </label>
                                             <div class="form-text">If unchecked, shows effective time.</div>
                                         </div>
                                         <div class="form-check mb-3">
-                                            <input class="form-check-input" type="checkbox" id="boards_wxalert_alert_title" value="">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="boards_wxalert_alert_title" value="">
                                             <label class="form-check-label" for="boards_wxalert_alert_title">
                                                 Show Alert Title
                                             </label>
                                             <div class="form-text">Show WARNING/WATCH/ADVISORY on alert page.</div>
                                         </div>
                                         <div class="form-check mb-3">
-                                            <input class="form-check-input" type="checkbox" id="boards_wxalert_scroll_alert" value="">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="boards_wxalert_scroll_alert" value="">
                                             <label class="form-check-label" for="boards_wxalert_scroll_alert">
                                                 Scroll Alert Text
                                             </label>
                                         </div>
                                         <div class="form-check mb-3">
-                                            <input class="form-check-input" type="checkbox" id="boards_wxalert_show_on_clock" value="">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="boards_wxalert_show_on_clock" value="">
                                             <label class="form-check-label" for="boards_wxalert_show_on_clock">
                                                 Show on Clock
                                             </label>
@@ -659,8 +1004,8 @@
                                     </div>
                                 </div>
                             </div>
-                            
-                        </div> 
+
+                        </div>
 
                     </div>
                 </div>
@@ -668,111 +1013,139 @@
 
             <div class="accordion-item">
                 <h2 class="accordion-header" id="headingSbio">
-                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSbio" aria-expanded="false" aria-controls="collapseSbio">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#collapseSbio" aria-expanded="false" aria-controls="collapseSbio">
                         <strong>Scoreboard IO (sbio)</strong>
                     </button>
                 </h2>
-                <div id="collapseSbio" class="accordion-collapse collapse" aria-labelledby="headingSbio" data-bs-parent="#mainAccordion">
+                <div id="collapseSbio" class="accordion-collapse collapse" aria-labelledby="headingSbio"
+                    data-bs-parent="#mainAccordion">
                     <div class="accordion-body">
-                        
+
                         <div class="accordion" id="sbioAccordion">
                             <div class="accordion-item">
                                 <h2 class="accordion-header" id="headingSbioMqtt">
-                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSbioMqtt" aria-expanded="false" aria-controls="collapseSbioMqtt">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                        data-bs-target="#collapseSbioMqtt" aria-expanded="false"
+                                        aria-controls="collapseSbioMqtt">
                                         MQTT
                                     </button>
                                 </h2>
-                                <div id="collapseSbioMqtt" class="accordion-collapse collapse" aria-labelledby="headingSbioMqtt" data-bs-parent="#sbioAccordion">
+                                <div id="collapseSbioMqtt" class="accordion-collapse collapse"
+                                    aria-labelledby="headingSbioMqtt" data-bs-parent="#sbioAccordion">
                                     <div class="accordion-body">
                                         <div class="form-check mb-3">
-                                            <input class="form-check-input" type="checkbox" id="sbio_mqtt_enabled" value="">
+                                            <input class="form-check-input" type="checkbox" id="sbio_mqtt_enabled"
+                                                value="">
                                             <label class="form-check-label" for="sbio_mqtt_enabled">
                                                 Enable MQTT
                                             </label>
                                         </div>
                                         <div id="mqtt-test-container" class="mb-3 align-items-center d-none">
-                                            <button type="button" class="btn btn-secondary btn-sm" id="test_mqtt_btn">Test Connection</button>
-                                            <span id="mqtt-status-indicator" class="ms-2" style="width: 1rem; height: 1rem; border-radius: 50%; background-color: #6c757d; transition: background-color 0.3s;"></span>
+                                            <button type="button" class="btn btn-secondary btn-sm"
+                                                id="test_mqtt_btn">Test Connection</button>
+                                            <span id="mqtt-status-indicator" class="ms-2"
+                                                style="width: 1rem; height: 1rem; border-radius: 50%; background-color: #6c757d; transition: background-color 0.3s;"></span>
                                         </div>
                                         <div class="row">
                                             <div class="col-md-8 mb-3">
                                                 <label for="sbio_mqtt_broker" class="form-label">Broker</label>
-                                                <input type="text" class="form-control" id="sbio_mqtt_broker" placeholder="192.168.1.100">
+                                                <input type="text" class="form-control" id="sbio_mqtt_broker"
+                                                    placeholder="192.168.1.100">
                                                 <div class="form-text">Hostname or IP address of MQTT server.</div>
                                             </div>
                                             <div class="col-md-4 mb-3">
                                                 <label for="sbio_mqtt_port" class="form-label">Port</label>
-                                                <input type="number" class="form-control" id="sbio_mqtt_port" value="1883">
+                                                <input type="number" class="form-control" id="sbio_mqtt_port"
+                                                    value="1883">
                                                 <div class="form-text">MQTT server port.</div>
                                             </div>
                                         </div>
                                         <div class="row">
                                             <div class="col-md-6 mb-3">
                                                 <label for="sbio_mqtt_username" class="form-label">Username</label>
-                                                <input type="text" class="form-control" id="sbio_mqtt_username" placeholder="Optional">
+                                                <input type="text" class="form-control" id="sbio_mqtt_username"
+                                                    placeholder="Optional">
                                             </div>
                                             <div class="col-md-6 mb-3">
                                                 <label for="sbio_mqtt_password" class="form-label">Password</label>
-                                                <input type="password" class="form-control" id="sbio_mqtt_password" placeholder="Optional">
+                                                <input type="password" class="form-control" id="sbio_mqtt_password"
+                                                    placeholder="Optional">
                                             </div>
                                         </div>
                                         <div class="mb-3">
                                             <label for="sbio_mqtt_main_topic" class="form-label">Main Topic</label>
-                                            <input type="text" class="form-control" id="sbio_mqtt_main_topic" value="scoreboard">
+                                            <input type="text" class="form-control" id="sbio_mqtt_main_topic"
+                                                value="scoreboard">
                                             <div class="form-text">The main topic for the scoreboard.</div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div class="accordion-item">
                                 <h2 class="accordion-header" id="headingSbioScreensaver">
-                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSbioScreensaver" aria-expanded="false" aria-controls="collapseSbioScreensaver">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                        data-bs-target="#collapseSbioScreensaver" aria-expanded="false"
+                                        aria-controls="collapseSbioScreensaver">
                                         Screensaver
                                     </button>
                                 </h2>
-                                <div id="collapseSbioScreensaver" class="accordion-collapse collapse" aria-labelledby="headingSbioScreensaver" data-bs-parent="#sbioAccordion">
+                                <div id="collapseSbioScreensaver" class="accordion-collapse collapse"
+                                    aria-labelledby="headingSbioScreensaver" data-bs-parent="#sbioAccordion">
                                     <div class="accordion-body">
                                         <div class="form-check mb-3">
-                                            <input class="form-check-input" type="checkbox" id="sbio_screensaver_enabled" value="">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="sbio_screensaver_enabled" value="">
                                             <label class="form-check-label" for="sbio_screensaver_enabled">
                                                 Enable Screensaver
                                             </label>
                                         </div>
                                         <div class="row">
                                             <div class="col-md-6 mb-3">
-                                                <label for="sbio_screensaver_start" class="form-label">Start Time (24h)</label>
-                                                <input type="time" class="form-control" id="sbio_screensaver_start" value="22:00">
+                                                <label for="sbio_screensaver_start" class="form-label">Start Time
+                                                    (24h)</label>
+                                                <input type="time" class="form-control" id="sbio_screensaver_start"
+                                                    value="22:00">
                                             </div>
                                             <div class="col-md-6 mb-3">
-                                                <label for="sbio_screensaver_stop" class="form-label">Stop Time (24h)</label>
-                                                <input type="time" class="form-control" id="sbio_screensaver_stop" value="06:00">
+                                                <label for="sbio_screensaver_stop" class="form-label">Stop Time
+                                                    (24h)</label>
+                                                <input type="time" class="form-control" id="sbio_screensaver_stop"
+                                                    value="06:00">
                                             </div>
                                         </div>
                                         <div class="row">
                                             <div class="col-md-4 mb-3">
-                                                <label for="sbio_screensaver_pin" class="form-label">Motion Sensor Pin</label>
-                                                <input type="number" class="form-control" id="sbio_screensaver_pin" value="24">
+                                                <label for="sbio_screensaver_pin" class="form-label">Motion Sensor
+                                                    Pin</label>
+                                                <input type="number" class="form-control" id="sbio_screensaver_pin"
+                                                    value="24">
                                             </div>
                                             <div class="col-md-4 mb-3">
-                                                <label for="sbio_screensaver_delay" class="form-label">Motion Delay (sec)</label>
-                                                <input type="number" class="form-control" id="sbio_screensaver_delay" value="30">
+                                                <label for="sbio_screensaver_delay" class="form-label">Motion Delay
+                                                    (sec)</label>
+                                                <input type="number" class="form-control" id="sbio_screensaver_delay"
+                                                    value="30">
                                             </div>
                                         </div>
                                         <div class="form-check mb-3">
-                                            <input class="form-check-input" type="checkbox" id="sbio_screensaver_animations" value="">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="sbio_screensaver_animations" value="">
                                             <label class="form-check-label" for="sbio_screensaver_animations">
                                                 Show Animations
                                             </label>
                                         </div>
                                         <div class="form-check mb-3">
-                                            <input class="form-check-input" type="checkbox" id="sbio_screensaver_data_updates" value="">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="sbio_screensaver_data_updates" value="">
                                             <label class="form-check-label" for="sbio_screensaver_data_updates">
                                                 Update Data While Active
                                             </label>
                                         </div>
                                         <div class="form-check mb-3">
-                                            <input class="form-check-input" type="checkbox" id="sbio_screensaver_motionsensor" value="">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="sbio_screensaver_motionsensor" value="">
                                             <label class="form-check-label" for="sbio_screensaver_motionsensor">
                                                 Use Motion Sensor
                                             </label>
@@ -780,17 +1153,21 @@
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div class="accordion-item">
                                 <h2 class="accordion-header" id="headingSbioDimmer">
-                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSbioDimmer" aria-expanded="false" aria-controls="collapseSbioDimmer">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                        data-bs-target="#collapseSbioDimmer" aria-expanded="false"
+                                        aria-controls="collapseSbioDimmer">
                                         Dimmer
                                     </button>
                                 </h2>
-                                <div id="collapseSbioDimmer" class="accordion-collapse collapse" aria-labelledby="headingSbioDimmer" data-bs-parent="#sbioAccordion">
+                                <div id="collapseSbioDimmer" class="accordion-collapse collapse"
+                                    aria-labelledby="headingSbioDimmer" data-bs-parent="#sbioAccordion">
                                     <div class="accordion-body">
                                         <div class="form-check mb-3">
-                                            <input class="form-check-input" type="checkbox" id="sbio_dimmer_enabled" value="">
+                                            <input class="form-check-input" type="checkbox" id="sbio_dimmer_enabled"
+                                                value="">
                                             <label class="form-check-label" for="sbio_dimmer_enabled">
                                                 Enable Dimmer
                                             </label>
@@ -813,52 +1190,68 @@
                                         </div>
                                         <div class="row">
                                             <div class="col-md-6 mb-3">
-                                                <label for="sbio_dimmer_sunrise_brightness" class="form-label">Sunrise/Day Brightness</label>
-                                                <input type="number" class="form-control" id="sbio_dimmer_sunrise_brightness" value="40">
+                                                <label for="sbio_dimmer_sunrise_brightness"
+                                                    class="form-label">Sunrise/Day Brightness</label>
+                                                <input type="number" class="form-control"
+                                                    id="sbio_dimmer_sunrise_brightness" value="40">
                                             </div>
                                             <div class="col-md-6 mb-3">
-                                                <label for="sbio_dimmer_sunset_brightness" class="form-label">Sunset/Night Brightness</label>
-                                                <input type="number" class="form-control" id="sbio_dimmer_sunset_brightness" value="5">
+                                                <label for="sbio_dimmer_sunset_brightness"
+                                                    class="form-label">Sunset/Night Brightness</label>
+                                                <input type="number" class="form-control"
+                                                    id="sbio_dimmer_sunset_brightness" value="5">
                                             </div>
                                         </div>
                                         <div class="row">
                                             <div class="col-md-4 mb-3">
-                                                <label for="sbio_dimmer_daytime" class="form-label">Daytime (Software)</label>
+                                                <label for="sbio_dimmer_daytime" class="form-label">Daytime
+                                                    (Software)</label>
                                                 <input type="time" class="form-control" id="sbio_dimmer_daytime">
                                             </div>
                                             <div class="col-md-4 mb-3">
-                                                <label for="sbio_dimmer_nighttime" class="form-label">Nighttime (Software)</label>
+                                                <label for="sbio_dimmer_nighttime" class="form-label">Nighttime
+                                                    (Software)</label>
                                                 <input type="time" class="form-control" id="sbio_dimmer_nighttime">
                                             </div>
                                             <div class="col-md-4 mb-3">
-                                                <label for="sbio_dimmer_offset" class="form-label">Sunrise/Sunset Offset (min)</label>
-                                                <input type="number" class="form-control" id="sbio_dimmer_offset" value="0">
+                                                <label for="sbio_dimmer_offset" class="form-label">Sunrise/Sunset Offset
+                                                    (min)</label>
+                                                <input type="number" class="form-control" id="sbio_dimmer_offset"
+                                                    value="0">
                                             </div>
                                         </div>
                                         <div class="row">
                                             <div class="col-md-4 mb-3">
-                                                <label for="sbio_dimmer_frequency" class="form-label">Check Freq (min)</label>
-                                                <input type="number" class="form-control" id="sbio_dimmer_frequency" value="5">
+                                                <label for="sbio_dimmer_frequency" class="form-label">Check Freq
+                                                    (min)</label>
+                                                <input type="number" class="form-control" id="sbio_dimmer_frequency"
+                                                    value="5">
                                             </div>
                                             <div class="col-md-4 mb-3">
-                                                <label for="sbio_dimmer_light_level_lux" class="form-label">LUX Threshold (Hardware)</label>
-                                                <input type="number" class="form-control" id="sbio_dimmer_light_level_lux" value="10">
+                                                <label for="sbio_dimmer_light_level_lux" class="form-label">LUX
+                                                    Threshold (Hardware)</label>
+                                                <input type="number" class="form-control"
+                                                    id="sbio_dimmer_light_level_lux" value="10">
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div class="accordion-item">
                                 <h2 class="accordion-header" id="headingSbioPushbutton">
-                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSbioPushbutton" aria-expanded="false" aria-controls="collapseSbioPushbutton">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                        data-bs-target="#collapseSbioPushbutton" aria-expanded="false"
+                                        aria-controls="collapseSbioPushbutton">
                                         Pushbutton
                                     </button>
                                 </h2>
-                                <div id="collapseSbioPushbutton" class="accordion-collapse collapse" aria-labelledby="headingSbioPushbutton" data-bs-parent="#sbioAccordion">
+                                <div id="collapseSbioPushbutton" class="accordion-collapse collapse"
+                                    aria-labelledby="headingSbioPushbutton" data-bs-parent="#sbioAccordion">
                                     <div class="accordion-body">
                                         <div class="form-check mb-3">
-                                            <input class="form-check-input" type="checkbox" id="sbio_pushbutton_enabled" value="">
+                                            <input class="form-check-input" type="checkbox" id="sbio_pushbutton_enabled"
+                                                value="">
                                             <label class="form-check-label" for="sbio_pushbutton_enabled">
                                                 Enable Pushbutton
                                             </label>
@@ -866,53 +1259,71 @@
                                         <div class="row">
                                             <div class="col-md-6 mb-3">
                                                 <label for="sbio_pushbutton_pin" class="form-label">GPIO Pin</label>
-                                                <input type="number" class="form-control" id="sbio_pushbutton_pin" value="25">
+                                                <input type="number" class="form-control" id="sbio_pushbutton_pin"
+                                                    value="25">
                                             </div>
                                             <div class="col-md-6 mb-3">
-                                                <label for="sbio_pushbutton_state_triggered1" class="form-label">Board on Press</label>
-                                                <input type="text" class="form-control" id="sbio_pushbutton_state_triggered1" value="clock">
+                                                <label for="sbio_pushbutton_state_triggered1" class="form-label">Board
+                                                    on Press</label>
+                                                <input type="text" class="form-control"
+                                                    id="sbio_pushbutton_state_triggered1" value="clock">
                                                 <div class="form-text">e.g., clock, weather, standings.</div>
                                             </div>
                                         </div>
                                         <div class="row">
                                             <div class="col-md-6 mb-3">
-                                                <label for="sbio_pushbutton_reboot_duration" class="form-label">Reboot Hold (sec)</label>
-                                                <input type="number" class="form-control" id="sbio_pushbutton_reboot_duration" value="2">
+                                                <label for="sbio_pushbutton_reboot_duration" class="form-label">Reboot
+                                                    Hold (sec)</label>
+                                                <input type="number" class="form-control"
+                                                    id="sbio_pushbutton_reboot_duration" value="2">
                                             </div>
                                             <div class="col-md-6 mb-3">
-                                                <label for="sbio_pushbutton_poweroff_duration" class="form-label">Poweroff Hold (sec)</label>
-                                                <input type="number" class="form-control" id="sbio_pushbutton_poweroff_duration" value="10">
+                                                <label for="sbio_pushbutton_poweroff_duration"
+                                                    class="form-label">Poweroff Hold (sec)</label>
+                                                <input type="number" class="form-control"
+                                                    id="sbio_pushbutton_poweroff_duration" value="10">
                                             </div>
                                         </div>
                                         <div class="mb-3">
-                                            <label for="sbio_pushbutton_state_triggered1_process" class="form-label">Process on Press (Optional)</label>
-                                            <input type="text" class="form-control" id="sbio_pushbutton_state_triggered1_process">
+                                            <label for="sbio_pushbutton_state_triggered1_process"
+                                                class="form-label">Process on Press (Optional)</label>
+                                            <input type="text" class="form-control"
+                                                id="sbio_pushbutton_state_triggered1_process">
                                             <div class="form-text">Full path to script to run on single press.</div>
                                         </div>
                                         <div class="mb-3">
-                                            <label for="sbio_pushbutton_reboot_override_process" class="form-label">Reboot Override (Optional)</label>
-                                            <input type="text" class="form-control" id="sbio_pushbutton_reboot_override_process">
-                                            <div class="form-text">Full path to script to run instead of /sbin/reboot.</div>
+                                            <label for="sbio_pushbutton_reboot_override_process"
+                                                class="form-label">Reboot Override (Optional)</label>
+                                            <input type="text" class="form-control"
+                                                id="sbio_pushbutton_reboot_override_process">
+                                            <div class="form-text">Full path to script to run instead of /sbin/reboot.
+                                            </div>
                                         </div>
                                         <div class="mb-3">
-                                            <label for="sbio_pushbutton_poweroff_override_process" class="form-label">Poweroff Override (Optional)</label>
-                                            <input type="text" class="form-control" id="sbio_pushbutton_poweroff_override_process">
-                                            <div class="form-text">Full path to script to run instead of /sbin/poweroff.</div>
+                                            <label for="sbio_pushbutton_poweroff_override_process"
+                                                class="form-label">Poweroff Override (Optional)</label>
+                                            <input type="text" class="form-control"
+                                                id="sbio_pushbutton_poweroff_override_process">
+                                            <div class="form-text">Full path to script to run instead of /sbin/poweroff.
+                                            </div>
                                         </div>
                                         <div class="form-check mb-3">
-                                            <input class="form-check-input" type="checkbox" id="sbio_pushbutton_bonnet" value="">
+                                            <input class="form-check-input" type="checkbox" id="sbio_pushbutton_bonnet"
+                                                value="">
                                             <label class="form-check-label" for="sbio_pushbutton_bonnet">
                                                 Using Adafruit Bonnet (not HAT)
                                             </label>
                                         </div>
                                         <div class="form-check mb-3">
-                                            <input class="form-check-input" type="checkbox" id="sbio_pushbutton_display_reboot" value="">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="sbio_pushbutton_display_reboot" value="">
                                             <label class="form-check-label" for="sbio_pushbutton_display_reboot">
                                                 Display "REBOOT" on reboot
                                             </label>
                                         </div>
                                         <div class="form-check mb-3">
-                                            <input class="form-check-input" type="checkbox" id="sbio_pushbutton_display_halt" value="">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="sbio_pushbutton_display_halt" value="">
                                             <label class="form-check-label" for="sbio_pushbutton_display_halt">
                                                 Display "! HALT !" on poweroff
                                             </label>
@@ -920,24 +1331,26 @@
                                     </div>
                                 </div>
                             </div>
-                            
-                        </div> 
+
+                        </div>
 
                     </div>
                 </div>
             </div>
 
-        </div> </form>
+        </div>
+    </form>
 
     <hr class="my-4">
 
-    <button id="generate_json" class="btn btn-primary btn-lg" data-bs-toggle="tooltip" data-bs-placement="top" title="Once JSON generated, press Save to Server to save it">Generate Config JSON</button>
+    <button id="generate_json" class="btn btn-primary btn-lg" data-bs-toggle="tooltip" data-bs-placement="top"
+        title="Once JSON generated, press Save to Server to save it">Generate Config JSON</button>
     <button id="save_to_server" class="btn btn-success btn-lg ms-2" disabled>Save to Server</button>
 
     <div id="output_section" style="display: none;">
         <h3 class="mt-5">Generated <code>config.json</code></h3>
         <p>Click "Generate" to populate this field, or "Load" to see the server's current config.</p>
-        
+
         <pre class="match-braces rainbow-braces"><code id="json_output" class="language-json"></code></pre>
     </div>
 
@@ -946,7 +1359,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
-    
+
     <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/match-braces/prism-match-braces.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/prismjs-rainbow-braces@1.0.2/prism-rainbow-braces.min.js"></script>
 
@@ -980,6 +1393,13 @@
     <script>
         // --- Helper functions for GETTING data from form ---
         function getMultiSelectValues(elementId) {
+            // Check if it's a dual listbox
+            const dualListbox = document.querySelector(`[data-dual-listbox="${elementId}"]`);
+            if (dualListbox) {
+                const selectedBox = dualListbox.querySelector('[data-role="selected"]');
+                return Array.from(selectedBox.querySelectorAll('.list-box-item')).map(item => item.dataset.value);
+            }
+            // Fallback to regular multiselect
             const select = document.getElementById(elementId);
             return Array.from(select.selectedOptions).map(option => option.value);
         }
@@ -993,18 +1413,18 @@
         function getVal(elementId) {
             return document.getElementById(elementId).value;
         }
-    
+
         // --- Attach click event to the generate button ---
         document.getElementById('generate_json').addEventListener('click', () => {
             let config = {};
             const outputElement = document.getElementById('json_output'); // Get output element
-            
+
             try {
                 // 1. General Settings
                 config.debug = getBool('debug');
                 config.loglevel = getVal('loglevel');
                 config.live_mode = getBool('live_mode');
-                
+
                 // 2. Preferences
                 config.preferences = {
                     time_format: getVal('pref_time_format'),
@@ -1019,7 +1439,7 @@
                     disable_penalty_animation: getBool('disable_penalty_animation'),
                     show_power_play_details: getBool('show_power_play_details')
                 };
-                
+
                 // 3. States
                 config.states = {
                     off_day: getMultiSelectValues('state_off_day'),
@@ -1027,7 +1447,7 @@
                     intermission: getMultiSelectValues('state_intermission'),
                     post_game: getMultiSelectValues('state_post_game')
                 };
-                
+
                 // 4. Boards
                 config.boards = {
                     scoreticker: {
@@ -1079,7 +1499,7 @@
                         alert_duration: getInt('boards_wxalert_alert_duration')
                     }
                 };
-                
+
                 // 5. SBIO
                 config.sbio = {
                     mqtt: {
@@ -1128,7 +1548,7 @@
                         state_triggered1_process: getVal('sbio_pushbutton_state_triggered1_process')
                     }
                 };
-            
+
                 // 6. Output
                 // MODIFIED: Use textContent and call Prism
                 outputElement.textContent = JSON.stringify(config, null, 2);
@@ -1138,12 +1558,12 @@
                 document.getElementById('output_section').style.display = 'block';
                 const saveButton = document.getElementById('save_to_server');
                 saveButton.disabled = false;
-            
+
             } catch (error) {
                 console.error("Error generating JSON:", error);
                 // MODIFIED: Use textContent
                 outputElement.textContent = "An error occurred. Please check the console (F12) for details.";
-                
+
                 // Show the output section even on error
                 document.getElementById('output_section').style.display = 'block';
             }
@@ -1170,22 +1590,22 @@
                 headers: { 'Content-Type': 'text/plain' },
                 body: jsonString
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('Success! ' + data.message);
-                } else {
-                    alert('Error saving config: ' + data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Save failed:', error);
-                alert('Save failed. Is the Python server running? Check the console for details.');
-            })
-            .finally(() => {
-                saveButton.textContent = 'Save to Server';
-                saveButton.disabled = false;
-            });
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Success! ' + data.message);
+                    } else {
+                        alert('Error saving config: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Save failed:', error);
+                    alert('Save failed. Is the Python server running? Check the console for details.');
+                })
+                .finally(() => {
+                    saveButton.textContent = 'Save to Server';
+                    saveButton.disabled = false;
+                });
         }
         document.getElementById('save_to_server').addEventListener('click', saveToServer);
 
@@ -1208,6 +1628,15 @@
         }
         function setMultiSelectValues(elementId, valuesArray) {
             if (!valuesArray || !Array.isArray(valuesArray)) return;
+            
+            // Check if it's a dual listbox
+            const dualListbox = document.querySelector(`[data-dual-listbox="${elementId}"]`);
+            if (dualListbox && window.dualListboxInstances && window.dualListboxInstances[elementId]) {
+                window.dualListboxInstances[elementId].setSelected(valuesArray);
+                return;
+            }
+            
+            // Fallback to regular multiselect
             const select = document.getElementById(elementId);
             Array.from(select.options).forEach(option => {
                 option.selected = valuesArray.includes(option.value);
@@ -1351,11 +1780,11 @@
                         setVal('sbio_pushbutton_state_triggered1_process', s.pushbutton.state_triggered1_process);
                     }
                 }
-                
+
                 // MODIFIED: Use textContent and call Prism
                 outputElement.textContent = JSON.stringify(config, null, 2);
                 Prism.highlightElement(outputElement);
-                
+
                 // Show the output section and save button
                 document.getElementById('output_section').style.display = 'block';
                 document.getElementById('save_to_server').style.display = 'inline-block';
@@ -1405,6 +1834,220 @@
 
     <script>
         /**
+         * Dual Listbox Component
+         * Provides a two-panel interface for selecting and ordering items
+         */
+        class DualListbox {
+            constructor(container, id) {
+                this.container = container;
+                this.id = id;
+                this.availableBox = container.querySelector('[data-role="available"]');
+                this.selectedBox = container.querySelector('[data-role="selected"]');
+                this.options = [];
+                this.selectedValues = [];
+                
+                // Bind event handlers
+                this.setupEventHandlers();
+            }
+            
+            setupEventHandlers() {
+                // Add/remove buttons
+                const addBtn = this.container.querySelector('[data-action="add"]');
+                const addAllBtn = this.container.querySelector('[data-action="add-all"]');
+                const removeBtn = this.container.querySelector('[data-action="remove"]');
+                const removeAllBtn = this.container.querySelector('[data-action="remove-all"]');
+                const moveUpBtn = this.container.querySelector('[data-action="move-up"]');
+                const moveDownBtn = this.container.querySelector('[data-action="move-down"]');
+                
+                if (addBtn) addBtn.addEventListener('click', () => this.addSelected());
+                if (addAllBtn) addAllBtn.addEventListener('click', () => this.addAll());
+                if (removeBtn) removeBtn.addEventListener('click', () => this.removeSelected());
+                if (removeAllBtn) removeAllBtn.addEventListener('click', () => this.removeAll());
+                if (moveUpBtn) moveUpBtn.addEventListener('click', () => this.moveUp());
+                if (moveDownBtn) moveDownBtn.addEventListener('click', () => this.moveDown());
+                
+                // Click handlers for list items
+                this.availableBox.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('list-box-item')) {
+                        this.toggleSelection(e.target);
+                    }
+                });
+                
+                this.selectedBox.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('list-box-item')) {
+                        this.toggleSelection(e.target);
+                    }
+                });
+                
+                // Double-click to move items
+                this.availableBox.addEventListener('dblclick', (e) => {
+                    if (e.target.classList.contains('list-box-item')) {
+                        e.target.classList.add('selected');
+                        this.addSelected();
+                    }
+                });
+                
+                this.selectedBox.addEventListener('dblclick', (e) => {
+                    if (e.target.classList.contains('list-box-item')) {
+                        e.target.classList.add('selected');
+                        this.removeSelected();
+                    }
+                });
+            }
+            
+            toggleSelection(item) {
+                if (item.classList.contains('selected')) {
+                    item.classList.remove('selected');
+                } else {
+                    // For multi-select, allow multiple selections
+                    item.classList.add('selected');
+                }
+            }
+            
+            setOptions(options) {
+                this.options = options;
+                this.render();
+            }
+            
+            setSelected(values) {
+                this.selectedValues = values || [];
+                this.render();
+            }
+            
+            getSelected() {
+                return this.selectedValues;
+            }
+            
+            addSelected() {
+                const selected = this.availableBox.querySelectorAll('.list-box-item.selected');
+                const newIndices = [];
+                
+                selected.forEach(item => {
+                    const value = item.dataset.value;
+                    // Always add, even if it already exists (allow duplicates)
+                    this.selectedValues.push(value);
+                    newIndices.push(this.selectedValues.length - 1);
+                });
+                
+                this.render();
+                
+                // Re-select the newly added items in the selected box
+                const selectedItems = this.selectedBox.querySelectorAll('.list-box-item');
+                newIndices.forEach(index => {
+                    if (selectedItems[index]) {
+                        selectedItems[index].classList.add('selected');
+                    }
+                });
+            }
+            
+            addAll() {
+                this.selectedValues = this.options.map(opt => opt.v);
+                this.render();
+            }
+            
+            removeSelected() {
+                const selected = this.selectedBox.querySelectorAll('.list-box-item.selected');
+                // Collect indices to remove (in reverse order to avoid index shifting issues)
+                const indices = Array.from(selected)
+                    .map(item => parseInt(item.dataset.index))
+                    .sort((a, b) => b - a); // Sort descending
+                
+                // Remove from highest index to lowest
+                indices.forEach(index => {
+                    this.selectedValues.splice(index, 1);
+                });
+                
+                this.render();
+            }
+            
+            removeAll() {
+                this.selectedValues = [];
+                this.render();
+            }
+            
+            moveUp() {
+                const selected = this.selectedBox.querySelector('.list-box-item.selected');
+                if (!selected) return;
+                
+                const index = parseInt(selected.dataset.index);
+                if (index > 0) {
+                    // Swap with previous item
+                    const temp = this.selectedValues[index];
+                    this.selectedValues[index] = this.selectedValues[index - 1];
+                    this.selectedValues[index - 1] = temp;
+                    this.render();
+                    // Re-select the moved item
+                    const items = this.selectedBox.querySelectorAll('.list-box-item');
+                    if (items[index - 1]) {
+                        items[index - 1].classList.add('selected');
+                    }
+                }
+            }
+            
+            moveDown() {
+                const selected = this.selectedBox.querySelector('.list-box-item.selected');
+                if (!selected) return;
+                
+                const index = parseInt(selected.dataset.index);
+                if (index < this.selectedValues.length - 1) {
+                    // Swap with next item
+                    const temp = this.selectedValues[index];
+                    this.selectedValues[index] = this.selectedValues[index + 1];
+                    this.selectedValues[index + 1] = temp;
+                    this.render();
+                    // Re-select the moved item
+                    const items = this.selectedBox.querySelectorBox.querySelectorAll('.list-box-item');
+                    if (items[index + 1]) {
+                        items[index + 1].classList.add('selected');
+                    }
+                }
+            }
+            
+            render() {
+                // Clear both boxes
+                this.availableBox.innerHTML = '';
+                this.selectedBox.innerHTML = '';
+                
+                // Render ALL available items (don't filter out selected ones)
+                this.options.forEach(opt => {
+                    const item = document.createElement('div');
+                    item.className = 'list-box-item';
+                    item.dataset.value = opt.v;
+                    item.textContent = opt.n;
+                    this.availableBox.appendChild(item);
+                });
+                
+                // Render selected items (in order, can have duplicates)
+                // Store the index in dataset for proper removal/reordering
+                this.selectedValues.forEach((value, index) => {
+                    const opt = this.options.find(o => o.v === value);
+                    if (opt) {
+                        const item = document.createElement('div');
+                        item.className = 'list-box-item';
+                        item.dataset.value = opt.v;
+                        item.dataset.index = index; // Store the actual position
+                        item.textContent = opt.n;
+                        this.selectedBox.appendChild(item);
+                    }
+                });
+            }
+        }
+        
+        // Global storage for dual listbox instances
+        window.dualListboxInstances = {};
+        
+        // Initialize all dual listboxes on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const containers = document.querySelectorAll('[data-dual-listbox]');
+            containers.forEach(container => {
+                const id = container.dataset.dualListbox;
+                window.dualListboxInstances[id] = new DualListbox(container, id);
+            });
+        });
+    </script>
+
+    <script>
+        /**
          * Attempts to get the user's location from their public IP address.
          */
         function autofillLocationFromIP() {
@@ -1442,23 +2085,20 @@
                     link.innerHTML = originalText;
                 });
         }
-        
+
         /**
-         * Populates the states dropdowns with board options.
+         * Populates the states dual listboxes with board options.
          */
         function populateBoardSelects(boardOptions) {
             const selectIds = ['state_off_day', 'state_scheduled', 'state_intermission', 'state_post_game'];
-            // Generate the HTML string for the options
-            const optionsHtml = boardOptions
-                .sort((a, b) => a.n.localeCompare(b.n)) // Sort alphabetically by name
-                .map(o => `<option value="${o.v}">${o.n}</option>`)
-                .join('');
+
+            // Sort boards alphabetically by name
+            const sortedBoards = boardOptions.sort((a, b) => a.n.localeCompare(b.n));
             
-            // Populate all four select boxes
+            // Initialize dual listboxes
             selectIds.forEach(id => {
-                const selectEl = document.getElementById(id);
-                if (selectEl) {
-                    selectEl.innerHTML = optionsHtml;
+                if (window.dualListboxInstances && window.dualListboxInstances[id]) {
+                    window.dualListboxInstances[id].setOptions(sortedBoards);
                 }
             });
         }
@@ -1469,11 +2109,11 @@
             const themeToggleButton = document.getElementById('theme-toggle-button');
             const themeLinks = document.querySelectorAll('a[data-theme-value]');
             const autoMediaMatch = window.matchMedia('(prefers-color-scheme: dark)');
-            
+
             // Get theme elements
             const lightTheme = document.getElementById('prism-light-theme');
             const darkTheme = document.getElementById('prism-dark-theme');
-            
+
             const icons = {
                 light: '<i class="bi bi-sun-fill me-2"></i> Light',
                 dark: '<i class="bi bi-moon-stars-fill me-2"></i> Dark',
@@ -1492,7 +2132,7 @@
                     if (darkTheme) darkTheme.disabled = true;
                 }
             };
-            
+
             // This function handles the logic for 'auto'
             const applyHtmlTheme = (theme) => {
                 if (theme === 'light' || theme === 'dark') {
@@ -1548,7 +2188,7 @@
 
             // === MODIFIED: Show Supervisor link and set active nav link ===
             document.getElementById('nav-config').classList.add('active'); // Set this page as active
-            
+
             fetch('/api/status')
                 .then(response => response.json())
                 .then(data => {
@@ -1557,17 +2197,21 @@
                     }
                 })
                 .catch(err => console.error("Error fetching status for nav:", err));
-                
+
             // === NEW: Fetch boards list and populate dropdowns ===
             fetch('/api/boards')
                 .then(response => response.json())
                 .then(boardOptions => {
                     populateBoardSelects(boardOptions);
+                    // Auto-load config from server on page load
+                    loadFromServer();
                 })
                 .catch(err => {
                     console.error("Error fetching boards list:", err);
                     // Even if it fails, populate with an empty list
-                    populateBoardSelects([]); 
+                    populateBoardSelects([]);
+                    // Still try to load config even if boards fetch failed
+                    loadFromServer();
                 });
 
             const standingsType = document.getElementById('boards_standings_type');
@@ -1607,7 +2251,7 @@
             prefOnlyCheckbox.addEventListener('change', updateStandingsVisibility);
         });
     </script>
-    
+
     <script>
         // --- Color Picker Logic ---
         document.addEventListener('DOMContentLoaded', () => {
@@ -1676,31 +2320,31 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ broker, port, username, password })
                 })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        mqttStatusIndicator.style.backgroundColor = '#198754'; // Green
-                    } else {
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            mqttStatusIndicator.style.backgroundColor = '#198754'; // Green
+                        } else {
+                            mqttStatusIndicator.style.backgroundColor = '#dc3545'; // Red
+                            alert('MQTT Test Failed: ' + data.output);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('MQTT Test failed:', error);
                         mqttStatusIndicator.style.backgroundColor = '#dc3545'; // Red
-                        alert('MQTT Test Failed: ' + data.output);
-                    }
-                })
-                .catch(error => {
-                    console.error('MQTT Test failed:', error);
-                    mqttStatusIndicator.style.backgroundColor = '#dc3545'; // Red
-                    alert('MQTT Test failed. Check the console for details.');
-                })
-                .finally(() => {
-                    testMqttBtn.disabled = false;
-                    testMqttBtn.textContent = 'Test Connection';
-                });
+                        alert('MQTT Test failed. Check the console for details.');
+                    })
+                    .finally(() => {
+                        testMqttBtn.disabled = false;
+                        testMqttBtn.textContent = 'Test Connection';
+                    });
             });
 
             // Initial state
             toggleMqttTest();
         });
     </script>
-    
+
     <script>
         // --- File Upload Logic ---
         document.addEventListener('DOMContentLoaded', () => {
@@ -1726,52 +2370,57 @@
                     method: 'POST',
                     body: formData,
                 })
-                .then(response => {
-                    if (!response.ok) {
-                        return response.json().then(err => {
-                            throw new Error(err.message || 'Server error');
-                        });
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    if (data.success) {
-                        populateForm(data.config);
-                        alert('Success: Configuration loaded from file!');
-                    } else {
-                        throw new Error(data.message);
-                    }
-                })
-                .catch(error => {
-                    console.error('Upload failed:', error);
-                    alert(`Upload failed: ${error.message}`);
-                })
-                .finally(() => {
-                    uploadButton.disabled = false;
-                    uploadButton.innerHTML = '<i class="bi bi-arrow-up-square-fill me-2"></i> Upload Config from PC';
-                    fileInput.value = ''; // Reset file input
-                });
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.json().then(err => {
+                                throw new Error(err.message || 'Server error');
+                            });
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.success) {
+                            populateForm(data.config);
+                            alert('Success: Configuration loaded from file!');
+                        } else {
+                            throw new Error(data.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Upload failed:', error);
+                        alert(`Upload failed: ${error.message}`);
+                    })
+                    .finally(() => {
+                        uploadButton.disabled = false;
+                        uploadButton.innerHTML = '<i class="bi bi-arrow-up-square-fill me-2"></i> Upload Config from PC';
+                        fileInput.value = ''; // Reset file input
+                    });
             });
         });
     </script>
-    
+
     <footer class="mt-5 pt-4 border-top text-center">
         <p class="text-muted">Find help or contribute:</p>
         <div class="d-flex justify-content-center gap-4 fs-2">
-            <a href="https://github.com/falkyre/nhl-led-scoreboard" title="GitHub Repository" class="text-body-secondary">
+            <a href="https://github.com/falkyre/nhl-led-scoreboard" title="GitHub Repository"
+                class="text-body-secondary">
                 <i class="bi bi-github"></i>
             </a>
-            <a href="https://github.com/falkyre/nhl-led-scoreboard/issues" title="Report an Issue" class="text-body-secondary">
+            <a href="https://github.com/falkyre/nhl-led-scoreboard/issues" title="Report an Issue"
+                class="text-body-secondary">
                 <i class="bi bi-bug-fill"></i>
             </a>
-            <a href="https://github.com/falkyre/nhl-led-scoreboard/wiki" title="Project Wiki" class="text-body-secondary">
+            <a href="https://github.com/falkyre/nhl-led-scoreboard/wiki" title="Project Wiki"
+                class="text-body-secondary">
                 <i class="bi bi-book-half"></i>
             </a>
-            <a href="https://github.com/falkyre/nhl-led-scoreboard/blob/main/README.md" title="README" class="text-body-secondary">
+            <a href="https://github.com/falkyre/nhl-led-scoreboard/blob/main/README.md" title="README"
+                class="text-body-secondary">
                 <i class="bi bi-file-text-fill"></i>
             </a>
         </div>
     </footer>
 
 </body>
+
 </html>

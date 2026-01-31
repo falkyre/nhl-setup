@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,8 +9,10 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>
-        .dropdown-item.active { font-weight: bold; }
-        
+        .dropdown-item.active {
+            font-weight: bold;
+        }
+
         /* ============================================= */
         /* MODIFIED: Logo Header CSS */
         /* ============================================= */
@@ -24,6 +27,7 @@
             border-radius: 0;
             transition: background-color 0.2s ease-in-out, padding 0.2s ease-in-out;
         }
+
         /* Light mode style */
         [data-bs-theme="light"] .logo-header {
             background-color: #ffffff;
@@ -32,12 +36,24 @@
         }
 
         /* NEW: CSS to toggle logos */
-        .logo-light { display: none; }
-        .logo-dark { display: inline-block; }
-        [data-bs-theme="light"] .logo-light { display: inline-block; }
-        [data-bs-theme="light"] .logo-dark { display: none; }
+        .logo-light {
+            display: none;
+        }
+
+        .logo-dark {
+            display: inline-block;
+        }
+
+        [data-bs-theme="light"] .logo-light {
+            display: inline-block;
+        }
+
+        [data-bs-theme="light"] .logo-dark {
+            display: none;
+        }
+
         /* ============================================= */
-        
+
         /* Style for the output box */
         .output-box {
             padding: 1rem;
@@ -53,31 +69,36 @@
         }
     </style>
     <script>
-        (function() {
+        (function () {
             const applyTheme = (theme) => {
                 document.documentElement.setAttribute('data-bs-theme', theme);
             };
             const savedTheme = localStorage.getItem('theme') || 'auto';
-            
+
             if (savedTheme === 'light' || savedTheme === 'dark') {
                 applyTheme(savedTheme);
-            } else { 
+            } else {
                 const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
                 applyTheme(prefersDark ? 'dark' : 'light');
             }
         })();
     </script>
 </head>
+
 <body class="container my-4">
 
     <div class="d-flex justify-content-end mb-2">
         <div class="dropdown">
-            <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="theme-toggle-button" data-bs-toggle="dropdown" aria-expanded="false">
-                </button>
+            <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="theme-toggle-button"
+                data-bs-toggle="dropdown" aria-expanded="false">
+            </button>
             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="theme-toggle-button">
-                <li><a class="dropdown-item" href="#" data-theme-value="light"><i class="bi bi-sun-fill me-2"></i> Light</a></li>
-                <li><a class="dropdown-item" href="#" data-theme-value="dark"><i class="bi bi-moon-stars-fill me-2"></i> Dark</a></li>
-                <li><a class="dropdown-item" href="#" data-theme-value="auto"><i class="bi bi-circle-half me-2"></i> Auto</a></li>
+                <li><a class="dropdown-item" href="#" data-theme-value="light"><i class="bi bi-sun-fill me-2"></i>
+                        Light</a></li>
+                <li><a class="dropdown-item" href="#" data-theme-value="dark"><i class="bi bi-moon-stars-fill me-2"></i>
+                        Dark</a></li>
+                <li><a class="dropdown-item" href="#" data-theme-value="auto"><i class="bi bi-circle-half me-2"></i>
+                        Auto</a></li>
             </ul>
         </div>
     </div>
@@ -93,6 +114,7 @@
         <a class="nav-link" id="nav-config" href="/config">CONFIGURATOR</a>
         <a class="nav-link" id="nav-plugins" href="/plugins">PLUGINS</a>
         <a class="nav-link" id="nav-utilities" href="/utilities">UTILITIES</a>
+        <a class="nav-link" id="nav-terminal" href="/terminal">TERMINAL</a>
         <a class="nav-link" id="nav-supervisor" href="/supervisor" style="display: none;">SUPERVISOR</a>
     </nav>
     <div class="text-center">
@@ -107,7 +129,8 @@
                     and logs, and upload them to a private pastebin. This is useful for
                     troubleshooting when opening an issue on GitHub.
                 </p>
-                <button class="btn btn-warning" id="run_issue_uploader_btn" data-bs-toggle="modal" data-bs-target="#outputModal">
+                <button class="btn btn-warning" id="run_issue_uploader_btn" data-bs-toggle="modal"
+                    data-bs-target="#outputModal">
                     <i class="bi bi-upload me-2"></i> Run Log Uploader
                 </button>
             </div>
@@ -122,14 +145,53 @@
                 <hr>
                 <p class="card-text">
                     If you are running on a the Scoreboard image V2025.12.1 or later,
-                    this will download a zip file with <code>config.json</code>, 
-                    the <code>scoreboard.conf</code> service file, the <code>splash.sh</code> and <code>testMatrix.sh</code> scripts.
+                    this will download a zip file with <code>config.json</code>,
+                    the <code>scoreboard.conf</code> service file, the <code>splash.sh</code> and
+                    <code>testMatrix.sh</code> scripts.
                     <br><br>
-                    The <code>configs.zip</code> file can be placed in the <code>/boot/scoreboard</code> directory on newer images (V2025.12.1 and later) to auto-deploy the configuration on boot.
+                    The <code>configs.zip</code> file can be placed in the <code>/boot/scoreboard</code> directory on
+                    newer images (V2025.12.1 and later) to auto-deploy the configuration on boot.
                 </p>
                 <a href="/download_config" class="btn btn-primary">
                     <i class="bi bi-download me-2"></i> Download
                 </a>
+            </div>
+        </div>
+
+        <div class="card col-lg-8 mx-auto mt-4" id="logo-editor-card" style="display: none;">
+            <div class="card-body">
+                <h5 class="card-title">Launch Logo Editor</h5>
+                <p class="card-text">
+                    Launch the graphical Logo Editor tool.
+                </p>
+                <div class="mb-3">
+                    <label for="venv_path" class="form-label">Virtual Environment Path</label>
+                    <input type="text" class="form-control" id="venv_path" placeholder="/home/pi/nhlsb-venv/">
+                    <div class="form-text">Path to the python virtual environment where dependencies are installed.
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="logo_editor_port" class="form-label">Port</label>
+                    <input type="number" class="form-control" id="logo_editor_port" value="5000">
+                    <div class="form-text">Port to run the Logo Editor on (default 5000).</div>
+                    <div class="mt-2">
+                        <div class="form-text">The logo editor can be accessed using these URLs once running. The "Open
+                            Logo Editor"
+                            button will launch the first.</div>
+                        <div class="font-monospace mt-1">
+                            <span id="text_local">http://127.0.0.1:5000</span> | <span
+                                id="text_localhost">http://localhost:5000</span> | <span
+                                id="text_host">http://hostname:5000</span>
+                        </div>
+                    </div>
+                </div>
+                <button class="btn btn-success" id="launch_logo_editor_btn">
+                    <i class="bi bi-window-plus me-2"></i> <span id="launch_btn_text">Open Logo Editor</span>
+                </button>
+                <button class="btn btn-danger ms-2" id="stop_logo_editor_btn" style="display: none;">
+                    <i class="bi bi-stop-circle me-2"></i> Stop Editor
+                </button>
+                <div id="editor_status_msg" class="mt-2 text-info" style="display: none;"></div>
             </div>
         </div>
 
@@ -160,7 +222,7 @@
             const themeToggleButton = document.getElementById('theme-toggle-button');
             const themeLinks = document.querySelectorAll('a[data-theme-value]');
             const autoMediaMatch = window.matchMedia('(prefers-color-scheme: dark)');
-            
+
             const icons = {
                 light: '<i class="bi bi-sun-fill me-2"></i> Light',
                 dark: '<i class="bi bi-moon-stars-fill me-2"></i> Dark',
@@ -170,7 +232,7 @@
             const applyTheme = (theme) => {
                 document.documentElement.setAttribute('data-bs-theme', theme);
             };
-            
+
             const applyHtmlTheme = (theme) => {
                 if (theme === 'light' || theme === 'dark') {
                     applyTheme(theme);
@@ -207,7 +269,7 @@
 
             // === MODIFIED: Show Supervisor link and set active nav link ===
             document.getElementById('nav-utilities').classList.add('active'); // Set this page as active
-            
+
             fetch('/api/status')
                 .then(response => response.json())
                 .then(data => {
@@ -216,13 +278,13 @@
                     }
                 })
                 .catch(err => console.error("Error fetching status for nav:", err));
-            
+
             // =============================================
             // MODIFIED: Issue Uploader Button Logic (uses modal)
             // =============================================
             const uploadBtn = document.getElementById('run_issue_uploader_btn');
             const modalBody = document.getElementById('output_modal_content');
-            
+
             uploadBtn.addEventListener('click', () => {
                 // 1. Set loading state in modal
                 modalBody.textContent = 'Running script, please wait... (This may take up to 2 minutes)';
@@ -232,44 +294,250 @@
                 fetch('/api/run-issue-uploader', {
                     method: 'POST'
                 })
-                .then(response => response.json())
-                .then(data => {
-                    // 3. Display output
-                    modalBody.textContent = data.output;
-                    if (data.success) {
-                        modalBody.classList.remove('text-danger');
-                    } else {
+                    .then(response => response.json())
+                    .then(data => {
+                        // 3. Display output
+                        modalBody.textContent = data.output;
+                        if (data.success) {
+                            modalBody.classList.remove('text-danger');
+                        } else {
+                            modalBody.classList.add('text-danger');
+                        }
+                    })
+                    .catch(err => {
+                        // 4. Handle fetch error
+                        console.error('Error running issue uploader:', err);
+                        modalBody.textContent = 'A client-side error occurred. Could not run script.\n' + err;
                         modalBody.classList.add('text-danger');
-                    }
-                })
-                .catch(err => {
-                    // 4. Handle fetch error
-                    console.error('Error running issue uploader:', err);
-                    modalBody.textContent = 'A client-side error occurred. Could not run script.\n' + err;
-                    modalBody.classList.add('text-danger');
-                });
+                    });
             });
-            
+
+            // =============================================
+            // NEW: Logo Editor Logic
+            // =============================================
+            const logoEditorCard = document.getElementById('logo-editor-card');
+            const launchLogoEditorBtn = document.getElementById('launch_logo_editor_btn');
+            const stopLogoEditorBtn = document.getElementById('stop_logo_editor_btn');
+            const venvInput = document.getElementById('venv_path');
+            const portInput = document.getElementById('logo_editor_port');
+            const launchBtnText = document.getElementById('launch_btn_text');
+            const statusMsg = document.getElementById('editor_status_msg');
+            const textLocal = document.getElementById('text_local');
+            const textLocalhost = document.getElementById('text_localhost');
+            const textHost = document.getElementById('text_host');
+            let pollInterval = null;
+
+            // Update links based on port
+            const updateLinks = () => {
+                const port = portInput.value || 5000;
+                const hostname = window.location.hostname;
+
+                const localUrl = `http://127.0.0.1:${port}`;
+                const localhostUrl = `http://localhost:${port}`;
+                const hostUrl = `http://${hostname}:${port}`;
+
+                textLocal.textContent = localUrl;
+                textLocalhost.textContent = localhostUrl;
+                textHost.textContent = hostUrl;
+            };
+
+            // Initial update
+            updateLinks();
+
+            // Reusable function to check status
+            const checkLogoEditorStatus = () => {
+                const port = portInput.value || 5000;
+                fetch(`/api/logo-editor/status?port=${port}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success && data.available) {
+                            logoEditorCard.style.display = 'block';
+
+                            // Reset classes
+                            launchLogoEditorBtn.classList.remove('btn-success', 'btn-primary', 'btn-danger');
+
+                            if (data.status === 'running') {
+                                // Running & Verified (Blue)
+                                launchBtnText.textContent = "Open Logo Editor";
+                                launchLogoEditorBtn.classList.add('btn-primary');
+                                launchLogoEditorBtn.disabled = false;
+                                stopLogoEditorBtn.style.display = 'inline-block';
+                                statusMsg.style.display = 'none';
+                                venvInput.disabled = true; // Lock inputs while running
+                                portInput.disabled = true;
+                            } else if (data.status === 'conflict') {
+                                // Port Conflict (Red)
+                                launchBtnText.textContent = "Port In Use";
+                                launchLogoEditorBtn.classList.add('btn-danger');
+                                launchLogoEditorBtn.disabled = true;
+                                stopLogoEditorBtn.style.display = 'none';
+                                statusMsg.textContent = "Port " + port + " is currently in use by another process.";
+                                statusMsg.classList.remove('text-info');
+                                statusMsg.classList.add('text-danger');
+                                statusMsg.style.display = 'block';
+                                venvInput.disabled = false;
+                                portInput.disabled = false;
+                            } else {
+                                // Available (Green)
+                                launchBtnText.textContent = "Launch Logo Editor";
+                                launchLogoEditorBtn.classList.add('btn-success');
+                                launchLogoEditorBtn.disabled = false;
+                                stopLogoEditorBtn.style.display = 'none';
+                                statusMsg.style.display = 'none';
+                                venvInput.disabled = false;
+                                portInput.disabled = false;
+                            }
+                        }
+                    })
+                    .catch(err => console.error("Error checking logo editor status:", err));
+            };
+
+            // Check on load
+            checkLogoEditorStatus();
+
+            // Check when port changes
+            portInput.addEventListener('change', () => {
+                checkLogoEditorStatus();
+                updateLinks();
+            });
+            portInput.addEventListener('input', updateLinks);
+
+            launchLogoEditorBtn.addEventListener('click', () => {
+                const venv = venvInput.value;
+                const port = portInput.value || 5000;
+                const editorUrl = `http://127.0.0.1:${port}`;
+
+                // Check status before deciding action
+                fetch(`/api/logo-editor/status?port=${port}`)
+                    .then(res => res.json())
+                    .then(statusData => {
+                        if (statusData.status === 'running') {
+                            window.open(editorUrl, '_blank');
+                            return;
+                        }
+
+                        // Not running, launch it (only if not conflict, though conflicting button is disabled)
+                        if (statusData.status === 'conflict') {
+                            return; // Should be impossible if button is disabled, but good safety
+                        }
+
+                        launchBtnText.textContent = "Starting...";
+                        launchLogoEditorBtn.disabled = true;
+                        statusMsg.textContent = "Launching background process...";
+                        statusMsg.classList.remove('text-danger');
+                        statusMsg.classList.add('text-info');
+                        statusMsg.style.display = 'block';
+
+                        fetch('/api/logo-editor/launch', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ venv: venv, port: port })
+                        })
+                            .then(res => res.json())
+                            .then(launchData => {
+                                if (launchData.success) {
+                                    statusMsg.textContent = "Waiting for editor to be ready...";
+                                    // Poll for status
+                                    let attempts = 0;
+                                    const maxAttempts = 15; // 15 seconds
+
+                                    pollInterval = setInterval(() => {
+                                        attempts++;
+                                        fetch(`/api/logo-editor/status?port=${port}`)
+                                            .then(r => r.json())
+                                            .then(s => {
+                                                if (s.status === 'running') {
+                                                    clearInterval(pollInterval);
+                                                    checkLogoEditorStatus(); // Update UI state
+
+                                                    // Open in new window
+                                                    window.open(editorUrl, '_blank');
+                                                } else if (attempts >= maxAttempts) {
+                                                    clearInterval(pollInterval);
+                                                    launchBtnText.textContent = "Launch Failed / Timed Out";
+                                                    launchLogoEditorBtn.disabled = false;
+                                                    statusMsg.textContent = "Timed out waiting for editor to start.";
+                                                    statusMsg.classList.remove('text-info');
+                                                    statusMsg.classList.add('text-danger');
+                                                }
+                                            })
+                                            .catch(e => {
+                                                console.error("Polling error", e);
+                                            });
+                                    }, 1000);
+                                } else {
+                                    statusMsg.textContent = "Error: " + launchData.message;
+                                    statusMsg.classList.add('text-danger');
+                                    launchLogoEditorBtn.disabled = false;
+                                    launchBtnText.textContent = "Try Again";
+                                }
+                            })
+                            .catch(err => {
+                                console.error(err);
+                                statusMsg.textContent = "Error launching: " + err;
+                                statusMsg.classList.add('text-danger');
+                                launchLogoEditorBtn.disabled = false;
+                                launchBtnText.textContent = "Try Again";
+                            });
+                    });
+            });
+
+            // Stop Button Logic
+            stopLogoEditorBtn.addEventListener('click', () => {
+                if (!confirm("Are you sure you want to stop the Logo Editor?")) return;
+
+                stopLogoEditorBtn.disabled = true;
+                stopLogoEditorBtn.textContent = "Stopping...";
+
+                fetch('/api/logo-editor/stop', { method: 'POST' })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Wait a moment for process to actually die
+                            setTimeout(() => {
+                                checkLogoEditorStatus();
+                                stopLogoEditorBtn.textContent = "Stop Editor";
+                                stopLogoEditorBtn.disabled = false;
+                            }, 1000);
+                        } else {
+                            alert("Failed to stop: " + data.message);
+                            stopLogoEditorBtn.textContent = "Stop Editor";
+                            stopLogoEditorBtn.disabled = false;
+                        }
+                    })
+                    .catch(e => {
+                        console.error(e);
+                        alert("Error: " + e);
+                        stopLogoEditorBtn.textContent = "Stop Editor";
+                        stopLogoEditorBtn.disabled = false;
+                    });
+            });
+
         });
     </script>
-    
+
     <footer class="mt-5 pt-4 border-top text-center">
         <p class="text-muted">Find help or contribute:</p>
         <div class="d-flex justify-content-center gap-4 fs-2">
-            <a href="https://github.com/falkyre/nhl-led-scoreboard" title="GitHub Repository" class="text-body-secondary">
+            <a href="https://github.com/falkyre/nhl-led-scoreboard" title="GitHub Repository"
+                class="text-body-secondary">
                 <i class="bi bi-github"></i>
             </a>
-            <a href="https://github.com/falkyre/nhl-led-scoreboard/issues" title="Report an Issue" class="text-body-secondary">
+            <a href="https://github.com/falkyre/nhl-led-scoreboard/issues" title="Report an Issue"
+                class="text-body-secondary">
                 <i class="bi bi-bug-fill"></i>
             </a>
-            <a href="https://github.com/falkyre/nhl-led-scoreboard/wiki" title="Project Wiki" class="text-body-secondary">
+            <a href="https://github.com/falkyre/nhl-led-scoreboard/wiki" title="Project Wiki"
+                class="text-body-secondary">
                 <i class="bi bi-book-half"></i>
             </a>
-            <a href="https://github.com/falkyre/nhl-led-scoreboard/blob/main/README.md" title="README" class="text-body-secondary">
+            <a href="https://github.com/falkyre/nhl-led-scoreboard/blob/main/README.md" title="README"
+                class="text-body-secondary">
                 <i class="bi bi-file-text-fill"></i>
             </a>
         </div>
     </footer>
 
 </body>
+
 </html>
