@@ -5,6 +5,7 @@ monkey.patch_all()
 
 import os
 import json
+import glob
 import socket
 import logging  
 import argparse
@@ -1147,14 +1148,15 @@ def utilities_page():
 def download_config():
     """
     Provides a download of configuration files.
-    If on a full scoreboard setup, it zips up multiple configs.
+    If on a full scoreboard setup or if logos are requested, it zips up multiple configs.
     Otherwise, it just provides the config.json.
     """
     led_portal_dir = '/home/pi/.nhlledportal'
+    include_logos = request.args.get('logos') == 'true'
     
     try:
-        if os.path.exists(led_portal_dir):
-            app.logger.info(f"'{led_portal_dir}' found. Zipping multiple configuration files.")
+        if os.path.exists(led_portal_dir) or include_logos:
+            app.logger.info(f"Zipping configuration files (Full Setup: {os.path.exists(led_portal_dir)}, Include Logos: {include_logos}).")
             
             # Create an in-memory zip file
             memory_file = io.BytesIO()
@@ -1173,7 +1175,8 @@ def download_config():
                     zf.write(supervisor_conf_path, os.path.basename(supervisor_conf_path))
                     app.logger.info(f"Added {supervisor_conf_path} to zip.")
                 else:
-                    app.logger.warning(f"{supervisor_conf_path} not found, skipping.")
+                    if os.path.exists(led_portal_dir): # Only warn if we expect it
+                        app.logger.warning(f"{supervisor_conf_path} not found, skipping.")
 
                 # 3. Add testMatrix.sh script
                 matrix_sh_path = '/home/pi/sbtools/testMatrix.sh'
@@ -1181,7 +1184,8 @@ def download_config():
                     zf.write(matrix_sh_path, os.path.basename(matrix_sh_path))
                     app.logger.info(f"Added {matrix_sh_path} to zip.")
                 else:
-                    app.logger.warning(f"{matrix_sh_path} not found, skipping.")
+                    if os.path.exists(led_portal_dir):
+                        app.logger.warning(f"{matrix_sh_path} not found, skipping.")
 
                 # 4. Add splash.sh script
                 splash_sh_path = '/home/pi/sbtools/splash.sh'
@@ -1189,7 +1193,33 @@ def download_config():
                     zf.write(splash_sh_path, os.path.basename(splash_sh_path))
                     app.logger.info(f"Added {splash_sh_path} to zip.")
                 else:
-                    app.logger.warning(f"{splash_sh_path} not found, skipping.")
+                    if os.path.exists(led_portal_dir):
+                        app.logger.warning(f"{splash_sh_path} not found, skipping.")
+
+                # 5. Add Logos if requested
+                if include_logos:
+                    # Add layout files (config/layout/logos_{W}x{H}.json)
+                    layout_dir = os.path.join(SCOREBOARD_DIR, 'config', 'layout')
+                    if os.path.exists(layout_dir):
+                        # Use glob to find matching files
+                        layout_files = glob.glob(os.path.join(layout_dir, 'logos_*x*.json'))
+                        for layout_file in layout_files:
+                            # Add to 'layout/' directory in zip
+                            zf.write(layout_file, os.path.join('layout', os.path.basename(layout_file)))
+                            app.logger.info(f"Added {layout_file} to zip.")
+                    
+                    # Add logos assets (assets/logos)
+                    logos_dir = os.path.join(SCOREBOARD_DIR, 'assets', 'logos')
+                    if os.path.exists(logos_dir):
+                        app.logger.info(f"Adding logos from {logos_dir}...")
+                        for root, dirs, files in os.walk(logos_dir):
+                            for file in files:
+                                full_path = os.path.join(root, file)
+                                # Calculate path inside zip (relative to logos_dir)
+                                # We want them in a 'logos' folder in the zip
+                                rel_path = os.path.relpath(full_path, start=logos_dir)
+                                zip_path = os.path.join('logos', rel_path)
+                                zf.write(full_path, zip_path)
 
             memory_file.seek(0)
             return send_file(
