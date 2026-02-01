@@ -152,9 +152,17 @@
                     The <code>configs.zip</code> file can be placed in the <code>/boot/scoreboard</code> directory on
                     newer images (V2025.12.1 and later) to auto-deploy the configuration on boot.
                 </p>
-                <a href="/download_config" class="btn btn-primary">
-                    <i class="bi bi-download me-2"></i> Download
-                </a>
+                <div class="d-flex flex-column align-items-center">
+                    <div class="form-check form-check-reverse mb-3" style="width: fit-content;" data-bs-toggle="tooltip" data-bs-placement="right" title="Include all logos and logo layout json files">
+                        <input class="form-check-input" type="checkbox" value="" id="includeLogos">
+                        <label class="form-check-label" for="includeLogos">
+                            Include Logos
+                        </label>
+                    </div>
+                    <a href="#" class="btn btn-primary" onclick="downloadConfig(event)">
+                        <i class="bi bi-download me-2"></i> Download
+                    </a>
+                </div>
             </div>
         </div>
 
@@ -219,6 +227,10 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // Initialize Bootstrap Tooltips
+            const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+            const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+
             const themeToggleButton = document.getElementById('theme-toggle-button');
             const themeLinks = document.querySelectorAll('a[data-theme-value]');
             const autoMediaMatch = window.matchMedia('(prefers-color-scheme: dark)');
@@ -514,6 +526,12 @@
             });
 
         });
+
+        function downloadConfig(event) {
+            event.preventDefault();
+            const includeLogos = document.getElementById('includeLogos').checked;
+            window.location.href = '/download_config' + (includeLogos ? '?logos=true' : '');
+        }
     </script>
 
     <footer class="mt-5 pt-4 border-top text-center">
