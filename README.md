@@ -12,10 +12,10 @@ Run the following commands to import the GPG key and add the repository source:
 
 ```bash
 # Download and install the GPG key
-curl -s --compressed "$REPO_URL/repo/KEY.gpg" | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/nls-controlhub.gpg > /dev/null
+curl -s --compressed "https://falkyre.github.io/nhl-setup/repo/KEY.gpg" | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/nls-controlhub.gpg > /dev/null
 
 # Add the repository to your sources list
-echo "deb [signed-by=/etc/apt/trusted.gpg.d/nls-controlhub.gpg] $REPO_URL/repo ./" | sudo tee /etc/apt/sources.list.d/nls-controlhub.list
+echo "deb [signed-by=/etc/apt/trusted.gpg.d/nls-controlhub.gpg] https://falkyre.github.io/nhl-setup/repo ./" | sudo tee /etc/apt/sources.list.d/nls-controlhub.list
 ```
 
 ### 2. Install the Package
