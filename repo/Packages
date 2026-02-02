@@ -22,3 +22,16 @@ SHA256: b938348b719d6b2a1418b01af82901ba93fec9b843700832a9c238c68659cac2
 Description: NHL LED Scoreboard Control Hub.
  A web-based control panel for the NHL LED Scoreboard.
 
+Package: nls-controlhub-apt-source
+Version: 2026.02.0
+Architecture: all
+Maintainer: Sean Ostermann <falkyre@gmail.com>
+Filename: ./nls-controlhub-apt-source_2026.02.0_all.deb
+Size: 2982
+MD5sum: 11f2a46ab44c367d6cb2dd4e26fe69ea
+SHA1: d61170e4a4d94fd502a06c57d350360cf1a6c938
+SHA256: 007bb794291284b44ef4ddc3821ad61c8db05aa478488d56cc809b95fa29a342
+Description: APT configuration for NLS Control Hub
+ This package installs the GPG signing key and repository configuration
+ for the NLS Control Hub.
+
