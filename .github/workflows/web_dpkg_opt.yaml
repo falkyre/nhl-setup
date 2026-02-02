@@ -84,7 +84,7 @@ jobs:
               --hidden-import 'gevent' \
               --hidden-import 'flask_socketio' \
               --hidden-import 'engineio.async_drivers.gevent' \
-              --hidden-import 'rich' \
+              --collect-all=rich \
               --add-binary 'issue_upload.py:.' \
               --add-binary 'mqtt_test.py:.' \
               --add-data 'templates:templates' \
