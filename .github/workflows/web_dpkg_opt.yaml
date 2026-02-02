@@ -360,12 +360,90 @@ jobs:
           # Export public key to the repo folder
           gpg --armor --export "$KEY_ID" > KEY.gpg
 
+          # ==========================================
+          # BUILD APT SOURCE PACKAGE
+          # ==========================================
+          echo "Building nls-controlhub-apt-source package..."
+          
+          # 1. Define variables
+          # REPO_URL is needed for the sources.list file. 
+          # We reconstruct it here inside the script block or pass it in. 
+          # Since we are in the same job, we can trust the previous definition or re-define it.
+          # We need the Lowercase owner/repo for GitHub Pages URL.
+          REPO_OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          REPO_NAME=$(echo "${{ github.event.repository.name }}" | tr '[:upper:]' '[:lower:]')
+          PAGE_URL="https://${REPO_OWNER}.github.io/${REPO_NAME}"
+          
+          PKG_NAME="nls-controlhub-apt-source"
+          # Use a version number. Since this is config, 1.0.0 is fine, or we could use the release version.
+          # Let's use the release version if available, otherwise 1.0.0.
+          PKG_VERSION="${{ steps.version.outputs.version }}"
+          [ -z "$PKG_VERSION" ] && PKG_VERSION="1.0.0"
+          
+          STAGING="apt-source-staging"
+          mkdir -p "$STAGING"/etc/apt/trusted.gpg.d
+          mkdir -p "$STAGING"/etc/apt/sources.list.d
+          mkdir -p "$STAGING"/DEBIAN
+          
+          # 2. Add GPG Key
+          # Export in binary format for trusted.gpg.d (as per modern apt guidelines, though .asc is also often accepted, .gpg is safer)
+          gpg --export "$KEY_ID" > "$STAGING/etc/apt/trusted.gpg.d/nls-controlhub.gpg"
+          
+          # 3. Add sources.list
+          echo "deb [signed-by=/etc/apt/trusted.gpg.d/nls-controlhub.gpg] $PAGE_URL/repo ./" > "$STAGING/etc/apt/sources.list.d/nls-controlhub.list"
+          
+          # 4. Create Control File
+          cat <<EOF > "$STAGING/DEBIAN/control"
+          Package: $PKG_NAME
+          Version: $PKG_VERSION
+          Architecture: all
+          Maintainer: Sean Ostermann <falkyre@gmail.com>
+          Description: APT configuration for NLS Control Hub
+           This package installs the GPG signing key and repository configuration
+           for the NLS Control Hub.
+          EOF
+          
+          # 5. Build the package
+          dpkg-deb --build --root-owner-group "$STAGING" "repo/${PKG_NAME}_${PKG_VERSION}_all.deb"
+          
+          # Cleanup staging
+          rm -rf "$STAGING"
+          
+          # Re-scan packages to include the new one (optional, but good if we want it searchable)
+          # Actually, we should run scanpackages AFTER adding this file.
+          # BUT, we already ran scanpackages above (line 340).
+          # Let's MOVE the scanpackages step to AFTER this block if we want it in the index.
+          # However, the user request says "just install the sources using a dpkg -i".
+          # It doesn't strictly need to be in the index if they download it manually, 
+          # BUT it's better if it is. 
+          # So I will re-run scanpackages just for completeness, or better yet, I should have inserted this BEFORE scanpackages.
+          # Since I am editing a block, I will just re-run scanpackages here quickly.
+          # simpler: move the file to repo/ and re-run.
+          
+          rm -f Packages Packages.gz Release Release.gpg InRelease
+          dpkg-scanpackages --multiversion . > Packages
+          gzip -k -f Packages
+          apt-ftparchive release . > Release
+          
+          # Re-sign
+          rm -f Release.gpg InRelease
+          gpg --default-key "$KEY_ID" -abs -o - Release > Release.gpg
+          gpg --default-key "$KEY_ID" --clearsign -o - Release > InRelease
+          
           cd ..
 
       - name: Create Repository README
         run: |
           # Define variables for URL construction
           REPO_URL="https://$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]').github.io/$(echo ${{ github.event.repository.name }} | tr '[:upper:]' '[:lower:]')"
+          
+          # Determine package filename for the source DEB (approximate version or find it)
+          # We can just list it or rely on the user finding it in the folder listing, 
+          # but specific commands are better.
+          # Let's assuming the version from previous step matches.
+          PKG_VERSION="${{ steps.version.outputs.version }}"
+          [ -z "$PKG_VERSION" ] && PKG_VERSION="1.0.0"
+          SOURCE_DEB_NAME="nls-controlhub-apt-source_${PKG_VERSION}_all.deb"
           
           cat <<EOF > README.md
           # NLS Control Hub APT Repository
@@ -376,9 +454,25 @@ jobs:
 
           Follow these steps to add this repository to your Raspberry Pi and install the control hub.
 
-          ### 1. Add the Repository and Key
+          ### Method 1: Automatic Setup (Recommended)
 
-          Run the following commands to import the GPG key and add the repository source:
+          Download and install the repository configuration package. This will automatically set up the GPG key and repository references.
+
+          \`\`\`bash
+          # 1. Download the setup package
+          wget "$REPO_URL/repo/$SOURCE_DEB_NAME"
+
+          # 2. Install it
+          sudo dpkg -i "$SOURCE_DEB_NAME"
+
+          # 3. Update and Install Control Hub
+          sudo apt update
+          sudo apt install nls-controlhub
+          \`\`\`
+
+          ### Method 2: Manual Setup
+
+          If you prefer to configure it manually:
 
           \`\`\`bash
           # Download and install the GPG key
@@ -386,13 +480,8 @@ jobs:
 
           # Add the repository to your sources list
           echo "deb [signed-by=/etc/apt/trusted.gpg.d/nls-controlhub.gpg] $REPO_URL/repo ./" | sudo tee /etc/apt/sources.list.d/nls-controlhub.list
-          \`\`\`
-
-          ### 2. Install the Package
-
-          Update your package list and install the control hub:
-
-          \`\`\`bash
+          
+          # Update and Install
           sudo apt update
           sudo apt install nls-controlhub
           \`\`\`
