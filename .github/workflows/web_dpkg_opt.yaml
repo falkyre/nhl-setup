@@ -1,4 +1,4 @@
-name: Build and Package NLS Control Hub
+name: Build and Package NLS Control Hub - Optimized
 
 permissions:
   contents: write
