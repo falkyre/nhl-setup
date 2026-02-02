@@ -1,5 +1,6 @@
 ![nhl_setup](assets/images/nhl_setup.gif)
 ### History
+* V2026.02.02 - February 2, 2026
 * V2025.12.0 - December 1, 2025
 * V2025.10.1 - October 14, 2025
 * V2025.10.0 - October 6, 2025
@@ -15,6 +16,9 @@
 See [Web Readme](web/README.md)
 
 ### Latest Changes
+
+#### V2026.02.02
+Update on adding plugin board names.
 
 #### V2025.12.0
 Addition of new config entries for displaying penalties animations (disable/enable), Show PP details on live game board. Also added in two new items for standings board, use large font (best on boards 128x64 or bigger) and limit the number of wild card teams.

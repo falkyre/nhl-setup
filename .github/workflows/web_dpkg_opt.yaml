@@ -81,6 +81,9 @@ jobs:
             
             echo 'Building Executable...'
             pyinstaller --onefile --clean \
+              --hidden-import 'gevent' \
+              --hidden-import 'flask_socketio' \
+              --hidden-import 'engineio.async_drivers.gevent' \
               --add-binary 'issue_upload.py:.' \
               --add-binary 'mqtt_test.py:.' \
               --add-data 'templates:templates' \
