@@ -315,7 +315,9 @@ jobs:
         env:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
         run: |
-          echo "$GPG_PRIVATE_KEY" | gpg --import
+          echo "$GPG_PRIVATE_KEY" | gpg --batch --import
+          gpg --list-keys
+          gpg --list-secret-keys
 
       - name: Update APT Repository
         run: |
@@ -352,8 +354,14 @@ jobs:
           apt-ftparchive release . > Release
 
           # Sign Release file
-          KEY_ID=$(gpg --list-keys --keyid-format LONG | grep "pub" | head -1 | awk '{print $2}' | cut -d'/' -f2)
+          # Robust way to get the key ID
+          KEY_ID=$(gpg --list-keys --with-colons | awk -F: '/^pub:/ {print $5; exit}')
           echo "Signing with Key ID: $KEY_ID"
+          
+          if [ -z "$KEY_ID" ]; then
+            echo "Error: Could not find GPG Key ID"
+            exit 1
+          fi
           
           rm -f Release.gpg InRelease
           gpg --default-key "$KEY_ID" -abs -o - Release > Release.gpg
