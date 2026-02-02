@@ -1,0 +1,36 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA512
+
+Date: Mon, 02 Feb 2026 17:09:20 +0000
+MD5Sum:
+ 214c0cf7691221629b3a459dd0f59ac9              868 Packages
+ c0adb8fa36d2caae8b14964d7fc52713              451 Packages.gz
+ a6eb8eeedcf5dfde01b4024830a49283               38 Release
+SHA1:
+ fb1d63028c8e4431c44b8c4b71fe55bb2c7cc2c1              868 Packages
+ d9b263dd6ef222a2061056d1109640fd3c3bba48              451 Packages.gz
+ 5404d9ee4f0f1b38f69b571cb39d59435a535bd6               38 Release
+SHA256:
+ 85c479031f6343e3e9031090f9ec323e34f296071b9320b4b4aaafd1edb690ad              868 Packages
+ 1231b2b48508eda1261ee62b1f70978662bbc2cb08cc58376395f0160aef71f4              451 Packages.gz
+ a4e2084b1d539baa2baddbe679c29f15be664500040c9a4df6eff6fc5cde2c03               38 Release
+SHA512:
+ c19763912f3fe4da5d3c5391b75f5e9e7f9fcd0d4fa8f8a4706e560fe63dc74d73ae517ce2ad4cd18f51213933ad01f8408ba64efb1429941a9cf7bf8dfb2dd2              868 Packages
+ 37470e40bb43d3c5557b8000128b450d5ed78e265ee694bdf82f4ccaa9567602c5b0b05257a8f5cae33783ae02277144f15f7c5eb5c87af9df602fd452f2f386              451 Packages.gz
+ 916f205b2cfea07e77ace306cff9d2f116da5998fe1c647f163ff0364eb0b477bad493d38fa8ff7c1fc3bf3dc6385a1933e03ae0b2571eda083325d15459efba               38 Release
+-----BEGIN PGP SIGNATURE-----
+
+iQIzBAEBCgAdFiEEd9/maY4HhvlVHGPQYjOytkgwAHgFAmmA2kAACgkQYjOytkgw
+AHjAZhAArlz6XvA61bfV5cMTtTl/NKJbJZ0OWtBMyxhL5prITckPdWj/GF4NqD6J
+DaqvX3r2F+G3SL2EcQHRSrQUs+2WPOzkw/MUyB5vIhNxQIaKg/HwbsvRVe1VJGvc
+4Hz/zHDZQ6tlBSpiEQif2tCmT6XeuvM+GG6mqUwuTSyr5IfDjVdkaO4JqJWVShdE
+gZ9U839PNnBjve7RUflAZxSllr084owCn5IcQWl2AgTDRF+YcCcoUVJXopJSHD2R
+3+/I1dv0FTcSrnzkDxjQ389WbddhWjNeI8FPimC86nNSYjA3jjskStP/QOFE8bB7
+PKk5lnh+BaNz2ChwUQYTCqWgpnHDY8UgZICql4OhQGMzTWz6o1jkigkFnhpZrKkS
+4rh7WED3AANkK1vKeUhXIjUR4QUKxZL17fgT7N5AuOfmHV14Jh1HhfcCILMMkZHM
+j+xtLDPtyHLgcdaagzK5NCSYfZtBr0TOnWG9cKErSU7xE1NjxPjozo5a6gL1xujU
+pnXLIeD+xpSjL10d3bgkEXqT1qBZSJQuYeV/3oPBOyp8Wus87myhaqR4WdLZtNg4
+VAfjmjRw+BllIkDIDYW0jxI4O/m6rrcSSTnxcqMAX0+A5vCRlj+DNaVY1s15F7gR
+ow/1r3Nec4SS/pT4kdT9DtlNxV65c6wuiaiobdvlSrurBDfbamo=
+=wVma
+-----END PGP SIGNATURE-----
