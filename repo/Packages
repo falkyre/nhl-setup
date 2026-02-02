@@ -1,0 +1,12 @@
+Package: nls-controlhub
+Version: 2026.02.0
+Architecture: armhf
+Maintainer: Sean Ostermann <falkyre@gmail.com>
+Filename: ./nls-controlhub-deb-bookworm-armv7.deb
+Size: 30097316
+MD5sum: 1a4370f32575c121eb2e7d86a1faedd2
+SHA1: 87103d0538cc29f9e643947595dabaeeae8048df
+SHA256: 9b034394225bf9aab67e3aa26c39fb0a6fb346d370c0463b04428fc06d75380e
+Description: NHL LED Scoreboard Control Hub.
+ A web-based control panel for the NHL LED Scoreboard.
+
