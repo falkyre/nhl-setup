@@ -84,10 +84,10 @@ jobs:
             
             echo 'Installing Python requirements...'
             pip install --upgrade pip
-            # Install cffi via pip (better than apt) + pyinstaller
-            pip install cffi pyinstaller
+            # Install cffi via pip (better than apt) + pyinstaller. Use piwheels for prebuilt armv7 wheels.
+            pip install --extra-index-url https://www.piwheels.org/simple cffi pyinstaller
             
-            if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+            if [ -f requirements.txt ]; then pip install --extra-index-url https://www.piwheels.org/simple -r requirements.txt; fi
             
             echo 'Building Executable...'
             pyinstaller --onefile --clean \
