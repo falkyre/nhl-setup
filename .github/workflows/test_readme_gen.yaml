@@ -1,0 +1,46 @@
+name: Test APT Repo README
+
+permissions:
+  contents: write
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test-readme-gen:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        
+      - name: Generate and Show README
+        run: |
+          # Define variables for URL construction (mimic the real workflow)
+          REPO_URL="https://$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]').github.io/$(echo ${{ github.event.repository.name }} | tr '[:upper:]' '[:lower:]')"
+          echo "DEBUG: REPO_URL is $REPO_URL"
+          
+          cat <<EOF > README_TEST.md
+          # NLS Control Hub APT Repository
+
+          This repository hosts the Debian packages for the **NHL LED Scoreboard Control Hub**.
+
+          ## Installation Instructions
+
+          Follow these steps to add this repository to your Raspberry Pi and install the control hub.
+
+          ### 1. Add the Repository and Key
+
+          Run the following commands to import the GPG key and add the repository source:
+
+          \`\`\`bash
+          # Download and install the GPG key
+          curl -s --compressed "$REPO_URL/repo/KEY.gpg" | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/nls-controlhub.gpg > /dev/null
+
+          # Add the repository to your sources list
+          echo "deb [signed-by=/etc/apt/trusted.gpg.d/nls-controlhub.gpg] $REPO_URL/repo ./" | sudo tee /etc/apt/sources.list.d/nls-controlhub.list
+          \`\`\`
+          EOF
+          
+          echo "--- GENERATED CONTENT ---"
+          cat README_TEST.md
+          echo "--- END CONTENT ---"
