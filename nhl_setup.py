@@ -453,16 +453,19 @@ def get_plugin_boards():
     # Define the plugins directory path
     # Using relative path from current working directory as is standard in this script
     plugins_dir = os.path.join(os.getcwd(), 'src', 'boards', 'plugins')
+    print(f"Plugins Directory: {plugins_dir}")
     
     if not os.path.exists(plugins_dir):
         # Fail silently or log if possible, but this script mostly prints to stdout
+        print(f"Plugins directory not found: {plugins_dir}", RED)
         return board_names
 
     try:
         # iterate over directories in plugins_dir
         for item in os.listdir(plugins_dir):
             plugin_path = os.path.join(plugins_dir, item)
-            
+            print(f"Searching for plugin board names in {item}")
+
             # Skip example_board
             if item == 'example_board':
                 continue
