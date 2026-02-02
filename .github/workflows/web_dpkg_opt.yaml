@@ -32,19 +32,11 @@ jobs:
           - os_name: bookworm
             docker_image: debian:bookworm
             arch: linux/arm/v7
-            suffix: bookworm-armv7
+            suffix: linux-armv7
           - os_name: bookworm
             docker_image: debian:bookworm
             arch: linux/arm64
-            suffix: bookworm-arm64
-          - os_name: trixie
-            docker_image: debian:trixie
-            arch: linux/arm/v7
-            suffix: trixie-armv7
-          - os_name: trixie
-            docker_image: debian:trixie
-            arch: linux/arm64
-            suffix: trixie-arm64
+            suffix: linux-arm64
     
     steps:
       - name: Checkout Repository
@@ -118,13 +110,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - suffix: bookworm-armv7
+          - suffix: linux-armv7
             deb_arch: armhf
-          - suffix: bookworm-arm64
-            deb_arch: arm64
-          - suffix: trixie-armv7
-            deb_arch: armhf
-          - suffix: trixie-arm64
+          - suffix: linux-arm64
             deb_arch: arm64
 
     steps:
