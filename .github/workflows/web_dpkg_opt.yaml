@@ -15,10 +15,8 @@ on:
         type: choice
         options:
           - all
-          - bookworm-armv7
-          - bookworm-arm64
-          - trixie-armv7
-          - trixie-arm64
+          - linux-armv7
+          - linux-arm64
 
 jobs:
   build-executables:
