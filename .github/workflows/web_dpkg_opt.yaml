@@ -1,0 +1,453 @@
+name: Build and Package NLS Control Hub
+
+permissions:
+  contents: write
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Target Platform'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - bookworm-armv7
+          - bookworm-arm64
+          - trixie-armv7
+          - trixie-arm64
+
+jobs:
+  build-executables:
+    name: Build Executable - ${{ matrix.suffix }}
+    runs-on: ubuntu-latest
+    if: github.event_name != 'release' || startsWith(github.event.release.tag_name, 'web-') || startsWith(github.event.release.tag_name, 'V')
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os_name: bookworm
+            docker_image: debian:bookworm
+            arch: linux/arm/v7
+            suffix: bookworm-armv7
+          - os_name: bookworm
+            docker_image: debian:bookworm
+            arch: linux/arm64
+            suffix: bookworm-arm64
+          - os_name: trixie
+            docker_image: debian:trixie
+            arch: linux/arm/v7
+            suffix: trixie-armv7
+          - os_name: trixie
+            docker_image: debian:trixie
+            arch: linux/arm64
+            suffix: trixie-arm64
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Cache Pip Dependencies
+        uses: actions/cache@v3
+        with:
+          path: .pip_cache
+          key: pip-${{ matrix.suffix }}-${{ hashFiles('web/requirements.txt') }}
+          restore-keys: |
+            pip-${{ matrix.suffix }}-
+
+      - name: Create Cache Directory
+        run: mkdir -p .pip_cache
+
+      - name: Build inside Docker Container
+        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.target == 'all' || github.event.inputs.target == matrix.suffix }}
+        # OPTIMIZATION: Modified apt-get flags and package list below
+        run: |
+          docker run --rm --platform ${{ matrix.arch }} -v "$PWD":/app -v "$PWD/.pip_cache":/root/.cache/pip -w /app/web ${{ matrix.docker_image }} /bin/bash -c "
+            set -e
+            # Fix permissions for pip (run as root in container)
+            chown -R root:root /root/.cache/pip
+            
+            echo 'Installing dependencies...'
+            apt-get update && apt-get install -y --no-install-recommends \
+              python3 python3-pip python3-venv python3-dev \
+              libffi-dev libssl-dev build-essential
+              
+            echo 'Setting up Virtual Environment...'
+            python3 -m venv venv
+            source venv/bin/activate
+            
+            echo 'Installing Python requirements...'
+            pip install --upgrade pip
+            # Install cffi via pip (better than apt) + pyinstaller
+            pip install cffi pyinstaller
+            
+            if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+            
+            echo 'Building Executable...'
+            pyinstaller --onefile --clean \
+              --add-binary 'issue_upload.py:.' \
+              --add-binary 'mqtt_test.py:.' \
+              --add-data 'templates:templates' \
+              --add-data 'static:static' \
+              --name nls_controlhub-${{ matrix.suffix }} \
+              config_server.py
+            chown -R 0:0 dist/
+            
+            # Restore permissions for host runner
+            chown -R $(id -u):$(id -g) /root/.cache/pip
+          "
+
+      - name: Upload Executable Artifact
+        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.target == 'all' || github.event.inputs.target == matrix.suffix }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: nls_controlhub-${{ matrix.suffix }}
+          path: web/dist/nls_controlhub-${{ matrix.suffix }}
+
+  package-debians:
+    name: Package Debian - ${{ matrix.suffix }}
+    needs: build-executables
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - suffix: bookworm-armv7
+            deb_arch: armhf
+          - suffix: bookworm-arm64
+            deb_arch: arm64
+          - suffix: trixie-armv7
+            deb_arch: armhf
+          - suffix: trixie-arm64
+            deb_arch: arm64
+
+    steps:
+      - name: Checkout Repository
+        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.target == 'all' || github.event.inputs.target == matrix.suffix }}
+        uses: actions/checkout@v4
+
+      - name: Download Executable Artifact
+        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.target == 'all' || github.event.inputs.target == matrix.suffix }}
+        uses: actions/download-artifact@v4
+        with:
+          name: nls_controlhub-${{ matrix.suffix }}
+          path: ./executable
+
+      - name: Set up Debian package structure
+        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.target == 'all' || github.event.inputs.target == matrix.suffix }}
+        run: |
+          mkdir -p debian/DEBIAN
+          mkdir -p debian/lib/systemd/system
+          mkdir -p debian/etc/nls_controlhub
+          mkdir -p debian/etc/default
+          mkdir -p debian/usr/local/bin
+
+      - name: Get version from VERSION file
+        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.target == 'all' || github.event.inputs.target == matrix.suffix }}
+        id: version
+        run: echo "version=$(cat web/VERSION)" >> $GITHUB_OUTPUT
+
+      - name: Create control file
+        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.target == 'all' || github.event.inputs.target == matrix.suffix }}
+        run: |
+          cat <<EOF > debian/DEBIAN/control
+          Package: nls-controlhub
+          Version: ${{ steps.version.outputs.version }}
+          Architecture: ${{ matrix.deb_arch }}
+          Maintainer: Sean Ostermann <falkyre@gmail.com>
+          Description: NHL LED Scoreboard Control Hub.
+           A web-based control panel for the NHL LED Scoreboard.
+          EOF
+
+      - name: Create maintainer scripts (postinst, prerm)
+        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.target == 'all' || github.event.inputs.target == matrix.suffix }}
+        run: |
+          # Create postinst
+          cat <<EOF > debian/DEBIAN/postinst
+          #!/bin/bash
+          set -e
+          
+          # Default values
+          NLS_USER="pi"
+          NLS_WORKDIR="/home/pi"
+
+          # Load defaults from /etc/default/nls_controlhub if it exists
+          if [ -f /etc/default/nls_controlhub ]; then
+              . /etc/default/nls_controlhub
+              # Update variables if they were set in the file
+              [ -n "\$User" ] && NLS_USER="\$User"
+              [ -n "\$WorkingDirectory" ] && NLS_WORKDIR="\$WorkingDirectory"
+          fi
+
+          if [ "\$1" = "configure" ]; then
+              # Dynamically generate the systemd service file
+              cat <<SERVICE > /lib/systemd/system/nls_controlhub.service
+          [Unit]
+          Description=NLS Control Hub
+          After=network.target
+
+          [Service]
+          ExecStart=/usr/local/bin/nls_controlhub --config /etc/nls_controlhub/config.toml
+          User=\$NLS_USER
+          WorkingDirectory=\$NLS_WORKDIR
+          Restart=on-failure
+          RestartSec=5
+          StandardOutput=syslog
+          StandardError=syslog
+          SyslogIdentifier=nls_controlhub
+
+          [Install]
+          WantedBy=multi-user.target
+          SERVICE
+
+              # Reload systemd and restart service
+              systemctl daemon-reload
+              systemctl enable nls_controlhub
+              systemctl restart nls_controlhub
+          fi
+          EOF
+          chmod 0755 debian/DEBIAN/postinst
+
+          # Create prerm
+          cat <<EOF > debian/DEBIAN/prerm
+          #!/bin/sh
+          set -e
+          if [ "\$1" = "remove" ]; then
+              systemctl stop nls_controlhub
+              systemctl disable nls_controlhub
+              # Remove the generated service file
+              rm -f /lib/systemd/system/nls_controlhub.service
+              systemctl daemon-reload
+          fi
+          EOF
+          chmod 0755 debian/DEBIAN/prerm
+
+      - name: Copy files to package structure
+        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.target == 'all' || github.event.inputs.target == matrix.suffix }}
+        run: |
+          # Create default configuration file
+          cat <<EOF > debian/etc/default/nls_controlhub
+          # Configuration for NLS Control Hub Service
+          # User to run the service as
+          User=pi
+          # Directory where nhl-led-scoreboard is installed
+          WorkingDirectory=/home/pi
+          EOF
+          
+          cp web/config.toml debian/etc/nls_controlhub/
+          mv ./executable/nls_controlhub-${{ matrix.suffix }} debian/usr/local/bin/nls_controlhub
+          chmod +x debian/usr/local/bin/nls_controlhub
+
+      - name: Build Debian package
+        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.target == 'all' || github.event.inputs.target == matrix.suffix }}
+        run: dpkg-deb --build --root-owner-group debian nls-controlhub-deb-${{ matrix.suffix }}.deb
+
+      - name: Upload Debian package artifact
+        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.target == 'all' || github.event.inputs.target == matrix.suffix }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: nls-controlhub-deb-${{ matrix.suffix }}
+          path: nls-controlhub-deb-${{ matrix.suffix }}.deb
+
+  release-assets:
+    name: Upload Release Assets
+    if: github.event_name == 'release' && (startsWith(github.event.release.tag_name, 'web-') || startsWith(github.event.release.tag_name, 'V'))
+    needs: package-debians
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all debian packages
+        uses: actions/download-artifact@v4
+        with:
+          path: ./deb-packages
+          pattern: nls-controlhub-deb-*
+          merge-multiple: true
+
+      # 1. Upload to the actual release (e.g., web-v2.0.0)
+      - name: Upload to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ./deb-packages/*
+
+      # 2. Delete the old 'latest-web' tag/release
+      - name: Delete existing 'latest-web' release
+        run: gh release delete latest-web --cleanup-tag --yes || true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # 3. Create/Update the 'latest-web' floating release
+      - name: Update 'latest-web' Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest-web
+          name: Latest Web Build
+          files: ./deb-packages/*
+          make_latest: false
+          prerelease: true
+
+  update-apt-repo:
+    name: Update APT Repository
+    needs: package-debians
+    runs-on: ubuntu-latest
+    if: success() && (github.event_name == 'release' || github.event_name == 'workflow_dispatch')
+    permissions:
+      contents: write
+      pages: write
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download all debian packages
+        uses: actions/download-artifact@v4
+        with:
+          path: ./incoming_debs
+          pattern: nls-controlhub-deb-*
+          merge-multiple: true
+
+      - name: Import GPG Key
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+        run: |
+          echo "$GPG_PRIVATE_KEY" | gpg --import
+
+      - name: Update APT Repository
+        run: |
+          # Configure Git
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+
+          # Switch to gh-pages branch (create if not exists)
+          if git rev-parse --verify origin/gh-pages >/dev/null 2>&1; then
+            git checkout gh-pages
+          else
+            git checkout --orphan gh-pages
+            git rm -rf .
+          fi
+
+          # Create repo directory structure if it doesn't exist
+          mkdir -p repo
+
+          # Copy new debs to repo directory
+          cp incoming_debs/*.deb repo/
+
+          # Install repository tools
+          # OPTIMIZATION: Added no-install-recommends
+          sudo apt-get update && sudo apt-get install -y --no-install-recommends dpkg-dev apt-utils
+
+          # Navigate to repo dir to generate indices
+          cd repo
+
+          # Generate Packages file
+          dpkg-scanpackages --multiversion . > Packages
+          gzip -k -f Packages
+
+          # Generate Release file
+          apt-ftparchive release . > Release
+
+          # Sign Release file
+          KEY_ID=$(gpg --list-keys --keyid-format LONG | grep "pub" | head -1 | awk '{print $2}' | cut -d'/' -f2)
+          echo "Signing with Key ID: $KEY_ID"
+          
+          rm -f Release.gpg InRelease
+          gpg --default-key "$KEY_ID" -abs -o - Release > Release.gpg
+          gpg --default-key "$KEY_ID" --clearsign -o - Release > InRelease
+          
+          # Export public key to the repo folder
+          gpg --armor --export "$KEY_ID" > KEY.gpg
+
+          cd ..
+
+      - name: Create Repository README
+        run: |
+          # Define variables for URL construction
+          REPO_URL="https://$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]').github.io/$(echo ${{ github.event.repository.name }} | tr '[:upper:]' '[:lower:]')"
+          
+          cat <<EOF > README.md
+          # NLS Control Hub APT Repository
+
+          This repository hosts the Debian packages for the **NHL LED Scoreboard Control Hub**.
+
+          ## Installation Instructions
+
+          Follow these steps to add this repository to your Raspberry Pi and install the control hub.
+
+          ### 1. Add the Repository and Key
+
+          Run the following commands to import the GPG key and add the repository source:
+
+          \`\`\`bash
+          # Download and install the GPG key
+          curl -s --compressed "\$REPO_URL/repo/KEY.gpg" | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/nls-controlhub.gpg > /dev/null
+
+          # Add the repository to your sources list
+          echo "deb [signed-by=/etc/apt/trusted.gpg.d/nls-controlhub.gpg] \$REPO_URL/repo ./" | sudo tee /etc/apt/sources.list.d/nls-controlhub.list
+          \`\`\`
+
+          ### 2. Install the Package
+
+          Update your package list and install the control hub:
+
+          \`\`\`bash
+          sudo apt update
+          sudo apt install nls-controlhub
+          \`\`\`
+
+          ---
+
+          ## Configuration
+
+          **Before starting the service**, you must ensure it is configured to run as the correct user and look in the correct directory for your scoreboard installation.
+
+          ### 1. Set User and Working Directory
+
+          The service relies on a default configuration file located at \`/etc/default/nls_controlhub\`.
+
+          1.  Open the file for editing:
+              \`\`\`bash
+              sudo nano /etc/default/nls_controlhub
+              \`\`\`
+
+          2.  Update the \`User\` and \`WorkingDirectory\` variables to match your installation.
+              * **User**: The username you use on your Raspberry Pi (e.g., \`pi\`, \`dietpi\`, or your custom user).
+              * **WorkingDirectory**: The full path to your \`nhl-led-scoreboard\` directory.
+
+              **Example:**
+              \`\`\`ini
+              # Configuration for NLS Control Hub Service
+              
+              # User to run the service as
+              User=myuser
+              
+              # Directory where nhl-led-scoreboard is installed
+              WorkingDirectory=/home/myuser/nhl-led-scoreboard
+              \`\`\`
+
+          3.  Save and exit (\`Ctrl+O\`, \`Enter\`, \`Ctrl+X\`).
+
+          ### 2. Apply Changes and Start Service
+
+          Once you have updated the defaults, re-run the package configuration to generate the correct systemd unit file and start the service:
+
+          \`\`\`bash
+          sudo dpkg-reconfigure nls-controlhub
+          \`\`\`
+
+          *Note: The service should start automatically after this step. You can check its status with:*
+
+          \`\`\`bash
+          sudo systemctl status nls_controlhub
+          \`\`\`
+          EOF
+
+      - name: Commit and Push
+        run: |
+          git add repo/ README.md
+          git commit -m "Update APT repository for release ${{ github.event.release.tag_name || 'manual build' }}" || echo "No changes to commit"
+          git push origin gh-pages
