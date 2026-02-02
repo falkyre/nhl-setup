@@ -444,8 +444,12 @@ jobs:
           \`\`\`
           EOF
 
+      - name: Create Jekyll Config
+        run: |
+          echo "theme: jekyll-theme-slate" > _config.yml
+
       - name: Commit and Push
         run: |
-          git add repo/ README.md
+          git add repo/ README.md _config.yml
           git commit -m "Update APT repository for release ${{ github.event.release.tag_name || 'manual build' }}" || echo "No changes to commit"
           git push origin gh-pages
