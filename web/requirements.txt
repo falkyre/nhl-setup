@@ -1,5 +1,5 @@
 flask
-richcolorlog
+richcolorlog==1.44.12
 toml
 paho-mqtt
 gevent

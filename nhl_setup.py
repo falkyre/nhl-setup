@@ -468,7 +468,7 @@ def get_plugin_boards():
                 continue
                 
             if os.path.isdir(plugin_path):
-                plugin_json_path = os.path.join(plugin_path, 'plugins.json')
+                plugin_json_path = os.path.join(plugin_path, 'plugin.json')
                 
                 if os.path.exists(plugin_json_path):
                     try:
