@@ -454,7 +454,7 @@ def get_plugin_boards(config_dir):
     # relative to the parent of the config directory
     parent_dir = os.path.dirname(config_dir)
     plugins_dir = os.path.join(parent_dir, 'src', 'boards', 'plugins')
-    print(f"Plugins Directory: {plugins_dir}")
+    #print(f"Plugins Directory: {plugins_dir}")
     
     if not os.path.exists(plugins_dir):
         # Fail silently or log if possible, but this script mostly prints to stdout
@@ -465,7 +465,7 @@ def get_plugin_boards(config_dir):
         # iterate over directories in plugins_dir
         for item in os.listdir(plugins_dir):
             plugin_path = os.path.join(plugins_dir, item)
-            print(f"Searching for plugin board names in {item}")
+            #print(f"Searching for plugin board names in {item}")
 
             # Skip example_board
             if item == 'example_board':
