@@ -443,7 +443,7 @@ def preferences_settings(default_config,qmark):
 
     return preferences
 
-def get_plugin_boards():
+def get_plugin_boards(config_dir):
     """
     Scans src/boards/plugins directory for plugins.json files and extracts board IDs.
     Skips 'example_board' directory.
@@ -451,8 +451,9 @@ def get_plugin_boards():
     board_names = []
     
     # Define the plugins directory path
-    # Using relative path from current working directory as is standard in this script
-    plugins_dir = os.path.join(os.getcwd(), 'src', 'boards', 'plugins')
+    # relative to the parent of the config directory
+    parent_dir = os.path.dirname(config_dir)
+    plugins_dir = os.path.join(parent_dir, 'src', 'boards', 'plugins')
     print(f"Plugins Directory: {plugins_dir}")
     
     if not os.path.exists(plugins_dir):
@@ -493,7 +494,7 @@ def get_plugin_boards():
 
     return board_names
 
-def states_settings(default_config,qmark,setup_type):
+def states_settings(default_config,qmark,setup_type,config_dir):
     states = STATES
     temp_dict = {}
 
@@ -514,7 +515,7 @@ def states_settings(default_config,qmark,setup_type):
         board_list = ['clock','weather','wxalert','wxforecast','scoreticker','seriesticker','standings','team_summary','stanley_cup_champions','christmas','season_countdown']
 
         # Check for plugins
-        plugins_board = get_plugin_boards()
+        plugins_board = get_plugin_boards(config_dir)
         
         if len(plugins_board) > 0:
             board_list.extend(plugins_board)
@@ -1516,7 +1517,7 @@ def main():
             nhl_config.update(preferences)
 
         if section == "states":
-            states = states_settings(default_config,qmark,setup_type)
+            states = states_settings(default_config,qmark,setup_type,config_dir)
             nhl_config.update(states)
 
         if section == "boards":
