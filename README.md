@@ -6,7 +6,26 @@ This repository hosts the Debian packages for the **NHL LED Scoreboard Control H
 
 Follow these steps to add this repository to your Raspberry Pi and install the control hub.
 
-### 1. Add the Repository and Key
+### Method 1: Automatic Setup (Recommended)
+
+Download and install the repository configuration package. This will automatically set up the GPG key and repository references.
+```bash
+# 1. Download the setup package
+wget "https://falkyre.github.io/repo/nls-controlhub-apt-source_2026.02.0_all.deb"
+
+# 2. Install it
+
+sudo dpkg -i "nls-controlhub-apt-source_2026.02.0_all.deb"
+
+# 3. Update and Install Control Hub
+sudo apt update
+sudo apt install nls-controlhub
+```
+         
+
+ ### Method 2: Manual Setup
+
+If you prefer to configure it manually:
 
 Run the following commands to import the GPG key and add the repository source:
 
