@@ -22,8 +22,7 @@ sudo apt update
 sudo apt install nls-controlhub
 ```
          
-
- ### Method 2: Manual Setup
+### Method 2: Manual Setup
 
 If you prefer to configure it manually:
 
