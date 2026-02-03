@@ -26,8 +26,7 @@ sudo apt install nls-controlhub
 
 If you prefer to configure it manually:
 
-Run the following commands to import the GPG key and add the repository source:
-
+### 1. Install GPG Key and repository source
 ```bash
 # Download and install the GPG key
 curl -s --compressed "https://falkyre.github.io/nhl-setup/repo/KEY.gpg" | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/nls-controlhub.gpg > /dev/null
