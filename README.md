@@ -11,7 +11,7 @@ Follow these steps to add this repository to your Raspberry Pi and install the c
 Download and install the repository configuration package. This will automatically set up the GPG key and repository references.
 ```bash
 # 1. Download the setup package
-wget "https://falkyre.github.io/repo/nls-controlhub-apt-source_2026.02.0_all.deb"
+wget "https://falkyre.github.io/nhl-setup/repo/nls-controlhub-apt-source_2026.02.0_all.deb"
 
 # 2. Install it
 
