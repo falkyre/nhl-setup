@@ -153,7 +153,8 @@
                     newer images (V2025.12.1 and later) to auto-deploy the configuration on boot.
                 </p>
                 <div class="d-flex flex-column align-items-center">
-                    <div class="form-check form-check-reverse mb-3" style="width: fit-content;" data-bs-toggle="tooltip" data-bs-placement="right" title="Include all logos and logo layout json files">
+                    <div class="form-check form-check-reverse mb-3" style="width: fit-content;" data-bs-toggle="tooltip"
+                        data-bs-placement="right" title="Include all logos and logo layout json files">
                         <input class="form-check-input" type="checkbox" value="" id="includeLogos">
                         <label class="form-check-label" for="includeLogos">
                             Include Logos
@@ -414,17 +415,72 @@
             });
             portInput.addEventListener('input', updateLinks);
 
+            // Reusable function to check connectivity and open
+            const checkAndOpenLogoEditor = (port) => {
+                const hostname = window.location.hostname;
+                const targetUrl = `http://${hostname}:${port}`;
+                const localUrl = `http://127.0.0.1:${port}`;
+
+                statusMsg.textContent = `Verifying connectivity to ${targetUrl}...`;
+                statusMsg.style.display = 'block';
+                statusMsg.classList.remove('text-danger', 'text-warning');
+                statusMsg.classList.add('text-info');
+
+                // 2 second timeout
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 2000);
+
+                fetch(targetUrl, { mode: 'no-cors', signal: controller.signal })
+                    .then(() => {
+                        // Success (or opaque response) - Open Hostname
+                        clearTimeout(timeoutId);
+                        statusMsg.style.display = 'none';
+                        window.open(targetUrl, '_blank');
+                    })
+                    .catch((err) => {
+                        clearTimeout(timeoutId);
+                        console.warn(`Failed to connect to ${targetUrl}:`, err);
+
+                        // Fallback to localhost? 
+                        // The user requested "check if that can be opened and if it can, open a new window".
+                        // Implications: If it CAN'T, do we fallback? 
+                        // Let's try localhost as a fallback but catch that too.
+
+                        statusMsg.textContent = `Could not reach ${targetUrl}. Trying ${localUrl}...`;
+
+                        const controller2 = new AbortController();
+                        const timeoutId2 = setTimeout(() => controller2.abort(), 2000);
+
+                        fetch(localUrl, { mode: 'no-cors', signal: controller2.signal })
+                            .then(() => {
+                                clearTimeout(timeoutId2);
+                                statusMsg.textContent = `Opened ${localUrl} (Hostname was unreachable).`;
+                                statusMsg.classList.remove('text-info');
+                                statusMsg.classList.add('text-warning');
+                                window.open(localUrl, '_blank');
+                            })
+                            .catch((err2) => {
+                                clearTimeout(timeoutId2);
+                                statusMsg.textContent = `Unable to connect to Logo Editor at ${targetUrl} or ${localUrl}. Check your firewall or network settings.`;
+                                statusMsg.classList.remove('text-info');
+                                statusMsg.classList.add('text-danger');
+                                // Enable button so they can try again
+                                launchLogoEditorBtn.disabled = false;
+                                launchBtnText.textContent = "Open Logo Editor";
+                            });
+                    });
+            };
+
             launchLogoEditorBtn.addEventListener('click', () => {
                 const venv = venvInput.value;
                 const port = portInput.value || 5000;
-                const editorUrl = `http://127.0.0.1:${port}`;
 
                 // Check status before deciding action
                 fetch(`/api/logo-editor/status?port=${port}`)
                     .then(res => res.json())
                     .then(statusData => {
                         if (statusData.status === 'running') {
-                            window.open(editorUrl, '_blank');
+                            checkAndOpenLogoEditor(port);
                             return;
                         }
 
@@ -462,8 +518,8 @@
                                                     clearInterval(pollInterval);
                                                     checkLogoEditorStatus(); // Update UI state
 
-                                                    // Open in new window
-                                                    window.open(editorUrl, '_blank');
+                                                    // Use the new check function
+                                                    checkAndOpenLogoEditor(port);
                                                 } else if (attempts >= maxAttempts) {
                                                     clearInterval(pollInterval);
                                                     launchBtnText.textContent = "Launch Failed / Timed Out";
