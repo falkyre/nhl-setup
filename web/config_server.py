@@ -15,6 +15,7 @@ import shutil
 import re
 import xmlrpc.client
 import urllib.request
+import urllib.error
 import toml
 from datetime import datetime
 import uuid
@@ -810,18 +811,42 @@ def get_logo_editor_path():
     """Returns the absolute path to the logo_editor.py script."""
     return os.path.join(SCOREBOARD_DIR, 'src', 'logo_editor.py')
 
-def check_port_open(port, host='127.0.0.1', timeout=1):
-    """Checks if a port is open on the given host."""
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.settimeout(timeout)
+def check_logo_editor_health(port, host='127.0.0.1', timeout=2):
+    """
+    Checks if the Logo Editor is running by calling its /api/health endpoint.
+    Returns:
+        'running': If the endpoint returns 200 OK with status='ok'.
+        'available': If the connection is refused (port closed).
+        'conflict': If the port is open but returns something else.
+    """
+    url = f"http://{host}:{port}/api/health"
     try:
-        result = sock.connect_ex((host, port))
-        return result == 0
-    except socket.error as e:
-        app.logger.debug(f"Port check failed: {e}")
-        return False
-    finally:
-        sock.close()
+        with urllib.request.urlopen(url, timeout=timeout) as response:
+            if response.status == 200:
+                try:
+                    data = json.loads(response.read().decode('utf-8'))
+                    if data.get('status') == 'ok':
+                        return 'running'
+                except json.JSONDecodeError:
+                    pass
+            return 'conflict' # Open but not returning expected JSON
+            
+    except urllib.error.URLError as e:
+        if isinstance(e.reason, ConnectionRefusedError) or (hasattr(e.reason, 'errno') and e.reason.errno == 111): # 111 is Connection Refused
+             return 'available' # Port closed
+        # Other URL errors might mean timeout or host unreachable, but if we can't compile a connection...
+        # If it is a timeout, it might be hanging or firewall.
+        if isinstance(e.reason, socket.timeout):
+             return 'available' # Treat timeout as not running/available? Or maybe it's hung. 
+        
+        # If we get here, it's some other error. 
+        # If the port is closed, we usually get ConnectionRefused.
+        # Let's assume 'available' if we can't connect.
+        return 'available'
+
+    except Exception as e:
+        app.logger.debug(f"Health check failed with unexpected error: {e}")
+        return 'available'
 
 LOGO_EDITOR_STATE_FILE = os.path.join(SCOREBOARD_DIR, 'logo_editor_state.json')
 
@@ -837,12 +862,13 @@ def logo_editor_status():
     except ValueError:
         port = 5000
 
-    port_open = check_port_open(port)
+    # Perform Health Check
+    health_status = check_logo_editor_health(port)
     
     # Determine Status
     status = 'unavailable'
     if exists:
-        if not port_open:
+        if health_status == 'available':
             status = 'available'
             # Cleanup state file if port is closed, as it means it stopped
             if os.path.exists(LOGO_EDITOR_STATE_FILE):
@@ -850,23 +876,15 @@ def logo_editor_status():
                     os.remove(LOGO_EDITOR_STATE_FILE)
                 except:
                     pass
-        else:
-            # Port is open. Check if it's us or something else.
-            status = 'conflict' # Default to conflict unless proven otherwise
-            
-            if os.path.exists(LOGO_EDITOR_STATE_FILE):
-                try:
-                    with open(LOGO_EDITOR_STATE_FILE, 'r') as f:
-                        state = json.load(f)
-                        if state.get('port') == port:
-                            status = 'running'
-                except Exception as e:
-                    app.logger.warning(f"Failed to read logo editor state: {e}")
-            
-            if status == 'conflict':
-                 app.logger.info(f"Port {port} is in use by another process (Conflict).")
+        elif health_status == 'running':
+            status = 'running'
+            # Optional: Check state file to confirm WE launched it?
+            # For now, if it's running and compatible, we say it's running.
+        else: # conflict
+            status = 'conflict' 
+            app.logger.info(f"Port {port} is in use by another process (Conflict).")
 
-    app.logger.debug(f"Logo Editor Status Check: port={port}, exists={exists}, port_open={port_open}, status={status}")
+    app.logger.debug(f"Logo Editor Status Check: port={port}, exists={exists}, health_status={health_status}, status={status}")
     
     return jsonify({
         'success': True,
