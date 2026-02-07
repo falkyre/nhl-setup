@@ -284,7 +284,7 @@ jobs:
     name: Update APT Repository
     needs: package-debians
     runs-on: ubuntu-latest
-    if: success() && (github.event_name == 'release' || github.event_name == 'workflow_dispatch')
+    if: success() && github.event_name == 'release'
     permissions:
       contents: write
       pages: write
