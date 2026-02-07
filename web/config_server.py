@@ -820,23 +820,32 @@ def check_logo_editor_health(port, host='127.0.0.1', timeout=2):
         'conflict': If the port is open but returns something else.
     """
     url = f"http://{host}:{port}/api/health"
+    app.logger.info(f"Checking Logo Editor health at: {url}")
     try:
         with urllib.request.urlopen(url, timeout=timeout) as response:
             if response.status == 200:
                 try:
-                    data = json.loads(response.read().decode('utf-8'))
+                    content = response.read().decode('utf-8')
+                    data = json.loads(content)
                     if data.get('status') == 'ok':
+                        app.logger.info(f"Health check PASSED. Response: {content}")
                         return 'running'
                 except json.JSONDecodeError:
+                    app.logger.warning(f"Health check: Invalid JSON received from {url}")
                     pass
+            app.logger.warning(f"Health check: Unexpected response status {response.status} or content from {url}")
             return 'conflict' # Open but not returning expected JSON
             
     except urllib.error.URLError as e:
+        # Log the specific error for debugging
+        app.logger.info(f"Health check URLError: {e.reason}")
+        
         if isinstance(e.reason, ConnectionRefusedError) or (hasattr(e.reason, 'errno') and e.reason.errno == 111): # 111 is Connection Refused
              return 'available' # Port closed
         # Other URL errors might mean timeout or host unreachable, but if we can't compile a connection...
         # If it is a timeout, it might be hanging or firewall.
         if isinstance(e.reason, socket.timeout):
+             app.logger.warning(f"Health check timed out checking {url}")
              return 'available' # Treat timeout as not running/available? Or maybe it's hung. 
         
         # If we get here, it's some other error. 
@@ -845,7 +854,7 @@ def check_logo_editor_health(port, host='127.0.0.1', timeout=2):
         return 'available'
 
     except Exception as e:
-        app.logger.debug(f"Health check failed with unexpected error: {e}")
+        app.logger.error(f"Health check failed with unexpected error: {e}")
         return 'available'
 
 LOGO_EDITOR_STATE_FILE = os.path.join(SCOREBOARD_DIR, 'logo_editor_state.json')
@@ -884,7 +893,7 @@ def logo_editor_status():
             status = 'conflict' 
             app.logger.info(f"Port {port} is in use by another process (Conflict).")
 
-    app.logger.debug(f"Logo Editor Status Check: port={port}, exists={exists}, health_status={health_status}, status={status}")
+    app.logger.info(f"Logo Editor Status Check: port={port}, exists={exists}, health_status={health_status}, status={status}")
     
     return jsonify({
         'success': True,
