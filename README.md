@@ -1,6 +1,6 @@
 ![nhl_setup](assets/images/nhl_setup.gif)
 ### History
-* V2026.02.02 - February 2, 2026
+* V2026.02.0 - February 2, 2026
 * V2025.12.0 - December 1, 2025
 * V2025.10.1 - October 14, 2025
 * V2025.10.0 - October 6, 2025
