@@ -415,60 +415,13 @@
             });
             portInput.addEventListener('input', updateLinks);
 
-            // Reusable function to check connectivity and open
+            // Reusable function to open the logo editor
             const checkAndOpenLogoEditor = (port) => {
                 const hostname = window.location.hostname;
                 const targetUrl = `http://${hostname}:${port}`;
-                const localUrl = `http://127.0.0.1:${port}`;
 
-                statusMsg.textContent = `Verifying connectivity to ${targetUrl}...`;
-                statusMsg.style.display = 'block';
-                statusMsg.classList.remove('text-danger', 'text-warning');
-                statusMsg.classList.add('text-info');
-
-                // 2 second timeout
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 2000);
-
-                fetch(targetUrl, { mode: 'no-cors', signal: controller.signal })
-                    .then(() => {
-                        // Success (or opaque response) - Open Hostname
-                        clearTimeout(timeoutId);
-                        statusMsg.style.display = 'none';
-                        window.open(targetUrl, '_blank');
-                    })
-                    .catch((err) => {
-                        clearTimeout(timeoutId);
-                        console.warn(`Failed to connect to ${targetUrl}:`, err);
-
-                        // Fallback to localhost? 
-                        // The user requested "check if that can be opened and if it can, open a new window".
-                        // Implications: If it CAN'T, do we fallback? 
-                        // Let's try localhost as a fallback but catch that too.
-
-                        statusMsg.textContent = `Could not reach ${targetUrl}. Trying ${localUrl}...`;
-
-                        const controller2 = new AbortController();
-                        const timeoutId2 = setTimeout(() => controller2.abort(), 2000);
-
-                        fetch(localUrl, { mode: 'no-cors', signal: controller2.signal })
-                            .then(() => {
-                                clearTimeout(timeoutId2);
-                                statusMsg.textContent = `Opened ${localUrl} (Hostname was unreachable).`;
-                                statusMsg.classList.remove('text-info');
-                                statusMsg.classList.add('text-warning');
-                                window.open(localUrl, '_blank');
-                            })
-                            .catch((err2) => {
-                                clearTimeout(timeoutId2);
-                                statusMsg.textContent = `Unable to connect to Logo Editor at ${targetUrl} or ${localUrl}. Check your firewall or network settings.`;
-                                statusMsg.classList.remove('text-info');
-                                statusMsg.classList.add('text-danger');
-                                // Enable button so they can try again
-                                launchLogoEditorBtn.disabled = false;
-                                launchBtnText.textContent = "Open Logo Editor";
-                            });
-                    });
+                statusMsg.style.display = 'none';
+                window.open(targetUrl, '_blank');
             };
 
             launchLogoEditorBtn.addEventListener('click', () => {
