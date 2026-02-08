@@ -27,7 +27,7 @@ import io
 import threading
 from flask_socketio import SocketIO, emit, disconnect, join_room, leave_room
 import paramiko
-
+import atexit
 
 __version__ = "2026.02.0"
 
@@ -1069,13 +1069,13 @@ def launch_logo_editor():
         app.logger.error(f"Failed to launch Logo Editor: {e}")
         return jsonify({'success': False, 'message': f"Failed to launch: {e}"}), 500
 
-@app.route('/api/logo-editor/stop', methods=['POST'])
-def stop_logo_editor():
-    """Stops the running Logo Editor process."""
-    app.logger.info("Request received to stop Logo Editor...")
-    
+def shutdown_logo_editor():
+    """
+    Stops the running Logo Editor process if it exists.
+    Returns a dict with 'success' (bool) and 'message' (str).
+    """
     if not os.path.exists(LOGO_EDITOR_STATE_FILE):
-        return jsonify({'success': False, 'message': 'No running Logo Editor tracked.'}), 404
+        return {'success': False, 'message': 'No running Logo Editor tracked.'}
 
     try:
         with open(LOGO_EDITOR_STATE_FILE, 'r') as f:
@@ -1092,17 +1092,36 @@ def stop_logo_editor():
                 app.logger.warning(f"Process {pid} not found. Cleaning up state file.")
             except Exception as e:
                 app.logger.error(f"Failed to kill process {pid}: {e}")
-                return jsonify({'success': False, 'message': f"Failed to stop process: {e}"}), 500
+                return {'success': False, 'message': f"Failed to stop process: {e}"}
         
         # Clean up state file on success or if process was missing
         if os.path.exists(LOGO_EDITOR_STATE_FILE):
              os.remove(LOGO_EDITOR_STATE_FILE)
 
-        return jsonify({'success': True, 'message': 'Logo Editor stopped.'})
+        return {'success': True, 'message': 'Logo Editor stopped.'}
 
     except Exception as e:
         app.logger.error(f"Error stopping Logo Editor: {e}")
-        return jsonify({'success': False, 'message': f"An error occurred: {e}"}), 500
+        return {'success': False, 'message': f"An error occurred: {e}"}
+
+@app.route('/api/logo-editor/stop', methods=['POST'])
+def stop_logo_editor():
+    """Stops the running Logo Editor process."""
+    app.logger.info("Request received to stop Logo Editor...")
+    
+    result = shutdown_logo_editor()
+    
+    if result['success']:
+        return jsonify(result)
+    else:
+        # If message says "No running...", return 404, else 500
+        if 'No running' in result['message']:
+            return jsonify(result), 404
+        else:
+            return jsonify(result), 500
+
+# Register cleanup on exit
+atexit.register(shutdown_logo_editor)
 
 # =============================================
 # End of Logo Editor API Section
