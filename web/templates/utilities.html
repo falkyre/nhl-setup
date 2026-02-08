@@ -184,8 +184,8 @@
                     <input type="number" class="form-control" id="logo_editor_port" value="5000">
                     <div class="form-text">Port to run the Logo Editor on (default 5000).</div>
                     <div class="mt-2">
-                        <div class="form-text">The logo editor can be accessed this address. The "Open
-                            Logo Editor" button will launch the first.</div>
+                        <div class="form-text">The logo editor can be accessed using the address below. The "Open Logo
+                            Editor" button will open a new tab or window to this address.</div>
                         <div class="font-monospace mt-1">
                             <span id="text_host">http://hostname:5000</span>
                         </div>
@@ -332,8 +332,6 @@
             const portInput = document.getElementById('logo_editor_port');
             const launchBtnText = document.getElementById('launch_btn_text');
             const statusMsg = document.getElementById('editor_status_msg');
-            const textLocal = document.getElementById('text_local');
-            const textLocalhost = document.getElementById('text_localhost');
             const textHost = document.getElementById('text_host');
             let pollInterval = null;
 
@@ -341,13 +339,7 @@
             const updateLinks = () => {
                 const port = portInput.value || 5000;
                 const hostname = window.location.hostname;
-
-                const localUrl = `http://127.0.0.1:${port}`;
-                const localhostUrl = `http://localhost:${port}`;
                 const hostUrl = `http://${hostname}:${port}`;
-
-                textLocal.textContent = localUrl;
-                textLocalhost.textContent = localhostUrl;
                 textHost.textContent = hostUrl;
             };
 
