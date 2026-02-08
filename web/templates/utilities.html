@@ -364,7 +364,7 @@
                                 launchLogoEditorBtn.classList.add('btn-primary');
                                 launchLogoEditorBtn.disabled = false;
                                 launchLogoEditorBtn.disabled = false;
-                                stopLogoEditorBtn.style.display = data.managed ? 'inline-block' : 'none';
+                                stopLogoEditorBtn.style.display = (data.managed !== false) ? 'inline-block' : 'none';
                                 statusMsg.style.display = 'none';
                                 venvInput.disabled = true; // Lock inputs while running
                                 portInput.disabled = true;
