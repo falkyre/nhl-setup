@@ -458,11 +458,14 @@
                                             .then(r => r.json())
                                             .then(s => {
                                                 if (s.status === 'running') {
-                                                    clearInterval(pollInterval);
-                                                    checkLogoEditorStatus(); // Update UI state
+                                                    if (pollInterval) {
+                                                        clearInterval(pollInterval);
+                                                        pollInterval = null;
 
-                                                    // Use the new check function
-                                                    checkAndOpenLogoEditor(port);
+                                                        checkLogoEditorStatus(); // Update UI state
+                                                        // Use the new check function
+                                                        checkAndOpenLogoEditor(port);
+                                                    }
                                                 } else if (attempts >= maxAttempts) {
                                                     clearInterval(pollInterval);
                                                     launchBtnText.textContent = "Launch Failed / Timed Out";
