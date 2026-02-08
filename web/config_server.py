@@ -910,6 +910,9 @@ def launch_logo_editor():
     app.logger.info("Request received to launch Logo Editor...")
     
     path = get_logo_editor_path()
+    app.logger.info(f"Launch: SCOREBOARD_DIR={SCOREBOARD_DIR}")
+    app.logger.info(f"Launch: LOGO_EDITOR_STATE_FILE={LOGO_EDITOR_STATE_FILE}")
+
     if not os.path.exists(path):
         return jsonify({'success': False, 'message': 'logo_editor.py not found.'}), 404
 
