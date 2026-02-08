@@ -363,7 +363,8 @@
                                 launchBtnText.textContent = "Open Logo Editor";
                                 launchLogoEditorBtn.classList.add('btn-primary');
                                 launchLogoEditorBtn.disabled = false;
-                                stopLogoEditorBtn.style.display = 'inline-block';
+                                launchLogoEditorBtn.disabled = false;
+                                stopLogoEditorBtn.style.display = data.managed ? 'inline-block' : 'none';
                                 statusMsg.style.display = 'none';
                                 venvInput.disabled = true; // Lock inputs while running
                                 portInput.disabled = true;

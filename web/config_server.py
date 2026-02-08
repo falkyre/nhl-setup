@@ -900,7 +900,8 @@ def logo_editor_status():
         'available': exists,
         'running': (status == 'running'), # For backwards compatibility if any
         'status': status,
-        'port': port
+        'port': port,
+        'managed': os.path.exists(LOGO_EDITOR_STATE_FILE)
     })
 
 @app.route('/api/logo-editor/launch', methods=['POST'])
