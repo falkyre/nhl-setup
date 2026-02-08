@@ -836,21 +836,25 @@ def check_logo_editor_health(port, host='127.0.0.1', timeout=2):
             app.logger.warning(f"Health check: Unexpected response status {response.status} or content from {url}")
             return 'conflict' # Open but not returning expected JSON
             
+    except urllib.error.HTTPError as e:
+        # If we get an HTTP error (e.g. 404), it means the port IS open and listening, just not our API.
+        app.logger.info(f"Health check HTTPError (Port Open): {e.code}")
+        return 'conflict'
+
     except urllib.error.URLError as e:
         # Log the specific error for debugging
         app.logger.info(f"Health check URLError: {e.reason}")
         
+        # Check for connection refused
         if isinstance(e.reason, ConnectionRefusedError) or (hasattr(e.reason, 'errno') and e.reason.errno == 111): # 111 is Connection Refused
              return 'available' # Port closed
-        # Other URL errors might mean timeout or host unreachable, but if we can't compile a connection...
-        # If it is a timeout, it might be hanging or firewall.
+        
+        # Check for timeout
         if isinstance(e.reason, socket.timeout):
              app.logger.warning(f"Health check timed out checking {url}")
-             return 'available' # Treat timeout as not running/available? Or maybe it's hung. 
+             return 'available' # Treat timeout as likely not running properly
         
-        # If we get here, it's some other error. 
-        # If the port is closed, we usually get ConnectionRefused.
-        # Let's assume 'available' if we can't connect.
+        # If we get here, it's some other error but usually implies we can't connect properly
         return 'available'
 
     except Exception as e:
@@ -880,10 +884,31 @@ def logo_editor_status():
         if health_status == 'available':
             status = 'available'
             # Cleanup state file if port is closed, as it means it stopped
+            # Cleanup state file if port is closed, BUT only if process is dead
             if os.path.exists(LOGO_EDITOR_STATE_FILE):
                 try:
-                    os.remove(LOGO_EDITOR_STATE_FILE)
-                except:
+                    with open(LOGO_EDITOR_STATE_FILE, 'r') as f:
+                        state = json.load(f)
+                        pid = state.get('pid')
+                    
+                    # Check if process is running
+                    is_running = False
+                    if pid:
+                        try:
+                            os.kill(pid, 0) # 0 signal just checks existence
+                            is_running = True
+                        except OSError:
+                            is_running = False
+                    
+                    if not is_running:
+                        app.logger.info(f"Port {port} closed and PID {pid} gone. Cleaning up state file.")
+                        os.remove(LOGO_EDITOR_STATE_FILE)
+                    else:
+                        app.logger.info(f"Port {port} closed but PID {pid} is running (starting up?). Keeping state file.")
+                        
+                except Exception as e:
+                    app.logger.error(f"Error checking/cleaning state file: {e}")
+                    # If corrupt, maybe delete? For now, leave it or delete safe
                     pass
         elif health_status == 'running':
             status = 'running'
