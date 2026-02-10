@@ -3,14 +3,18 @@
 This is the web-based control hub for the NHL LED Scoreboard project. It provides a user-friendly interface to configure the scoreboard, manage plugins, and view logs.
 
 ### History
-* V2025.02.0 - February 2, 2026
+* V2026.02.1 - February 9, 2026
+* V2026.02.0 - February 2, 2026
 * V2025.12.2 - December 11, 2025
 * V2025.12.1 - December 9, 2025
 * V2025.12.0 - December 1, 2025
 
 ### Latest Changes
 
-#### V2025.02.02
+#### V2026.02.1
+Embed the logo editor within the application using a new iframe page and enhance port management in utilities.
+
+#### V2026.02.02
 Integration of new Logo Editor and addition of Web Based SSH.
 
 #### V2025.12.2
