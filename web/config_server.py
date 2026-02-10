@@ -918,6 +918,18 @@ def logo_editor_status():
             status = 'conflict' 
             app.logger.info(f"Port {port} is in use by another process (Conflict).")
 
+    # Managed Status
+    managed = False
+    managed_port = None
+    if os.path.exists(LOGO_EDITOR_STATE_FILE):
+        managed = True
+        try:
+            with open(LOGO_EDITOR_STATE_FILE, 'r') as f:
+                state = json.load(f)
+                managed_port = state.get('port')
+        except Exception:
+            pass
+
     app.logger.info(f"Logo Editor Status Check: port={port}, exists={exists}, health_status={health_status}, status={status}")
     
     return jsonify({
@@ -926,7 +938,8 @@ def logo_editor_status():
         'running': (status == 'running'), # For backwards compatibility if any
         'status': status,
         'port': port,
-        'managed': os.path.exists(LOGO_EDITOR_STATE_FILE)
+        'managed': managed,
+        'managed_port': managed_port
     })
 
 @app.route('/api/logo-editor/launch', methods=['POST'])
@@ -1328,6 +1341,11 @@ def plugins_page():
 def supervisor_page():
     """Serves the supervisor embed page."""
     return send_from_directory(TEMPLATES_DIR, 'supervisor_rpc.html') 
+
+@app.route('/logo_editor')
+def logo_editor_page():
+    """Serves the logo editor embed page."""
+    return send_from_directory(TEMPLATES_DIR, 'logo_editor_embed.html') 
 
 @app.route('/assets/<path:path>')
 def send_asset(path):

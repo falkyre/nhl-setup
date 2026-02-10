@@ -185,7 +185,7 @@
                     <div class="form-text">Port to run the Logo Editor on (default 5000).</div>
                     <div class="mt-2">
                         <div class="form-text">The logo editor can be accessed using the address below. The "Open Logo
-                            Editor" button will open a new tab or window to this address.</div>
+                            Editor" button will open the editor in an iframe.</div>
                         <div class="font-monospace mt-1">
                             <span id="text_host">http://hostname:5000</span>
                         </div>
@@ -353,6 +353,16 @@
                     .then(res => res.json())
                     .then(data => {
                         if (data.success && data.available) {
+
+                            // Check if we are managing an editor on a different port
+                            if (data.managed_port && data.managed_port != port) {
+                                console.log(`Switching to managed port: ${data.managed_port}`);
+                                portInput.value = data.managed_port;
+                                updateLinks();
+                                checkLogoEditorStatus(); // Re-check with new port
+                                return;
+                            }
+
                             logoEditorCard.style.display = 'block';
 
                             // Reset classes
@@ -407,11 +417,8 @@
 
             // Reusable function to open the logo editor
             const checkAndOpenLogoEditor = (port) => {
-                const hostname = window.location.hostname;
-                const targetUrl = `http://${hostname}:${port}`;
-
-                statusMsg.style.display = 'none';
-                window.open(targetUrl, '_blank');
+                // Navigate to the embed page instead of opening a new tab
+                window.location.href = `/logo_editor?port=${port}`;
             };
 
             launchLogoEditorBtn.addEventListener('click', () => {
