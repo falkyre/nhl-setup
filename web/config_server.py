@@ -29,7 +29,7 @@ from flask_socketio import SocketIO, emit, disconnect, join_room, leave_room
 import paramiko
 import atexit
 
-__version__ = "2026.02.0"
+__version__ = "2026.02.1"
 
 
 def is_frozen():
