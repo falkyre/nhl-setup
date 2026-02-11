@@ -110,7 +110,15 @@ jobs:
           cd repo
           dpkg-scanpackages --multiversion . > Packages
           gzip -k -f Packages
-          apt-ftparchive release . > Release
+          apt-ftparchive \
+            -o APT::FTPArchive::Release::Origin="nls-controlhub" \
+            -o APT::FTPArchive::Release::Label="nls-controlhub" \
+            -o APT::FTPArchive::Release::Suite="stable" \
+            -o APT::FTPArchive::Release::Codename="nls-controlhub" \
+            -o APT::FTPArchive::Release::Architectures="armhf arm64 all" \
+            -o APT::FTPArchive::Release::Components="main" \
+            -o APT::FTPArchive::Release::Description="NHL LED Scoreboard Control Hub Repository" \
+            release . > Release
           
           # Sign
           rm -f Release.gpg InRelease
