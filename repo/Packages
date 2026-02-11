@@ -1,24 +1,24 @@
 Package: nls-controlhub
-Version: 2026.02.0
+Version: 2026.02.1
 Architecture: arm64
 Maintainer: Sean Ostermann <falkyre@gmail.com>
 Filename: ./nls-controlhub-deb-linux-arm64.deb
-Size: 27832786
-MD5sum: 1b9b0d4046055fb350a6587d459a4d67
-SHA1: 117a235fd451d4c2a90079da5036636d90bfd19a
-SHA256: 4be6469d9f17ee1a5361ba8e2a6173d8fa773d4c33d0c0f9f99f8e54f40b267d
+Size: 27841300
+MD5sum: a0e760126e967239be29b37e80288754
+SHA1: 43bbc95effc826f9e411e30b4a249c96b7e3246a
+SHA256: 2f8b265d8a06a3769bda8b75105abead0ffabfdc409c69435bc050bf91322d23
 Description: NHL LED Scoreboard Control Hub.
  A web-based control panel for the NHL LED Scoreboard.
 
 Package: nls-controlhub
-Version: 2026.02.0
+Version: 2026.02.1
 Architecture: armhf
 Maintainer: Sean Ostermann <falkyre@gmail.com>
 Filename: ./nls-controlhub-deb-linux-armv7.deb
-Size: 30487304
-MD5sum: d82b3e1a8713522fee64766cb4077599
-SHA1: ec492026fd6d4728e9a76218ae9469ebb2df68bb
-SHA256: b938348b719d6b2a1418b01af82901ba93fec9b843700832a9c238c68659cac2
+Size: 30497160
+MD5sum: f58364ac39d9301eee2356827a5d28c8
+SHA1: 59ec7a5767645f1a9a7d987ea3ac4ff83aec5478
+SHA256: 958c6ec441cd8841fa9711fb3497f1f26e917dcad846bbed891b0381873c8432
 Description: NHL LED Scoreboard Control Hub.
  A web-based control panel for the NHL LED Scoreboard.
 
@@ -31,19 +31,6 @@ Size: 2982
 MD5sum: 11f2a46ab44c367d6cb2dd4e26fe69ea
 SHA1: d61170e4a4d94fd502a06c57d350360cf1a6c938
 SHA256: 007bb794291284b44ef4ddc3821ad61c8db05aa478488d56cc809b95fa29a342
-Description: APT configuration for NLS Control Hub
- This package installs the GPG signing key and repository configuration
- for the NLS Control Hub.
-
-Package: nls-controlhub-apt-source
-Version: 2026.02.1
-Architecture: all
-Maintainer: Sean Ostermann <falkyre@gmail.com>
-Filename: ./nls-controlhub-apt-source_2026.02.1_all.deb
-Size: 2984
-MD5sum: 8569c62d9a9465f3697c60fc2fc380c2
-SHA1: bff412e95cdd34a9a886d636d9ed3a3e6cca4ae9
-SHA256: 62fa168e2f9bc69e24257cfe1ada10dad6d505cb906495e49e0e7c6d2a669026
 Description: APT configuration for NLS Control Hub
  This package installs the GPG signing key and repository configuration
  for the NLS Control Hub.
