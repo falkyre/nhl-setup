@@ -1,4 +1,4 @@
-name: Generate APT Source Package (Temporary)
+name: Generate APT Source Package
 
 on:
   workflow_dispatch:
