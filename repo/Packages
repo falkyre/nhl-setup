@@ -35,3 +35,16 @@ Description: APT configuration for NLS Control Hub
  This package installs the GPG signing key and repository configuration
  for the NLS Control Hub.
 
+Package: nls-controlhub-apt-source
+Version: 2026.02.1
+Architecture: all
+Maintainer: Sean Ostermann <falkyre@gmail.com>
+Filename: ./nls-controlhub-apt-source_2026.02.1_all.deb
+Size: 2984
+MD5sum: 8569c62d9a9465f3697c60fc2fc380c2
+SHA1: bff412e95cdd34a9a886d636d9ed3a3e6cca4ae9
+SHA256: 62fa168e2f9bc69e24257cfe1ada10dad6d505cb906495e49e0e7c6d2a669026
+Description: APT configuration for NLS Control Hub
+ This package installs the GPG signing key and repository configuration
+ for the NLS Control Hub.
+
