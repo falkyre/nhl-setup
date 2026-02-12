@@ -218,6 +218,14 @@ jobs:
           EOF
           chmod 0755 debian/DEBIAN/prerm
 
+      - name: Create conffiles
+        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.target == 'all' || github.event.inputs.target == matrix.suffix }}
+        run: |
+          cat <<EOF > debian/DEBIAN/conffiles
+          /etc/nls_controlhub/config.toml
+          /etc/default/nls_controlhub
+          EOF
+
       - name: Copy files to package structure
         if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.target == 'all' || github.event.inputs.target == matrix.suffix }}
         run: |
