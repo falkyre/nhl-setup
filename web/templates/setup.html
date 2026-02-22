@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,8 +9,10 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>
-        .dropdown-item.active { font-weight: bold; }
-        
+        .dropdown-item.active {
+            font-weight: bold;
+        }
+
         /* ============================================= */
         /* MODIFIED: Logo Header CSS */
         /* ============================================= */
@@ -24,6 +27,7 @@
             border-radius: 0;
             transition: background-color 0.2s ease-in-out, padding 0.2s ease-in-out;
         }
+
         /* Light mode style */
         [data-bs-theme="light"] .logo-header {
             background-color: #ffffff;
@@ -32,12 +36,24 @@
         }
 
         /* NEW: CSS to toggle logos */
-        .logo-light { display: none; }
-        .logo-dark { display: inline-block; }
-        [data-bs-theme="light"] .logo-light { display: inline-block; }
-        [data-bs-theme="light"] .logo-dark { display: none; }
+        .logo-light {
+            display: none;
+        }
+
+        .logo-dark {
+            display: inline-block;
+        }
+
+        [data-bs-theme="light"] .logo-light {
+            display: inline-block;
+        }
+
+        [data-bs-theme="light"] .logo-dark {
+            display: none;
+        }
+
         /* ============================================= */
-        
+
         code {
             background-color: var(--bs-secondary-bg);
             padding: 0.25rem 0.5rem;
@@ -45,31 +61,36 @@
         }
     </style>
     <script>
-        (function() {
+        (function () {
             const applyTheme = (theme) => {
                 document.documentElement.setAttribute('data-bs-theme', theme);
             };
             const savedTheme = localStorage.getItem('theme') || 'auto';
-            
+
             if (savedTheme === 'light' || savedTheme === 'dark') {
                 applyTheme(savedTheme);
-            } else { 
+            } else {
                 const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
                 applyTheme(prefersDark ? 'dark' : 'light');
             }
         })();
     </script>
 </head>
+
 <body class="container my-4">
 
     <div class="d-flex justify-content-end mb-2">
         <div class="dropdown">
-            <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="theme-toggle-button" data-bs-toggle="dropdown" aria-expanded="false">
-                </button>
+            <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="theme-toggle-button"
+                data-bs-toggle="dropdown" aria-expanded="false">
+            </button>
             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="theme-toggle-button">
-                <li><a class="dropdown-item" href="#" data-theme-value="light"><i class="bi bi-sun-fill me-2"></i> Light</a></li>
-                <li><a class="dropdown-item" href="#" data-theme-value="dark"><i class="bi bi-moon-stars-fill me-2"></i> Dark</a></li>
-                <li><a class="dropdown-item" href="#" data-theme-value="auto"><i class="bi bi-circle-half me-2"></i> Auto</a></li>
+                <li><a class="dropdown-item" href="#" data-theme-value="light"><i class="bi bi-sun-fill me-2"></i>
+                        Light</a></li>
+                <li><a class="dropdown-item" href="#" data-theme-value="dark"><i class="bi bi-moon-stars-fill me-2"></i>
+                        Dark</a></li>
+                <li><a class="dropdown-item" href="#" data-theme-value="auto"><i class="bi bi-circle-half me-2"></i>
+                        Auto</a></li>
             </ul>
         </div>
     </div>
@@ -78,24 +99,174 @@
         <img src="/assets/images/logo-lite.svg" class="logo-header logo-light" alt="Scoreboard Logo">
         <img src="/assets/images/logo.svg" class="logo-header logo-dark" alt="Scoreboard Logo">
     </div>
-    <div class="text-center">
-        <h1 class="mb-3">Welcome to the NHL Scoreboard Image!</h1>
-        <p class="lead">To continue, you must complete the one-time interactive setup.</p>
-        
-        <div class="alert alert-info col-lg-8 mx-auto mt-4">
-            <h4 class="alert-heading"><i class="bi bi-terminal-fill me-2"></i> Terminal Setup Required</h4>
-            <p>This server has detected that you are running the scoreboard for the first time. The initial setup requires interactive, system-level access and **must be run from a terminal on the Raspberry Pi**.</p>
-            <hr>
-            <p class="mb-0">
-                Please SSH into your Pi (as the pi user) and follow the prompts.  To run tool manually,
-            </p>
-            <code class="d-block p-3 my-3 fs-5">/home/pi/nhl-led-scoreboard/sb-tools do_firstrun</code>
-            <p>After you follow the on-screen prompts and reboot, this page will automatically redirect to the Control Hub.</p>
+    <div class="text-center col-lg-8 mx-auto">
+        <h1 class="mb-3">Welcome to the NHL Scoreboard!</h1>
+        <p class="lead">Please configure your LED Matrix to complete the onboarding process.</p>
+
+        <div class="card shadow-sm mt-4 text-start mb-4" id="step1-card">
+            <div class="card-body p-4">
+                <h4 class="card-title mb-4"><i class="bi bi-gear-fill me-2 text-primary"></i> Step 1: Matrix
+                    Configuration</h4>
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="matrixSize" class="form-label fw-bold">Matrix Size</label>
+                        <select class="form-select" id="matrixSize">
+                            <option value="64x32" selected>64x32</option>
+                            <option value="128x32">128x32</option>
+                            <option value="128x64">128x64</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="gpioMapping" class="form-label fw-bold">GPIO Mapping</label>
+                        <select class="form-select" id="gpioMapping">
+                            <option value="regular">regular</option>
+                            <option value="adafruit-hat" selected>adafruit-hat</option>
+                            <option value="adafruit-hat-pwm">adafruit-hat-pwm</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-check mt-3">
+                    <input class="form-check-input" type="checkbox" id="advancedToggle">
+                    <label class="form-check-label fw-bold text-danger" for="advancedToggle">
+                        Advanced Configuration
+                    </label>
+                </div>
+
+                <div id="advancedSection" class="mt-3 d-none">
+                    <div class="alert alert-warning py-2 mb-2">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <strong>Warning:</strong> The text box below will not be checked for syntax errors. Ensure you
+                        know what you are adding, or your panel may not display correctly.
+                    </div>
+                    <label for="boardCommand" class="form-label">Custom Board Command</label>
+                    <input type="text" class="form-control font-monospace" id="boardCommand"
+                        value="--led-gpio-mapping=adafruit-hat --led-rows=32 --led-cols=64 --led-brightness=40">
+                </div>
+
+                <div class="d-grid mt-4">
+                    <button class="btn btn-primary btn-lg" id="actionBtn" onclick="createTestScript()">
+                        <i class="bi bi-file-earmark-code me-2"></i>Create Test Script
+                    </button>
+                    <div id="statusMessage" class="mt-2 text-center text-muted small"></div>
+                </div>
+
+                <div id="debugScriptContainer" class="mt-4 d-none">
+                    <h5 class="text-info"><i class="bi bi-bug me-2"></i>Debug: Generated Script</h5>
+                    <pre><code id="debugScriptContent" class="d-block p-3 border rounded bg-dark text-light overflow-auto" style="max-height: 200px; font-size: 0.85rem;"></code></pre>
+                </div>
+            </div>
         </div>
 
-        <button class="btn btn-primary btn-lg mt-3" onclick="window.location.reload();">
-            <i class="bi bi-arrow-clockwise me-2"></i>I've completed the setup, refresh page
-        </button>
+        <!-- Step 2: Configuration Setup (Initially hidden) -->
+        <div class="card shadow-sm mt-4 text-start mb-4 d-none" id="step2-card">
+            <div class="card-body p-4">
+                <h4 class="card-title mb-4"><i class="bi bi-sliders me-2 text-primary"></i> Step 2: Configuration Setup
+                </h4>
+
+                <p class="mb-3">Select your preferred NHL team. This will generate a simplified `config.json` for your
+                    scoreboard.</p>
+                <div class="mb-3">
+                    <label for="teamSelect" class="form-label fw-bold">Favorite Team</label>
+                    <select class="form-select" id="teamSelect">
+                        <option value="Avalanche">Avalanche</option>
+                        <option value="Blackhawks">Blackhawks</option>
+                        <option value="Blue Jackets">Blue Jackets</option>
+                        <option value="Blues">Blues</option>
+                        <option value="Bruins">Bruins</option>
+                        <option value="Canadiens">Canadiens</option>
+                        <option value="Canucks">Canucks</option>
+                        <option value="Capitals">Capitals</option>
+                        <option value="Coyotes">Coyotes</option>
+                        <option value="Devils">Devils</option>
+                        <option value="Ducks">Ducks</option>
+                        <option value="Flames">Flames</option>
+                        <option value="Flyers">Flyers</option>
+                        <option value="Golden Knights">Golden Knights</option>
+                        <option value="Hurricanes">Hurricanes</option>
+                        <option value="Islanders">Islanders</option>
+                        <option value="Jets">Jets</option>
+                        <option value="Kings">Kings</option>
+                        <option value="Kraken">Kraken</option>
+                        <option value="Lightning">Lightning</option>
+                        <option value="Maple Leafs">Maple Leafs</option>
+                        <option value="Oilers">Oilers</option>
+                        <option value="Panthers">Panthers</option>
+                        <option value="Penguins">Penguins</option>
+                        <option value="Predators" selected>Predators</option>
+                        <option value="Rangers">Rangers</option>
+                        <option value="Red Wings">Red Wings</option>
+                        <option value="Sabres">Sabres</option>
+                        <option value="Senators">Senators</option>
+                        <option value="Sharks">Sharks</option>
+                        <option value="Stars">Stars</option>
+                        <option value="Wild">Wild</option>
+                    </select>
+                </div>
+
+                <div class="d-grid mt-4">
+                    <button class="btn btn-primary btn-lg" id="createConfigBtn" onclick="createConfig()">
+                        <i class="bi bi-file-earmark-plus me-2"></i>Create Config
+                    </button>
+                    <div id="configStatusMessage" class="mt-2 text-center text-muted small"></div>
+                </div>
+
+                <div id="debugConfigContainer" class="mt-4 d-none">
+                    <h5 class="text-info"><i class="bi bi-bug me-2"></i>Debug: Generated config.json</h5>
+                    <pre><code id="debugConfigContent" class="d-block p-3 border rounded bg-dark text-light overflow-auto" style="max-height: 200px; font-size: 0.85rem;"></code></pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 3: Supervisor Setup (Initially hidden) -->
+        <div class="card shadow-sm mt-4 text-start mb-4 d-none" id="step3-card">
+            <div class="card-body p-4">
+                <h4 class="card-title mb-4"><i class="bi bi-activity me-2 text-primary"></i> Step 3: Service Setup</h4>
+
+                <p>Would you like to enable the Supervisor service? This ensures your scoreboard will automatically run
+                    whenever the Raspberry Pi boots up.</p>
+
+                <div class="form-check mt-3 mb-4">
+                    <input class="form-check-input" type="checkbox" id="updateCheck">
+                    <label class="form-check-label" for="updateCheck">
+                        Enable automatic update check on startup
+                    </label>
+                </div>
+
+                <div class="d-grid mt-4">
+                    <button class="btn btn-success btn-lg" id="supervisorBtn" onclick="confirmSupervisor()">
+                        <i class="bi bi-check-circle-fill me-2"></i>Enable Supervisor & Reboot
+                    </button>
+                    <div id="supervisorStatusMessage" class="mt-2 text-center text-muted small"></div>
+                </div>
+
+                <div id="debugSupervisorContainer" class="mt-4 d-none">
+                    <h5 class="text-info"><i class="bi bi-bug me-2"></i>Debug: Generated scoreboard.conf string</h5>
+                    <pre><code id="debugSupervisorContent" class="d-block p-3 border rounded bg-dark text-light overflow-auto" style="max-height: 200px; font-size: 0.85rem;"></code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Validation Modal -->
+    <div class="modal fade" id="validationModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Display Validation</h5>
+                </div>
+                <div class="modal-body">
+                    <p>Did you see the expected text displayed on your LED Matrix?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No, let me try
+                        again</button>
+                    <button type="button" class="btn btn-success" onclick="advanceToStep2()">Yes, I saw it!</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -105,7 +276,7 @@
             const themeToggleButton = document.getElementById('theme-toggle-button');
             const themeLinks = document.querySelectorAll('a[data-theme-value]');
             const autoMediaMatch = window.matchMedia('(prefers-color-scheme: dark)');
-            
+
             const icons = {
                 light: '<i class="bi bi-sun-fill me-2"></i> Light',
                 dark: '<i class="bi bi-moon-stars-fill me-2"></i> Dark',
@@ -115,7 +286,7 @@
             const applyTheme = (theme) => {
                 document.documentElement.setAttribute('data-bs-theme', theme);
             };
-            
+
             const applyHtmlTheme = (theme) => {
                 if (theme === 'light' || theme === 'dark') {
                     applyTheme(theme);
@@ -149,26 +320,248 @@
                     applyHtmlTheme('auto');
                 }
             });
+
+            // Onboarding Flow Logic
+            const matrixSizeSelect = document.getElementById('matrixSize');
+            const gpioMappingSelect = document.getElementById('gpioMapping');
+            const boardCommandInput = document.getElementById('boardCommand');
+            const advancedToggle = document.getElementById('advancedToggle');
+            const advancedSection = document.getElementById('advancedSection');
+            const updateCheck = document.getElementById('updateCheck');
+            const actionBtn = document.getElementById('actionBtn');
+            const statusMessage = document.getElementById('statusMessage');
+
+            let currentState = 'CREATE'; // Object states: CREATE, RUN
+
+            function updateBoardCommand() {
+                if (advancedToggle.checked) return; // Don't auto-update if manually locked
+
+                let rows, cols;
+                const size = matrixSizeSelect.value;
+                if (size === '64x32') { rows = 32; cols = 64; }
+                else if (size === '128x32') { rows = 32; cols = 128; }
+                else if (size === '128x64') { rows = 64; cols = 128; }
+
+                const mapping = gpioMappingSelect.value;
+                boardCommandInput.value = `--led-gpio-mapping=${mapping} --led-rows=${rows} --led-cols=${cols} --led-brightness=40`;
+            }
+
+            matrixSizeSelect.addEventListener('change', updateBoardCommand);
+            gpioMappingSelect.addEventListener('change', updateBoardCommand);
+
+            advancedToggle.addEventListener('change', (e) => {
+                if (e.target.checked) {
+                    advancedSection.classList.remove('d-none');
+                } else {
+                    advancedSection.classList.add('d-none');
+                    updateBoardCommand(); // reset to defaults if unchecked
+                }
+            });
+
+            // Step 1: Matrix Validation
+            window.createTestScript = function () {
+                if (currentState === 'CREATE') {
+                    const cmd = boardCommandInput.value;
+
+                    statusMessage.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Generating script...';
+                    actionBtn.disabled = true;
+
+                    fetch('/api/onboard/create_test', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ board_command: cmd })
+                    })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.success) {
+                                currentState = 'RUN';
+                                actionBtn.innerHTML = '<i class="bi bi-play-fill me-2"></i>Test Matrix';
+                                actionBtn.classList.replace('btn-primary', 'btn-success');
+                                statusMessage.innerHTML = 'Script generated successfully. Click Test Matrix to run it.';
+
+                                if (data.script_content) {
+                                    document.getElementById('debugScriptContent').textContent = data.script_content;
+                                    document.getElementById('debugScriptContainer').classList.remove('d-none');
+                                }
+                            } else {
+                                statusMessage.innerHTML = `<span class="text-danger">Error: ${data.message}</span>`;
+                            }
+                        })
+                        .catch(err => {
+                            statusMessage.innerHTML = `<span class="text-danger">Failed to communicate with server.</span>`;
+                        })
+                        .finally(() => {
+                            actionBtn.disabled = false;
+                        });
+                } else if (currentState === 'RUN') {
+                    runTestScript();
+                }
+            };
+
+            function runTestScript() {
+                statusMessage.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Running test...';
+                actionBtn.disabled = true;
+
+                fetch('/api/onboard/run_test', { method: 'POST' })
+                    .then(res => res.json())
+                    .then(data => {
+                        const modal = new bootstrap.Modal(document.getElementById('validationModal'));
+                        modal.show();
+                        statusMessage.innerHTML = '';
+
+                        // User tested it, so let's let them go back to 'CREATE' if they answer 'No'
+                        currentState = 'CREATE';
+                        actionBtn.innerHTML = '<i class="bi bi-file-earmark-code me-2"></i>Create Test Script';
+                        actionBtn.classList.replace('btn-success', 'btn-primary');
+                    })
+                    .catch(err => {
+                        statusMessage.innerHTML = `<span class="text-danger">Error running test script.</span>`;
+                    })
+                    .finally(() => {
+                        actionBtn.disabled = false;
+                    });
+            }
+
+            window.advanceToStep2 = function () {
+                const modalEl = document.getElementById('validationModal');
+                const modal = bootstrap.Modal.getInstance(modalEl);
+                modal.hide();
+
+                // Collapse/disable Step 1 partially to show progress
+                document.getElementById('step1-card').classList.add('opacity-50');
+                actionBtn.disabled = true;
+
+                // Unhide Step 2
+                document.getElementById('step2-card').classList.remove('d-none');
+            };
+
+            // Step 2: Configuration
+            window.createConfig = function () {
+                const teamName = document.getElementById('teamSelect').value;
+                const configBtn = document.getElementById('createConfigBtn');
+                const configMsg = document.getElementById('configStatusMessage');
+
+                configMsg.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Generating config...';
+                configBtn.disabled = true;
+
+                fetch('/api/onboard/create_config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ team_name: teamName })
+                })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            configMsg.innerHTML = '<span class="text-success"><i class="bi bi-check-circle me-1"></i> Config saved.</span>';
+                            configBtn.innerHTML = '<i class="bi bi-check me-2"></i>Created';
+                            configBtn.classList.replace('btn-primary', 'btn-success');
+
+                            if (data.config_content) {
+                                document.getElementById('debugConfigContent').textContent = data.config_content;
+                                document.getElementById('debugConfigContainer').classList.remove('d-none');
+                            }
+
+                            // Advance to Step 3
+                            document.getElementById('step2-card').classList.add('opacity-50');
+                            document.getElementById('step3-card').classList.remove('d-none');
+                        } else {
+                            configMsg.innerHTML = `<span class="text-danger">Error: ${data.message}</span>`;
+                            configBtn.disabled = false;
+                        }
+                    })
+                    .catch(err => {
+                        configMsg.innerHTML = `<span class="text-danger">Failed to communicate with server.</span>`;
+                        configBtn.disabled = false;
+                    });
+            };
+
+            // Step 3: Supervisor
+            window.confirmSupervisor = function () {
+                if (confirm("Enabling this will reboot your Raspberry Pi immediately to complete setup. Are you sure you're ready?")) {
+                    enableSupervisor();
+                }
+            };
+
+            function enableSupervisor() {
+                const supBtn = document.getElementById('supervisorBtn');
+                const supMsg = document.getElementById('supervisorStatusMessage');
+                const boardCmd = boardCommandInput.value;
+                const doUpdateCheck = document.getElementById('updateCheck').checked;
+
+                supBtn.disabled = true;
+                supMsg.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Equipping supervisor...';
+
+                fetch('/api/onboard/enable_supervisor', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ board_command: boardCmd, update_check: doUpdateCheck })
+                })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            if (data.supervisor_content) {
+                                document.getElementById('debugSupervisorContent').textContent = data.supervisor_content;
+                                document.getElementById('debugSupervisorContainer').classList.remove('d-none');
+                            }
+                            finishSetup();
+                        } else {
+                            supMsg.innerHTML = `<span class="text-danger">Error: ${data.message}</span>`;
+                            supBtn.disabled = false;
+                        }
+                    })
+                    .catch(err => {
+                        supMsg.innerHTML = `<span class="text-danger">Failed to communicate with server.</span>`;
+                        supBtn.disabled = false;
+                    });
+            };
+
+            function finishSetup() {
+                // Dim the screen and throw up a modal acting as a loading state
+                const modalEl = document.getElementById('validationModal');
+
+                // Force recreate modal overlay
+                const modal = new bootstrap.Modal(modalEl, { backdrop: 'static', keyboard: false });
+
+                // Change modal content to loading state
+                modalEl.querySelector('.modal-header').style.display = 'none';
+                modalEl.querySelector('.modal-body').innerHTML = `
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;" role="status"></div>
+                        <h4 class="mb-3">Completing Setup...</h4>
+                        <p class="text-muted">The system is configuring itself and will restart shortly.</p>
+                        <p class="text-muted small">You will be redirected automatically once the hub is online.</p>
+                    </div>
+                `;
+                modalEl.querySelector('.modal-footer').style.display = 'none';
+
+                modal.show();
+
+                fetch('/api/onboard/finish', { method: 'POST' })
+                    .then(() => {
+                        setTimeout(checkServerStatus, 5000);
+                    })
+                    .catch(() => {
+                        setTimeout(checkServerStatus, 5000);
+                    });
+            }
+
+            function checkServerStatus() {
+                fetch('/')
+                    .then(res => {
+                        if (res.ok) window.location.reload();
+                        else setTimeout(checkServerStatus, 3000);
+                    })
+                    .catch(() => {
+                        setTimeout(checkServerStatus, 3000);
+                    });
+            }
+
+            // Init state
+            updateBoardCommand();
         });
     </script>
-    
-    <footer class="mt-5 pt-4 border-top text-center">
-        <p class="text-muted">Find help or contribute:</p>
-        <div class="d-flex justify-content-center gap-4 fs-2">
-            <a href="https://github.com/falkyre/nhl-led-scoreboard" title="GitHub Repository" class="text-body-secondary">
-                <i class="bi bi-github"></i>
-            </a>
-            <a href="https://github.com/falkyre/nhl-led-scoreboard/issues" title="Report an Issue" class="text-body-secondary">
-                <i class="bi bi-bug-fill"></i>
-            </a>
-            <a href="https://github.com/falkyre/nhl-led-scoreboard/wiki" title="Project Wiki" class="text-body-secondary">
-                <i class="bi bi-book-half"></i>
-            </a>
-            <a href="https://github.com/falkyre/nhl-led-scoreboard/blob/main/README.md" title="README" class="text-body-secondary">
-                <i class="bi bi-file-text-fill"></i>
-            </a>
-        </div>
-    </footer>
+    {% include 'footer.html' %}
 
 </body>
+
 </html>
