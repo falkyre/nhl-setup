@@ -195,6 +195,11 @@ def check_configs_zip():
     """Checks if the configs.zip exists in the scoreboard directory."""
     return get_configs_zip_path() is not None
 
+def is_imported_session():
+    """Checks if we're in an imported session by looking for the backup folder."""
+    # The import_configs_zip function moves the zip to /home/pi/config_backup/
+    return os.path.exists('/home/pi/config_backup/configs.zip')
+
 def import_configs_zip(version):
     """
     Imports configs.zip by unzipping it to a temporary directory 
