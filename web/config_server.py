@@ -917,6 +917,23 @@ def sync_plugins():
 # Onboarding Management API Endpoints
 # =============================================
 
+@app.route('/api/onboard/check_import', methods=['GET'])
+def api_onboard_check_import():
+    """Endpoint to check if configs.zip exists for import."""
+    exists = onboard.check_configs_zip()
+    return jsonify({'success': True, 'exists': exists})
+
+@app.route('/api/onboard/run_import', methods=['POST'])
+def api_onboard_run_import():
+    """Endpoint to run the import of configs.zip."""
+    version = get_version()
+    success, msg = onboard.import_configs_zip(version)
+    if not success:
+        app.logger.error(f"Import failed: {msg}")
+        return jsonify({'success': False, 'message': msg}), 500
+    
+    return jsonify({'success': True, 'message': msg})
+
 @app.route('/api/onboard/create_test', methods=['POST'])
 def api_onboard_create_test():
     """Endpoint for creating the test script."""
