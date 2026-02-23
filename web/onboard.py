@@ -158,7 +158,7 @@ def update_supervisor(board_command, update_check=False, debug=False):
         # Check if scoreboard.conf is already imported and we just want to enable it
         if board_command is None:
             # Service only enable (implies it's imported)
-            subprocess.run(['sudo', 'systemctl', 'enable', 'supervisor'], check=True)
+            subprocess.run(['sudo', 'systemctl', 'enable', 'supervisor'], check=False)
             conf_content = subprocess.check_output(['sudo', 'cat', SUPERVISOR_CONF]).decode('utf-8')
             log.info(f"Enabled supervisor service on existing config.")
             return True, conf_content
@@ -169,7 +169,7 @@ def update_supervisor(board_command, update_check=False, debug=False):
         subprocess.run(['sudo', 'sed', '-i', f'/program/a {sup_command}', SUPERVISOR_CONF], check=True)
         
         # Enable the service
-        subprocess.run(['sudo', 'systemctl', 'enable', 'supervisor'], check=True)
+        subprocess.run(['sudo', 'systemctl', 'enable', 'supervisor'], check=False)
         
         # Read the file contents as root to return to frontend
         conf_content = subprocess.check_output(['sudo', 'cat', SUPERVISOR_CONF]).decode('utf-8')
@@ -239,6 +239,31 @@ def import_configs_zip(version):
         # testMatrix.sh
         test_src = os.path.join(tmpdir, 'testMatrix.sh')
         if os.path.exists(test_src):
+            try:
+                # Ensure it has the necessary formatting arguments for runtext.py
+                with open(test_src, 'r') as f:
+                    content = f.read()
+                
+                if 'runtext.py' in content:
+                    # Look for lines containing runtext.py
+                    lines = content.split('\n')
+                    for i, line in enumerate(lines):
+                        if 'runtext.py' in line:
+                            # Add missing arguments if they aren't there
+                            if '-y 20' not in line:
+                                line = line.replace('runtext.py', 'runtext.py -y 20')
+                            if '-l 1' not in line:
+                                line = line.replace('runtext.py', 'runtext.py -l 1')
+                            if '-C 255,255,0' not in line:
+                                line = line.replace('runtext.py', 'runtext.py -C 255,255,0')
+                            lines[i] = line
+                    
+                    content = '\n'.join(lines)
+                    with open(test_src, 'w') as f:
+                        f.write(content)
+            except Exception as e:
+                log.warning(f"Failed to update arguments in testMatrix.sh: {e}")
+
             subprocess.run(['sudo', 'cp', test_src, '/home/pi/sbtools/testMatrix.sh'], check=True)
             subprocess.run(['sudo', 'chmod', '+x', '/home/pi/sbtools/testMatrix.sh'], check=True)
             # Update to the latest version

@@ -990,7 +990,8 @@ def api_onboard_enable_supervisor():
     board_command = data.get('board_command')
     update_check = data.get('update_check', False)
     
-    if not board_command:
+    if board_command is None and not onboard.check_configs_zip():
+        # It's only required if we are not in an imported session where we already have a conf
         return jsonify({'success': False, 'message': 'Error: "board_command" is required.'}), 400
         
     # Update supervisor conf
