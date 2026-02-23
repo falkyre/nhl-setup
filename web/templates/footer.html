@@ -1,0 +1,77 @@
+<footer class="mt-5 pt-4 border-top text-center" id="global-version-footer">
+    <p class="text-muted">Find help or contribute:</p>
+    <div class="d-flex justify-content-center gap-4 fs-2 mb-3">
+        <a href="https://github.com/falkyre/nhl-led-scoreboard" title="GitHub Repository" class="text-body-secondary">
+            <i class="bi bi-github"></i>
+        </a>
+        <a href="https://github.com/falkyre/nhl-led-scoreboard/issues" title="Report an Issue"
+            class="text-body-secondary">
+            <i class="bi bi-bug-fill"></i>
+        </a>
+        <a href="https://github.com/falkyre/nhl-led-scoreboard/wiki" title="Project Wiki" class="text-body-secondary">
+            <i class="bi bi-book-half"></i>
+        </a>
+    </div>
+
+    <div class="d-flex flex-wrap justify-content-center gap-2 mb-2" id="version-badges-container">
+        <!-- Badges will be injected here via javascript -->
+    </div>
+
+    <div id="update-available-container" style="display: none; height: 35px;">
+        <a href="https://github.com/falkyre/nhl-led-scoreboard/releases"
+            class="badge rounded-pill text-bg-success pulse-animation px-3 py-2 text-decoration-none">
+            Update Available
+        </a>
+    </div>
+
+    <style>
+        .pulse-animation {
+            animation: pulse-green 2s infinite;
+        }
+
+        @keyframes pulse-green {
+            0% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(25, 135, 84, 0.7);
+            }
+
+            70% {
+                transform: scale(1);
+                box-shadow: 0 0 0 10px rgba(25, 135, 84, 0);
+            }
+
+            100% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(25, 135, 84, 0);
+            }
+        }
+    </style>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            fetch('/api/versions')
+                .then(response => response.json())
+                .then(data => {
+                    const container = document.getElementById('version-badges-container');
+
+                    const badges = [
+                        { label: 'Scoreboard', version: data.local.scoreboard, url: 'https://github.com/falkyre/nhl-led-scoreboard' },
+                        { label: 'CLI Setup', version: data.local.cli_setup, url: 'https://github.com/falkyre/nhl-setup' },
+                        { label: 'Web Hub', version: data.local.web_hub, url: 'https://github.com/falkyre/nhl-setup' },
+                        { label: 'OS Image', version: data.local.os_image, url: 'https://github.com/falkyre/nhl-led-scoreboard-img' }
+                    ];
+
+                    container.innerHTML = badges.map(b =>
+                        `<a href="${b.url}" target="_blank" class="text-decoration-none">
+                            <span class="badge rounded-pill text-bg-secondary">${b.label} <span class="badge text-bg-light ms-1">v${b.version}</span></span>
+                        </a>`
+                    ).join('');
+
+                    if (data.update_available) {
+                        document.getElementById('update-available-container').style.display = 'block';
+                    }
+                })
+                .catch(err => console.error("Could not fetch component versions:", err));
+        });
+    </script>
+</footer>

@@ -20,7 +20,7 @@ import toml
 from datetime import datetime
 import uuid
 import time
-from flask import Flask, request, jsonify, send_from_directory, send_file
+from flask import Flask, request, jsonify, send_from_directory, send_file, render_template
 from richcolorlog import RichColorLogHandler
 import zipfile
 import io
@@ -28,8 +28,9 @@ import threading
 from flask_socketio import SocketIO, emit, disconnect, join_room, leave_room
 import paramiko
 import atexit
+import onboard
 
-__version__ = "2026.02.1"
+__version__ = "2026.02.2"
 
 
 def is_frozen():
@@ -104,6 +105,16 @@ logging.basicConfig(
 # Set default values
 PORT = 8000
 toml_config = {}
+
+# Global variables for caching
+SCHEMA_CACHE = None
+PLUGINS_CACHE = None
+LAST_MODIFIED_TIME = 0
+
+# Version caching
+VERSION_CACHE = None
+LAST_VERSION_CHECK = 0
+VERSION_CHECK_INTERVAL = 3600 # 1 hour
 
 # If running as a frozen executable, sys.executable points to the app itself.
 # We need to use a generic python interpreter to run other scripts like plugins.py.
@@ -458,6 +469,72 @@ def parse_plugin_list_output(output):
 
     return plugin_statuses
 
+# --- Version Fetching Logic ---
+
+def get_latest_github_release(repo_name):
+    """Fetches the latest release tag from a GitHub repository."""
+    url = f"https://api.github.com/repos/{repo_name}/releases/latest"
+    try:
+        req = urllib.request.Request(url, headers={'User-Agent': 'NHL-Control-Hub'})
+        with urllib.request.urlopen(req, timeout=5) as response:
+            data = json.loads(response.read().decode())
+            # Usually starts with 'v', we return exactly what GitHub gives
+            return data.get('tag_name', 'Unknown').lstrip('vV')
+    except Exception as e:
+        app.logger.warning(f"Failed to fetch latest release for {repo_name}: {e}")
+        return "Unknown"
+
+def fetch_local_versions():
+    """Fetches local versions of all 4 components."""
+    versions = {
+        'scoreboard': get_version().lstrip('vV'), # existing func looks in SCOREBOARD_DIR/VERSION
+        'web_hub': __version__.lstrip('vV'),
+        'cli_setup': 'Unknown',
+        'os_image': 'Unknown'
+    }
+    
+    # Fetch CLI version
+    # The CLI has a binary installed when the scoreboard is created. 
+    # Example output: "nhl_setup 2026.02.0"
+    cli_binary_path = '/home/pi/nhl-led-scoreboard/nhl_setup'
+    try:
+        if os.path.exists(cli_binary_path):
+            output = subprocess.check_output([cli_binary_path, '-v'], text=True).strip()
+            # output format is "nhl_setup 2026.02.0"
+            parts = output.split()
+            if len(parts) >= 2:
+                versions['cli_setup'] = parts[-1].lstrip('vV')
+            else:
+                versions['cli_setup'] = output.lstrip('vV')
+    except Exception as e:
+        app.logger.warning(f"Failed to execute CLI binary for version: {e}")
+        # Fallback to reading the python source file directly if the binary is missing/failing
+        cli_source_path = os.path.join(SCRIPT_DIR, '..', 'nhl_setup.py')
+        if os.path.exists(cli_source_path):
+            try:
+                with open(cli_source_path, 'r') as f:
+                    for line in f:
+                        if line.startswith('SCRIPT_VERSION'):
+                            versions['cli_setup'] = line.split('=')[1].strip().strip('\'"').lstrip('vV')
+                            break
+            except Exception as e2:
+                app.logger.error(f"Failed to read CLI version from source fallback: {e2}")
+            
+    # Fetch OS Image version
+    imgver_path = '/home/pi/.nhlledportal/imgver'
+    if os.path.exists(imgver_path):
+        try:
+            with open(imgver_path, 'r') as f:
+                # File contents look like: "You are running the image version 2026.02.2"
+                content = f.read().strip()
+                parts = content.split()
+                if parts:
+                    versions['os_image'] = parts[-1].lstrip('vV')
+        except Exception as e:
+            app.logger.error(f"Failed to read imgver: {e}")
+            
+    return versions
+
 # --- API Endpoints ---
 
 @app.route('/api/status')
@@ -470,8 +547,45 @@ def api_status():
     return jsonify({
         'version': get_version(),
         'control_hub_version': __version__,
-        'supervisor_available': supervisor_status
+        'supervisor_available': supervisor_status,
+        'debug_mode': args.debug
     })
+    
+@app.route('/api/versions')
+def api_versions():
+    """Returns local and remote versions of all components."""
+    global VERSION_CACHE, LAST_VERSION_CHECK
+    
+    current_time = time.time()
+    if VERSION_CACHE is None or (current_time - LAST_VERSION_CHECK) > VERSION_CHECK_INTERVAL:
+        app.logger.info("Fetching fresh version data.")
+        local_versions = fetch_local_versions()
+        
+        # We deliberately fetch remote versions synchronously here. 
+        # In a high-traffic app this would be backgrounded, but here it's fine.
+        remote_versions = {
+            'scoreboard': get_latest_github_release('falkyre/nhl-led-scoreboard'),
+            'web_hub': get_latest_github_release('falkyre/nhl-setup'), # Same repo for CLI & Web
+            'cli_setup': get_latest_github_release('falkyre/nhl-setup'),
+            'os_image': get_latest_github_release('falkyre/nhl-led-scoreboard-img')
+        }
+        
+        # Determine if updates are available
+        has_update = False
+        for key in local_versions:
+            if local_versions[key] != 'Unknown' and remote_versions[key] != 'Unknown':
+                # naive string comparison, but sufficient for standard x.y.z versioning
+                if remote_versions[key] > local_versions[key]: 
+                    has_update = True
+        
+        VERSION_CACHE = {
+            'local': local_versions,
+            'remote': remote_versions,
+            'update_available': has_update
+        }
+        LAST_VERSION_CHECK = current_time
+        
+    return jsonify(VERSION_CACHE)
 
 @app.route('/api/boards')
 def api_boards():
@@ -798,6 +912,99 @@ def sync_plugins():
     # Runs 'python plugins.py sync'
     result = run_plugin_script(['sync'])
     return jsonify(result)
+
+# =============================================
+# Onboarding Management API Endpoints
+# =============================================
+
+@app.route('/api/onboard/create_test', methods=['POST'])
+def api_onboard_create_test():
+    """Endpoint for creating the test script."""
+    data = request.json
+    board_command = data.get('board_command')
+    
+    if not board_command:
+        return jsonify({'success': False, 'message': 'Error: "board_command" is required.'}), 400
+        
+    # Generate the test script
+    test_success, test_msg = onboard.generate_test_script(board_command, debug=args.debug)
+    if not test_success:
+        return jsonify({'success': False, 'message': f"Test script error: {test_msg}"}), 500
+    
+    response_data = {'success': True, 'message': "Script created."}
+    
+    if args.debug:
+        response_data['script_content'] = test_msg
+        
+    return jsonify(response_data)
+
+@app.route('/api/onboard/run_test', methods=['POST'])
+def api_onboard_run_test():
+    """Runs the testMatrix.sh script."""
+    # testMatrix.sh runs locally
+    result = run_shell_script(['/home/pi/sbtools/testMatrix.sh'], timeout=30)
+    return jsonify(result)
+
+@app.route('/api/onboard/create_config', methods=['POST'])
+def api_onboard_create_config():
+    """Creates the config.json based on frontend team selection."""
+    data = request.json
+    team_name = data.get('team_name')
+    
+    if not team_name:
+        return jsonify({'success': False, 'message': 'Error: "team_name" is required.'}), 400
+
+    success, msg = onboard.create_config(team_name, SCOREBOARD_DIR, debug=args.debug)
+    
+    if not success:
+        return jsonify({'success': False, 'message': msg}), 500
+        
+    response_data = {'success': True, 'message': "Configuration created."}
+    
+    if args.debug:
+        response_data['config_content'] = msg
+        
+    return jsonify(response_data)
+
+@app.route('/api/onboard/enable_supervisor', methods=['POST'])
+def api_onboard_enable_supervisor():
+    """Updates the supervisor configuration."""
+    data = request.json
+    board_command = data.get('board_command')
+    update_check = data.get('update_check', False)
+    
+    if not board_command:
+        return jsonify({'success': False, 'message': 'Error: "board_command" is required.'}), 400
+        
+    # Update supervisor conf
+    sup_success, sup_msg = onboard.update_supervisor(board_command, update_check, debug=args.debug)
+    if not sup_success:
+        return jsonify({'success': False, 'message': f"Supervisor config error: {sup_msg}"}), 500
+        
+    response_data = {'success': True, 'message': "Supervisor updated."}
+    
+    # Always include the supervisor configuration string back to the UI
+    response_data['supervisor_content'] = sup_msg
+        
+    return jsonify(response_data)
+
+@app.route('/api/onboard/finish', methods=['POST'])
+def api_onboard_finish():
+    """Finish the onboarding process and trigger a reboot."""
+    onboard.finish_onboarding()
+    
+    if args.debug:
+        app.logger.info("Debug mode enabled: Skipping system reboot.")
+        return jsonify({'success': True, 'message': 'Onboarding finished. Debug mode active, reboot skipped.'})
+    
+    # Trigger reboot via subprocess
+    def reboot_system():
+        time.sleep(2)
+        subprocess.run(['sudo', 'sync'])
+        subprocess.run(['sudo', 'reboot'])
+    
+    threading.Thread(target=reboot_system).start()
+    return jsonify({'success': True, 'message': 'Onboarding finished. System is restarting.'})
     
 # =============================================
 # End of Plugin API Section
@@ -1206,9 +1413,9 @@ def index():
     # Bypass setup check if in debug mode
     if check_first_run() and not args.debug:
         app.logger.info(f"SETUP file found. Serving setup.html for {request.remote_addr}")
-        return send_from_directory(TEMPLATES_DIR, 'setup.html') 
+        return render_template('setup.html') 
         
-    return send_from_directory(TEMPLATES_DIR, 'index.html')
+    return render_template('index.html')
 
 @app.route('/setup')
 def setup_page():
@@ -1216,21 +1423,21 @@ def setup_page():
     # Bypass setup check if in debug mode
     if not check_first_run() and not args.debug:
         app.logger.info("Access to /setup denied, redirecting to /")
-        return send_from_directory(TEMPLATES_DIR, 'index.html') 
+        return render_template('index.html') 
     
     app.logger.info(f"Serving setup.html (Debug: {args.debug})")
-    return send_from_directory(TEMPLATES_DIR, 'setup.html') 
+    return render_template('setup.html') 
 
 
 @app.route('/config')
 def config_page():
     """Serves the configurator page."""
-    return send_from_directory(TEMPLATES_DIR, 'config.html') 
+    return render_template('config.html') 
 
 @app.route('/utilities')
 def utilities_page():
     """Serves the placeholder utilities page."""
-    return send_from_directory(TEMPLATES_DIR, 'utilities.html') 
+    return render_template('utilities.html') 
 
 @app.route('/download_config')
 def download_config():
@@ -1335,17 +1542,17 @@ def download_config():
 @app.route('/plugins')
 def plugins_page():
     """Serves the new plugins page."""
-    return send_from_directory(TEMPLATES_DIR, 'plugins.html')
+    return render_template('plugins.html')
 
 @app.route('/supervisor')
 def supervisor_page():
     """Serves the supervisor embed page."""
-    return send_from_directory(TEMPLATES_DIR, 'supervisor_rpc.html') 
+    return render_template('supervisor_rpc.html') 
 
 @app.route('/logo_editor')
 def logo_editor_page():
     """Serves the logo editor embed page."""
-    return send_from_directory(TEMPLATES_DIR, 'logo_editor_embed.html') 
+    return render_template('logo_editor_embed.html') 
 
 @app.route('/assets/<path:path>')
 def send_asset(path):
@@ -1417,7 +1624,7 @@ def read_from_ssh(token, shell):
 @app.route('/terminal')
 def terminal_page():
     """Serves the web terminal page."""
-    return send_from_directory(TEMPLATES_DIR, 'ssh_index.html')
+    return render_template('ssh_index.html')
 
 @socketio.on('ssh_login')
 def handle_ssh_login(data):

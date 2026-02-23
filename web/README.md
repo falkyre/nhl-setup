@@ -3,6 +3,7 @@
 This is the web-based control hub for the NHL LED Scoreboard project. It provides a user-friendly interface to configure the scoreboard, manage plugins, and view logs.
 
 ### History
+* V2026.02.2 - February 22, 2026
 * V2026.02.1 - February 9, 2026
 * V2026.02.0 - February 2, 2026
 * V2025.12.2 - December 11, 2025
@@ -11,10 +12,19 @@ This is the web-based control hub for the NHL LED Scoreboard project. It provide
 
 ### Latest Changes
 
+#### V2026.02.2
+
+* Redesigned the onboarding flow into a multi-step interactive wizard replacing manual SSH instructions.
+* Added a Configuration Editor to select favorite teams and generate `config.json` directly from the web interface.
+* Integrated Supervisor enablement into the onboarding web flow with a read-only configuration review and system reboot trigger.
+* Introduced a unified version footer showing local subsystem versions.
+* Added an update-availability checker that links version badges directly to GitHub releases.
+* Transitioned backend static HTML serving to dynamic Jinja templating.
+
 #### V2026.02.1
 Embed the logo editor within the application using a new iframe page and enhance port management in utilities.
 
-#### V2026.02.02
+#### V2026.02.0
 Integration of new Logo Editor and addition of Web Based SSH.
 
 #### V2025.12.2
