@@ -227,6 +227,13 @@
                 <p>Would you like to enable the Supervisor service? This ensures your scoreboard will automatically run
                     whenever the Raspberry Pi boots up.</p>
 
+                <div class="alert alert-info mt-3" role="alert">
+                    <i class="bi bi-info-circle-fill me-2"></i><strong>Note:</strong> Onboarding is almost complete! If
+                    you wish to fully customize your scoreboard (enable plugins, modify visuals, etc.), please return to
+                    the <strong>Configurator</strong> tab in the Control Hub at <a href="#" id="configuratorLink"
+                        class="fw-bold text-decoration-none"></a> after the reboot finishes.
+                </div>
+
                 <div class="form-check mt-3 mb-4">
                     <input class="form-check-input" type="checkbox" id="updateCheck">
                     <label class="form-check-label" for="updateCheck">
@@ -236,14 +243,15 @@
 
                 <div class="d-grid mt-4">
                     <button class="btn btn-success btn-lg" id="supervisorBtn" onclick="confirmSupervisor()">
-                        <i class="bi bi-check-circle-fill me-2"></i>Enable Supervisor & Reboot
+                        <i class="bi bi-check-circle-fill me-2"></i>Enable Supervisor
                     </button>
                     <div id="supervisorStatusMessage" class="mt-2 text-center text-muted small"></div>
                 </div>
 
-                <div id="debugSupervisorContainer" class="mt-4 d-none">
-                    <h5 class="text-info"><i class="bi bi-bug me-2"></i>Debug: Generated scoreboard.conf string</h5>
-                    <pre><code id="debugSupervisorContent" class="d-block p-3 border rounded bg-dark text-light overflow-auto" style="max-height: 200px; font-size: 0.85rem;"></code></pre>
+                <div id="supervisorOutputContainer" class="mt-4 d-none">
+                    <h5 class="text-primary mb-2"><i class="bi bi-file-earmark-code me-2"></i>Generated scoreboard.conf
+                    </h5>
+                    <pre><code id="supervisorOutputContent" class="d-block p-3 border rounded bg-dark text-light overflow-auto" style="max-height: 200px; font-size: 0.85rem;"></code></pre>
                 </div>
             </div>
         </div>
@@ -334,7 +342,7 @@
             let currentState = 'CREATE'; // Object states: CREATE, RUN
 
             function updateBoardCommand() {
-                if (advancedToggle.checked) return; // Don't auto-update if manually locked
+                // Determine sizes
 
                 let rows, cols;
                 const size = matrixSizeSelect.value;
@@ -351,10 +359,11 @@
 
             advancedToggle.addEventListener('change', (e) => {
                 if (e.target.checked) {
+                    // Start the user off with the dropdown settings before allowing edits
+                    updateBoardCommand();
                     advancedSection.classList.remove('d-none');
                 } else {
                     advancedSection.classList.add('d-none');
-                    updateBoardCommand(); // reset to defaults if unchecked
                 }
             });
 
@@ -477,7 +486,7 @@
 
             // Step 3: Supervisor
             window.confirmSupervisor = function () {
-                if (confirm("Enabling this will reboot your Raspberry Pi immediately to complete setup. Are you sure you're ready?")) {
+                if (confirm("Enabling this will set the scoreboard to run automatically. Are you sure you're ready?")) {
                     enableSupervisor();
                 }
             };
@@ -500,10 +509,18 @@
                     .then(data => {
                         if (data.success) {
                             if (data.supervisor_content) {
-                                document.getElementById('debugSupervisorContent').textContent = data.supervisor_content;
-                                document.getElementById('debugSupervisorContainer').classList.remove('d-none');
+                                document.getElementById('supervisorOutputContent').textContent = data.supervisor_content;
+                                document.getElementById('supervisorOutputContainer').classList.remove('d-none');
                             }
-                            finishSetup();
+
+                            supMsg.innerHTML = '<span class="text-success"><i class="bi bi-check-circle me-1"></i> Supervisor enabled.</span>';
+
+                            const rebootBtn = document.createElement('button');
+                            rebootBtn.className = 'btn btn-danger btn-lg mt-2';
+                            rebootBtn.innerHTML = '<i class="bi bi-power me-2"></i>Reboot System';
+                            rebootBtn.onclick = finishSetup;
+
+                            supBtn.parentElement.replaceChild(rebootBtn, supBtn);
                         } else {
                             supMsg.innerHTML = `<span class="text-danger">Error: ${data.message}</span>`;
                             supBtn.disabled = false;
@@ -558,6 +575,14 @@
 
             // Init state
             updateBoardCommand();
+
+            // Populate the Configurator URL
+            const configLink = document.getElementById('configuratorLink');
+            if (configLink) {
+                const configUrl = window.location.origin + '/config';
+                configLink.href = configUrl;
+                configLink.textContent = configUrl;
+            }
         });
     </script>
     {% include 'footer.html' %}

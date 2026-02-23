@@ -131,8 +131,15 @@ def update_supervisor(board_command, update_check=False, debug=False):
         subprocess.run(['sudo', 'sed', '-i', '/command=/d', SUPERVISOR_CONF], check=True)
         # add the new command to scoreboard.conf (the user specified "/program/a $sup_command")
         subprocess.run(['sudo', 'sed', '-i', f'/program/a {sup_command}', SUPERVISOR_CONF], check=True)
+        
+        # Enable the service
+        subprocess.run(['sudo', 'systemctl', 'enable', 'supervisor'], check=True)
+        
+        # Read the file contents as root to return to frontend
+        conf_content = subprocess.check_output(['sudo', 'cat', SUPERVISOR_CONF]).decode('utf-8')
+        
         log.info(f"Updated supervisor config with command: {sup_command}")
-        return True, "Supervisor config updated successfully."
+        return True, conf_content
     except subprocess.CalledProcessError as e:
         log.error(f"Failed to update supervisor config: {e}")
         return False, str(e)

@@ -964,8 +964,8 @@ def api_onboard_enable_supervisor():
         
     response_data = {'success': True, 'message': "Supervisor updated."}
     
-    if args.debug:
-        response_data['supervisor_content'] = sup_msg
+    # Always include the supervisor configuration string back to the UI
+    response_data['supervisor_content'] = sup_msg
         
     return jsonify(response_data)
 
@@ -978,10 +978,11 @@ def api_onboard_finish():
         app.logger.info("Debug mode enabled: Skipping system reboot.")
         return jsonify({'success': True, 'message': 'Onboarding finished. Debug mode active, reboot skipped.'})
     
-    # We trigger enable_supervisor.sh after a brief delay so the request can complete
+    # Trigger reboot via subprocess
     def reboot_system():
         time.sleep(2)
-        subprocess.run(['bash', os.path.join(SCRIPT_DIR, 'enable_supervisor.sh')])
+        subprocess.run(['sudo', 'sync'])
+        subprocess.run(['sudo', 'reboot'])
     
     threading.Thread(target=reboot_system).start()
     return jsonify({'success': True, 'message': 'Onboarding finished. System is restarting.'})
