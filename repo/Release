@@ -1,17 +1,24 @@
-Date: Wed, 11 Feb 2026 03:05:20 +0000
+Architectures: armhf arm64 all
+Codename: nls-controlhub
+Components: main
+Date: Mon, 23 Feb 2026 01:47:06 +0000
+Description: NHL LED Scoreboard Control Hub Repository
+Label: nls-controlhub
+Origin: nls-controlhub
+Suite: stable
 MD5Sum:
- 19c9d7566257b202157eb736a7998a90             1365 Packages
- 06c335976f9f164d3a4fa1dc3417f354              644 Packages.gz
- 0a26e2fab3427beefbc2ee0722590f20               38 Release
+ 82acb4ce4257b932f9b3f56aea7b7590             1365 Packages
+ 54d7c5125d2ec986886ce9122c139289              647 Packages.gz
+ 645fef0b3dc760a8596efb1fb176c015              225 Release
 SHA1:
- bb4bfc7e237cff511c8ced92b548626b9ddef370             1365 Packages
- 1f458fe84179d84b2a1c1c24d6f6c4dadc1dc0cf              644 Packages.gz
- eac20205b11b4ac36253b300a6d57643215ddead               38 Release
+ 6f1b6b2312f6b1f43cb90d6ffdc26e15011617d1             1365 Packages
+ 67f20269212a40e2fe9c84777b45e1396eaa5000              647 Packages.gz
+ 9c9a58d849504ef26ba35a28bd3b4c55d155afd1              225 Release
 SHA256:
- 79e04f5adb7de029bfeec366d4ff12b0ba4e62d7c149d15ad55340ff68110646             1365 Packages
- 6e8250a39b0f72dfd64475589db1164409efd572ad7704d15c8ca760063e9fcd              644 Packages.gz
- 2ce4935a9ed9651a9fb5f95a8775400b793249c9b17ac949002a20b6686004ad               38 Release
+ 918f78eb6ae6df30c3528ac7c0e0b886ac97fef09b0fd2f25b78bd6eb3b174eb             1365 Packages
+ 0ea2a860c4bcc8f03abfc068a1b9f9b0daef11933a4d6b3fe8c29dd439f8845f              647 Packages.gz
+ ba9184e6f61fc3d6e7b238431bfe1942f90df5553e2d3682608b369dd6dbec4b              225 Release
 SHA512:
- fed61ec4b4525a2bd971fbba2f315e8c81ee81235fbd6db49f730f323130aeccd5e2b730f7006aac1ec6766e108458299b7f5989af3dca03b548f2abb5e21d89             1365 Packages
- f0f0c78756a843897ee76f6f23a1b0089c70e3f3d945c6cc3f27f213812644ecb834afa4eb2984a48521edf59954a6132755252fd16047d24c818f6116bdd13c              644 Packages.gz
- 69360eadc0a5aef66b051000f47336269a3d37bc9408ede71401d4ba07419933d81ccc6aeff2d706da0b7585891b0d93686d8f27f56b259da1e151ea86ca17fe               38 Release
+ b2adf496029d408c95427450f380b726f546b6efc4f68e189da1188c033b61b15cea17a0893709121cad0c72a50c25acc81f21ea5934e8d2d6d252caee030653             1365 Packages
+ 9fa02edb1c9ac076eef458e9f6dd19a2f259f3f23756ba825c27e8ad2464b651109d6af30498a2e501ed4c6584c90875bf5bc8512d2f3890e7b01798c8cca3cd              647 Packages.gz
+ 6b65fab3eafaaa9482bcecdd5075ba44dd40b2456723ab3cbba5ba4d2a34476efe7d93dcce42bcf2204ec684c158e9fabe156c87e7f28c952506964f76453fbf              225 Release
