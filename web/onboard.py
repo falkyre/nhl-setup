@@ -9,6 +9,7 @@ STATUS_FILE = '/home/pi/.nhlledportal/status'
 SETUP_FILE = '/home/pi/.nhlledportal/SETUP'
 TEST_SCRIPT_PATH = '/home/pi/sbtools/testMatrix.sh'
 SUPERVISOR_CONF = '/etc/supervisor/conf.d/scoreboard.conf'
+CONFIGS_ZIP = '/boot/firmware/scoreboard/configs.zip'
 
 def get_pi_model_slowdown():
     """Reads the device tree model to determine the appropriate slowdown."""
@@ -143,6 +144,16 @@ def update_supervisor(board_command, update_check=False, debug=False):
         return True, "Debug mode: Supervisor config update skipped."
 
     try:
+        # If the file exists, it might be the imported one which already has the correct command.
+        # But if we want to add the custom command, we modify it.
+        # Check if scoreboard.conf is already imported and we just want to enable it
+        if board_command is None:
+            # Service only enable (implies it's imported)
+            subprocess.run(['sudo', 'systemctl', 'enable', 'supervisor'], check=True)
+            conf_content = subprocess.check_output(['sudo', 'cat', SUPERVISOR_CONF]).decode('utf-8')
+            log.info(f"Enabled supervisor service on existing config.")
+            return True, conf_content
+
         # delete the line with command=
         subprocess.run(['sudo', 'sed', '-i', '/command=/d', SUPERVISOR_CONF], check=True)
         # add the new command to scoreboard.conf (the user specified "/program/a $sup_command")
@@ -170,3 +181,84 @@ def finish_onboarding():
     except Exception as e:
         log.error(f"Failed to delete SETUP file: {e}")
         return False, str(e)
+
+def check_configs_zip():
+    """Checks if the configs.zip exists in the scoreboard directory."""
+    return os.path.exists(CONFIGS_ZIP)
+
+def import_configs_zip(version):
+    """
+    Imports configs.zip by unzipping it to a temporary directory 
+    and moving the files to their proper places.
+    """
+    import tempfile
+    import shutil
+    import glob
+
+    if not os.path.exists(CONFIGS_ZIP):
+        return False, "configs.zip not found."
+
+    try:
+        # Create temporary directory
+        tmpdir = tempfile.mkdtemp()
+        
+        # Unzip configs.zip to tmpdir
+        log.info(f"Unzipping {CONFIGS_ZIP} to {tmpdir}")
+        subprocess.run(['unzip', '-o', CONFIGS_ZIP, '-d', tmpdir], check=True, stdout=subprocess.DEVNULL)
+
+        # Iterate and copy
+        # config.json
+        config_src = os.path.join(tmpdir, 'config.json')
+        if os.path.exists(config_src):
+            subprocess.run(['sudo', 'cp', config_src, '/home/pi/nhl-led-scoreboard/config/config.json'], check=True)
+            subprocess.run(['sudo', 'chown', 'pi:pi', '/home/pi/nhl-led-scoreboard/config/config.json'], check=True)
+
+        # logos_*x*.json
+        layout_files = glob.glob(os.path.join(tmpdir, 'logos_*x*.json'))
+        for layout_file in layout_files:
+            dest = f"/home/pi/nhl-led-scoreboard/config/layout/{os.path.basename(layout_file)}"
+            subprocess.run(['sudo', 'cp', layout_file, dest], check=True)
+            subprocess.run(['sudo', 'chown', 'pi:pi', dest], check=True)
+
+        # logos folder
+        logos_src = os.path.join(tmpdir, 'logos')
+        if os.path.isdir(logos_src):
+            subprocess.run(['sudo', 'cp', '-r', logos_src, '/home/pi/nhl-led-scoreboard/assets/'], check=True)
+            subprocess.run(['sudo', 'chown', '-R', 'pi:pi', '/home/pi/nhl-led-scoreboard/assets/logos'], check=True)
+
+        # testMatrix.sh
+        test_src = os.path.join(tmpdir, 'testMatrix.sh')
+        if os.path.exists(test_src):
+            subprocess.run(['sudo', 'cp', test_src, '/home/pi/sbtools/testMatrix.sh'], check=True)
+            subprocess.run(['sudo', 'chmod', '+x', '/home/pi/sbtools/testMatrix.sh'], check=True)
+            # Update to the latest version
+            subprocess.run(['sudo', 'sed', '-i', '-E', f"/latest version/s/V[0-9]{{4}}\.[0-9]{{2}}\.[0-9]+/{version}/", '/home/pi/sbtools/testMatrix.sh'], check=True)
+            # Note: The user mentioned "do_test_matrix" which in bash is likely running the test matrix or just setting a flag.
+            # We don't run the matrix here, the user manually runs to test it in the UI.
+
+        # splash.sh
+        splash_src = os.path.join(tmpdir, 'splash.sh')
+        if os.path.exists(splash_src):
+            subprocess.run(['sudo', 'cp', splash_src, '/home/pi/sbtools/splash.sh'], check=True)
+            subprocess.run(['sudo', 'chmod', '+x', '/home/pi/sbtools/splash.sh'], check=True)
+
+        # scoreboard.conf
+        conf_src = os.path.join(tmpdir, 'scoreboard.conf')
+        if os.path.exists(conf_src):
+            subprocess.run(['sudo', 'cp', conf_src, '/etc/supervisor/conf.d/scoreboard.conf'], check=True)
+            subprocess.run(['sudo', 'mkdir', '-p', '/home/pi/config_backup'], check=True)
+            subprocess.run(['sudo', 'mv', CONFIGS_ZIP, '/home/pi/config_backup/'], check=True)
+            subprocess.run(['sudo', 'chown', '-R', 'pi:pi', '/home/pi/config_backup'], check=True)
+
+        return True, "Import complete."
+
+    except subprocess.CalledProcessError as e:
+        log.error(f"Subprocess failed during import: {e}")
+        return False, f"Import error: {e}"
+    except Exception as e:
+        log.error(f"Error during configs.zip import: {e}")
+        return False, str(e)
+    finally:
+        # Cleanup tmpdir
+        if os.path.exists(tmpdir):
+            shutil.rmtree(tmpdir, ignore_errors=True)
