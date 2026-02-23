@@ -81,7 +81,7 @@ def create_config(team_name, scoreboard_dir, debug=False):
 
 
 def generate_test_script(board_command, debug=False):
-    """Generates the testMatrix.sh script using frontend values."""
+    """Generates the testMatrix.sh and splash.sh scripts using frontend values."""
     status_text = read_status_file()
     
     script_content = f"""#!/bin/bash
@@ -93,6 +93,11 @@ clear
 exit
 """
 
+    splash_content = f"""#!/bin/bash
+cd /home/pi/sbtools/
+./led-image-viewer {board_command} -t60 -C splash.gif
+"""
+
     if debug:
         log.info("Debug mode enabled: Returning script content instead of creating file.")
         return True, script_content
@@ -100,11 +105,22 @@ exit
     try:
         # Ensure directory exists
         os.makedirs(os.path.dirname(TEST_SCRIPT_PATH), exist_ok=True)
+        
+        # Write testMatrix.sh
         with open(TEST_SCRIPT_PATH, 'w') as f:
             f.write(script_content)
         # Make script executable
         os.chmod(TEST_SCRIPT_PATH, 0o755)
         log.info(f"Test script created at {TEST_SCRIPT_PATH}")
+        
+        # Write splash.sh
+        splash_path = '/home/pi/sbtools/splash.sh'
+        with open(splash_path, 'w') as f:
+            f.write(splash_content)
+        # Make script executable
+        os.chmod(splash_path, 0o755)
+        log.info(f"Splash script created at {splash_path}")
+        
         return True, "Test script generated successfully."
     except Exception as e:
         log.error(f"Failed to generate test script: {e}")

@@ -494,23 +494,42 @@ def fetch_local_versions():
     }
     
     # Fetch CLI version
-    cli_path = os.path.join(SCRIPT_DIR, '..', 'nhl_setup.py')
-    if os.path.exists(cli_path):
-        try:
-            with open(cli_path, 'r') as f:
-                for line in f:
-                    if line.startswith('SCRIPT_VERSION'):
-                        versions['cli_setup'] = line.split('=')[1].strip().strip('\'"').lstrip('vV')
-                        break
-        except Exception as e:
-            app.logger.error(f"Failed to read CLI version: {e}")
+    # The CLI has a binary installed when the scoreboard is created. 
+    # Example output: "nhl_setup 2026.02.0"
+    cli_binary_path = '/home/pi/nhl-led-scoreboard/nhl_setup'
+    try:
+        if os.path.exists(cli_binary_path):
+            output = subprocess.check_output([cli_binary_path, '-v'], text=True).strip()
+            # output format is "nhl_setup 2026.02.0"
+            parts = output.split()
+            if len(parts) >= 2:
+                versions['cli_setup'] = parts[-1].lstrip('vV')
+            else:
+                versions['cli_setup'] = output.lstrip('vV')
+    except Exception as e:
+        app.logger.warning(f"Failed to execute CLI binary for version: {e}")
+        # Fallback to reading the python source file directly if the binary is missing/failing
+        cli_source_path = os.path.join(SCRIPT_DIR, '..', 'nhl_setup.py')
+        if os.path.exists(cli_source_path):
+            try:
+                with open(cli_source_path, 'r') as f:
+                    for line in f:
+                        if line.startswith('SCRIPT_VERSION'):
+                            versions['cli_setup'] = line.split('=')[1].strip().strip('\'"').lstrip('vV')
+                            break
+            except Exception as e2:
+                app.logger.error(f"Failed to read CLI version from source fallback: {e2}")
             
     # Fetch OS Image version
     imgver_path = '/home/pi/.nhlledportal/imgver'
     if os.path.exists(imgver_path):
         try:
             with open(imgver_path, 'r') as f:
-                versions['os_image'] = f.read().strip().lstrip('vV')
+                # File contents look like: "You are running the image version 2026.02.2"
+                content = f.read().strip()
+                parts = content.split()
+                if parts:
+                    versions['os_image'] = parts[-1].lstrip('vV')
         except Exception as e:
             app.logger.error(f"Failed to read imgver: {e}")
             
