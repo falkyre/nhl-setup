@@ -934,6 +934,14 @@ def api_onboard_run_import():
     
     return jsonify({'success': True, 'message': msg})
 
+@app.route('/api/onboard/restart_import', methods=['POST'])
+def api_onboard_restart_import():
+    """Endpoint to move configs.zip back from config_backup to scoreboard folder."""
+    success, msg = onboard.restart_import()
+    if not success:
+        return jsonify({'success': False, 'message': msg}), 500
+    return jsonify({'success': True, 'message': msg})
+
 @app.route('/api/onboard/create_test', methods=['POST'])
 def api_onboard_create_test():
     """Endpoint for creating the test script."""

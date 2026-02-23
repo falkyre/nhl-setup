@@ -200,6 +200,24 @@ def is_imported_session():
     # The import_configs_zip function moves the zip to /home/pi/config_backup/
     return os.path.exists('/home/pi/config_backup/configs.zip')
 
+def restart_import():
+    """Moves the backup configs.zip back to /boot/firmware/scoreboard/ so the import can be run again."""
+    backup_path = '/home/pi/config_backup/configs.zip'
+    dest_path = '/boot/firmware/scoreboard/configs.zip'
+    
+    if not os.path.exists(backup_path):
+        # Maybe it's still in the original location and they just reloaded the page early
+        if os.path.exists(dest_path) or os.path.exists('/boot/scoreboard/configs.zip'):
+            return True, "configs.zip is already in the original location."
+        return False, "configs.zip backup not found."
+        
+    try:
+        subprocess.run(['sudo', 'mv', backup_path, dest_path], check=True)
+        return True, "configs.zip returned to original location."
+    except Exception as e:
+        log.error(f"Error reverting configs.zip: {e}")
+        return False, str(e)
+
 def import_configs_zip(version):
     """
     Imports configs.zip by unzipping it to a temporary directory 

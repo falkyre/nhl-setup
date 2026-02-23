@@ -242,9 +242,13 @@
                     </label>
                 </div>
 
-                <div class="d-grid mt-4">
+                <div class="d-grid mt-4 gap-2">
                     <button class="btn btn-success btn-lg" id="supervisorBtn" onclick="confirmSupervisor()">
                         <i class="bi bi-check-circle-fill me-2"></i>Enable Supervisor
+                    </button>
+                    <button class="btn btn-outline-warning btn-lg d-none" id="restartImportBtn"
+                        onclick="restartImport()">
+                        <i class="bi bi-arrow-counterclockwise me-2"></i>Restart Import
                     </button>
                     <div id="supervisorStatusMessage" class="mt-2 text-center text-muted small"></div>
                 </div>
@@ -284,14 +288,16 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title"><i class="bi bi-box-arrow-in-down me-2"></i>Previous Configuration Found</h5>
+                    <h5 class="modal-title"><i class="bi bi-box-arrow-in-down me-2"></i>Previous Configuration Found
+                    </h5>
                 </div>
                 <div class="modal-body">
                     <p>We found configurations from a previous install (<code>configs.zip</code>).</p>
                     <p>Do you want to import them?</p>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="btnSkipImport">No, setup from scratch</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="btnSkipImport">No, setup
+                        from scratch</button>
                     <button type="button" class="btn btn-primary" onclick="startImport()">Yes, import configs</button>
                 </div>
             </div>
@@ -374,10 +380,10 @@
                 })
                 .catch(err => console.error("Error checking import:", err));
 
-            window.startImport = function() {
+            window.startImport = function () {
                 const modalEl = document.getElementById('importModal');
                 const modal = bootstrap.Modal.getInstance(modalEl);
-                
+
                 // Change Modal content to loading state
                 modalEl.querySelector('.modal-header').style.display = 'none';
                 modalEl.querySelector('.modal-body').innerHTML = `
@@ -535,16 +541,18 @@
                     step2Card.classList.remove('d-none');
                     step2Card.classList.add('opacity-50');
                     document.getElementById('teamSelect').disabled = true;
-                    
+
                     const configBtn = document.getElementById('createConfigBtn');
                     configBtn.innerHTML = '<i class="bi bi-check me-2"></i>Imported';
                     configBtn.classList.replace('btn-primary', 'btn-success');
                     configBtn.disabled = true;
-                    
+
                     document.getElementById('configStatusMessage').innerHTML = '<span class="text-success"><i class="bi bi-check-circle me-1"></i> Configuration imported from configs.zip successfully.</span>';
-                    
+
                     // Unhide Step 3
                     document.getElementById('step3-card').classList.remove('d-none');
+                    // Show the Restart Import button
+                    document.getElementById('restartImportBtn').classList.remove('d-none');
                 } else {
                     // Unhide Step 2 normally
                     document.getElementById('step2-card').classList.remove('d-none');
@@ -592,6 +600,32 @@
             };
 
             // Step 3: Supervisor
+            window.restartImport = function () {
+                if (confirm("This will undo the current import, returning the configs.zip to its original place, and reload the setup page. Are you sure?")) {
+                    const btn = document.getElementById('restartImportBtn');
+                    const originalHtml = btn.innerHTML;
+                    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Restarting...';
+                    btn.disabled = true;
+
+                    fetch('/api/onboard/restart_import', { method: 'POST' })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.success) {
+                                window.location.reload();
+                            } else {
+                                alert("Failed to restart import: " + data.message);
+                                btn.innerHTML = originalHtml;
+                                btn.disabled = false;
+                            }
+                        })
+                        .catch(err => {
+                            alert("Failed to communicate with the server to restart import.");
+                            btn.innerHTML = originalHtml;
+                            btn.disabled = false;
+                        });
+                }
+            };
+
             window.confirmSupervisor = function () {
                 if (confirm("Enabling this will set the scoreboard to run automatically. Are you sure you're ready?")) {
                     enableSupervisor();
