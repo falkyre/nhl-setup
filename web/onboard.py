@@ -9,7 +9,16 @@ STATUS_FILE = '/home/pi/.nhlledportal/status'
 SETUP_FILE = '/home/pi/.nhlledportal/SETUP'
 TEST_SCRIPT_PATH = '/home/pi/sbtools/testMatrix.sh'
 SUPERVISOR_CONF = '/etc/supervisor/conf.d/scoreboard.conf'
-CONFIGS_ZIP = '/boot/firmware/scoreboard/configs.zip'
+CONFIGS_ZIP_PATHS = [
+    '/boot/firmware/scoreboard/configs.zip',
+    '/boot/scoreboard/configs.zip'
+]
+
+def get_configs_zip_path():
+    for path in CONFIGS_ZIP_PATHS:
+        if os.path.exists(path):
+            return path
+    return None
 
 def get_pi_model_slowdown():
     """Reads the device tree model to determine the appropriate slowdown."""
@@ -184,7 +193,7 @@ def finish_onboarding():
 
 def check_configs_zip():
     """Checks if the configs.zip exists in the scoreboard directory."""
-    return os.path.exists(CONFIGS_ZIP)
+    return get_configs_zip_path() is not None
 
 def import_configs_zip(version):
     """
@@ -195,7 +204,8 @@ def import_configs_zip(version):
     import shutil
     import glob
 
-    if not os.path.exists(CONFIGS_ZIP):
+    configs_zip = get_configs_zip_path()
+    if not configs_zip:
         return False, "configs.zip not found."
 
     try:
@@ -203,8 +213,8 @@ def import_configs_zip(version):
         tmpdir = tempfile.mkdtemp()
         
         # Unzip configs.zip to tmpdir
-        log.info(f"Unzipping {CONFIGS_ZIP} to {tmpdir}")
-        subprocess.run(['unzip', '-o', CONFIGS_ZIP, '-d', tmpdir], check=True, stdout=subprocess.DEVNULL)
+        log.info(f"Unzipping {configs_zip} to {tmpdir}")
+        subprocess.run(['unzip', '-o', configs_zip, '-d', tmpdir], check=True, stdout=subprocess.DEVNULL)
 
         # Iterate and copy
         # config.json
@@ -247,7 +257,7 @@ def import_configs_zip(version):
         if os.path.exists(conf_src):
             subprocess.run(['sudo', 'cp', conf_src, '/etc/supervisor/conf.d/scoreboard.conf'], check=True)
             subprocess.run(['sudo', 'mkdir', '-p', '/home/pi/config_backup'], check=True)
-            subprocess.run(['sudo', 'mv', CONFIGS_ZIP, '/home/pi/config_backup/'], check=True)
+            subprocess.run(['sudo', 'mv', configs_zip, '/home/pi/config_backup/'], check=True)
             subprocess.run(['sudo', 'chown', '-R', 'pi:pi', '/home/pi/config_backup'], check=True)
 
         return True, "Import complete."
