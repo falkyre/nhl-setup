@@ -189,3 +189,4 @@ web/plugins_index.json
 
 .DS_Store
 download_assets.py
+web/tmp_scoreboard

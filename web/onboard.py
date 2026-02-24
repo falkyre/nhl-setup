@@ -9,6 +9,16 @@ STATUS_FILE = '/home/pi/.nhlledportal/status'
 SETUP_FILE = '/home/pi/.nhlledportal/SETUP'
 TEST_SCRIPT_PATH = '/home/pi/sbtools/testMatrix.sh'
 SUPERVISOR_CONF = '/etc/supervisor/conf.d/scoreboard.conf'
+CONFIGS_ZIP_PATHS = [
+    '/boot/firmware/scoreboard/configs.zip',
+    '/boot/scoreboard/configs.zip'
+]
+
+def get_configs_zip_path():
+    for path in CONFIGS_ZIP_PATHS:
+        if os.path.exists(path):
+            return path
+    return None
 
 def get_pi_model_slowdown():
     """Reads the device tree model to determine the appropriate slowdown."""
@@ -143,13 +153,23 @@ def update_supervisor(board_command, update_check=False, debug=False):
         return True, "Debug mode: Supervisor config update skipped."
 
     try:
+        # If the file exists, it might be the imported one which already has the correct command.
+        # But if we want to add the custom command, we modify it.
+        # Check if scoreboard.conf is already imported and we just want to enable it
+        if board_command is None:
+            # Service only enable (implies it's imported)
+            subprocess.run(['sudo', 'systemctl', 'enable', 'supervisor'], check=False)
+            conf_content = subprocess.check_output(['sudo', 'cat', SUPERVISOR_CONF]).decode('utf-8')
+            log.info(f"Enabled supervisor service on existing config.")
+            return True, conf_content
+
         # delete the line with command=
         subprocess.run(['sudo', 'sed', '-i', '/command=/d', SUPERVISOR_CONF], check=True)
         # add the new command to scoreboard.conf (the user specified "/program/a $sup_command")
         subprocess.run(['sudo', 'sed', '-i', f'/program/a {sup_command}', SUPERVISOR_CONF], check=True)
         
         # Enable the service
-        subprocess.run(['sudo', 'systemctl', 'enable', 'supervisor'], check=True)
+        subprocess.run(['sudo', 'systemctl', 'enable', 'supervisor'], check=False)
         
         # Read the file contents as root to return to frontend
         conf_content = subprocess.check_output(['sudo', 'cat', SUPERVISOR_CONF]).decode('utf-8')
@@ -170,3 +190,133 @@ def finish_onboarding():
     except Exception as e:
         log.error(f"Failed to delete SETUP file: {e}")
         return False, str(e)
+
+def check_configs_zip():
+    """Checks if the configs.zip exists in the scoreboard directory."""
+    return get_configs_zip_path() is not None
+
+def is_imported_session():
+    """Checks if we're in an imported session by looking for the backup folder."""
+    # The import_configs_zip function moves the zip to /home/pi/config_backup/
+    return os.path.exists('/home/pi/config_backup/configs.zip')
+
+def restart_import():
+    """Moves the backup configs.zip back to /boot/firmware/scoreboard/ so the import can be run again."""
+    backup_path = '/home/pi/config_backup/configs.zip'
+    dest_path = '/boot/firmware/scoreboard/configs.zip'
+    
+    if not os.path.exists(backup_path):
+        # Maybe it's still in the original location and they just reloaded the page early
+        if os.path.exists(dest_path) or os.path.exists('/boot/scoreboard/configs.zip'):
+            return True, "configs.zip is already in the original location."
+        return False, "configs.zip backup not found."
+        
+    try:
+        subprocess.run(['sudo', 'mv', backup_path, dest_path], check=True)
+        return True, "configs.zip returned to original location."
+    except Exception as e:
+        log.error(f"Error reverting configs.zip: {e}")
+        return False, str(e)
+
+def import_configs_zip(version):
+    """
+    Imports configs.zip by unzipping it to a temporary directory 
+    and moving the files to their proper places.
+    """
+    import tempfile
+    import shutil
+    import glob
+
+    configs_zip = get_configs_zip_path()
+    if not configs_zip:
+        return False, "configs.zip not found."
+
+    try:
+        # Create temporary directory
+        tmpdir = tempfile.mkdtemp()
+        
+        # Unzip configs.zip to tmpdir
+        log.info(f"Unzipping {configs_zip} to {tmpdir}")
+        subprocess.run(['unzip', '-o', configs_zip, '-d', tmpdir], check=True, stdout=subprocess.DEVNULL)
+
+        # Iterate and copy
+        # config.json
+        config_src = os.path.join(tmpdir, 'config.json')
+        if os.path.exists(config_src):
+            subprocess.run(['sudo', 'cp', config_src, '/home/pi/nhl-led-scoreboard/config/config.json'], check=True)
+            subprocess.run(['sudo', 'chown', 'pi:pi', '/home/pi/nhl-led-scoreboard/config/config.json'], check=True)
+
+        # logos_*x*.json
+        layout_files = glob.glob(os.path.join(tmpdir, 'logos_*x*.json'))
+        for layout_file in layout_files:
+            dest = f"/home/pi/nhl-led-scoreboard/config/layout/{os.path.basename(layout_file)}"
+            subprocess.run(['sudo', 'cp', layout_file, dest], check=True)
+            subprocess.run(['sudo', 'chown', 'pi:pi', dest], check=True)
+
+        # logos folder
+        logos_src = os.path.join(tmpdir, 'logos')
+        if os.path.isdir(logos_src):
+            subprocess.run(['sudo', 'cp', '-r', logos_src, '/home/pi/nhl-led-scoreboard/assets/'], check=True)
+            subprocess.run(['sudo', 'chown', '-R', 'pi:pi', '/home/pi/nhl-led-scoreboard/assets/logos'], check=True)
+
+        # testMatrix.sh
+        test_src = os.path.join(tmpdir, 'testMatrix.sh')
+        if os.path.exists(test_src):
+            try:
+                # Ensure it has the necessary formatting arguments for runtext.py
+                with open(test_src, 'r') as f:
+                    content = f.read()
+                
+                if 'runtext.py' in content:
+                    # Look for lines containing runtext.py
+                    lines = content.split('\n')
+                    for i, line in enumerate(lines):
+                        if 'runtext.py' in line:
+                            # Add missing arguments if they aren't there
+                            if '-y 20' not in line:
+                                line = line.replace('runtext.py', 'runtext.py -y 20')
+                            if '-l 1' not in line:
+                                line = line.replace('runtext.py', 'runtext.py -l 1')
+                            if '-C 255,255,0' not in line:
+                                line = line.replace('runtext.py', 'runtext.py -C 255,255,0')
+                            lines[i] = line
+                    
+                    content = '\n'.join(lines)
+                    with open(test_src, 'w') as f:
+                        f.write(content)
+            except Exception as e:
+                log.warning(f"Failed to update arguments in testMatrix.sh: {e}")
+
+            subprocess.run(['sudo', 'cp', test_src, '/home/pi/sbtools/testMatrix.sh'], check=True)
+            subprocess.run(['sudo', 'chmod', '+x', '/home/pi/sbtools/testMatrix.sh'], check=True)
+            # Update to the latest version
+            subprocess.run(['sudo', 'sed', '-i', '-E', f"/latest version/s/V[0-9]{{4}}\.[0-9]{{2}}\.[0-9]+/{version}/", '/home/pi/sbtools/testMatrix.sh'], check=True)
+            # Note: The user mentioned "do_test_matrix" which in bash is likely running the test matrix or just setting a flag.
+            # We don't run the matrix here, the user manually runs to test it in the UI.
+
+        # splash.sh
+        splash_src = os.path.join(tmpdir, 'splash.sh')
+        if os.path.exists(splash_src):
+            subprocess.run(['sudo', 'cp', splash_src, '/home/pi/sbtools/splash.sh'], check=True)
+            subprocess.run(['sudo', 'chmod', '+x', '/home/pi/sbtools/splash.sh'], check=True)
+
+        # scoreboard.conf
+        conf_src = os.path.join(tmpdir, 'scoreboard.conf')
+        if os.path.exists(conf_src):
+            subprocess.run(['sudo', 'cp', conf_src, '/etc/supervisor/conf.d/scoreboard.conf'], check=True)
+            subprocess.run(['sudo', 'mkdir', '-p', '/home/pi/config_backup'], check=True)
+            subprocess.run(['sudo', 'mv', configs_zip, '/home/pi/config_backup/'], check=True)
+            subprocess.run(['sudo', 'chown', '-R', 'pi:pi', '/home/pi/config_backup'], check=True)
+
+        return True, "Import complete."
+
+    except subprocess.CalledProcessError as e:
+        log.error(f"Subprocess failed during import: {e}")
+        return False, f"Import error: {e}"
+    except Exception as e:
+        log.error(f"Error during configs.zip import: {e}")
+        return False, str(e)
+    finally:
+        # Cleanup tmpdir
+        if os.path.exists(tmpdir):
+            shutil.rmtree(tmpdir, ignore_errors=True)

@@ -18,10 +18,10 @@
     </div>
 
     <div id="update-available-container" style="display: none; height: 35px;">
-        <a href="https://github.com/falkyre/nhl-led-scoreboard/releases"
-            class="badge rounded-pill text-bg-success pulse-animation px-3 py-2 text-decoration-none">
+        <span class="badge rounded-pill text-bg-success pulse-animation px-3 py-2 cursor-default"
+            title="To see the latest release, click on the pill that is green.">
             Update Available
-        </a>
+        </span>
     </div>
 
     <style>
@@ -55,20 +55,31 @@
                     const container = document.getElementById('version-badges-container');
 
                     const badges = [
-                        { label: 'Scoreboard', version: data.local.scoreboard, url: 'https://github.com/falkyre/nhl-led-scoreboard' },
-                        { label: 'CLI Setup', version: data.local.cli_setup, url: 'https://github.com/falkyre/nhl-setup' },
-                        { label: 'Web Hub', version: data.local.web_hub, url: 'https://github.com/falkyre/nhl-setup' },
-                        { label: 'OS Image', version: data.local.os_image, url: 'https://github.com/falkyre/nhl-led-scoreboard-img' }
+                        { id: 'scoreboard', label: 'Scoreboard', version: data.local.scoreboard, url: 'https://github.com/falkyre/nhl-led-scoreboard/releases' },
+                        { id: 'cli_setup', label: 'CLI Setup', version: data.local.cli_setup, url: 'https://github.com/falkyre/nhl-setup/releases' },
+                        { id: 'web_hub', label: 'Control Hub', version: data.local.web_hub, url: 'https://github.com/falkyre/nhl-setup/releases' },
+                        { id: 'os_image', label: 'OS Image', version: data.local.os_image, url: 'https://github.com/falkyre/nhl-led-scoreboard-img/releases' }
                     ];
 
-                    container.innerHTML = badges.map(b =>
-                        `<a href="${b.url}" target="_blank" class="text-decoration-none">
-                            <span class="badge rounded-pill text-bg-secondary">${b.label} <span class="badge text-bg-light ms-1">v${b.version}</span></span>
-                        </a>`
-                    ).join('');
+                    let updateCount = 0;
 
-                    if (data.update_available) {
-                        document.getElementById('update-available-container').style.display = 'block';
+                    container.innerHTML = badges.map(b => {
+                        let hasUpdate = false;
+                        if (data.local[b.id] !== 'Unknown' && data.remote[b.id] !== 'Unknown' && data.remote[b.id] > data.local[b.id]) {
+                            hasUpdate = true;
+                            updateCount++;
+                        }
+                        const bgClass = hasUpdate ? 'text-bg-success' : 'text-bg-secondary';
+                        return `<a href="${b.url}" target="_blank" class="text-decoration-none">
+                            <span class="badge rounded-pill ${bgClass}">${b.label} <span class="badge text-bg-light ms-1">v${b.version}</span></span>
+                        </a>`;
+                    }).join('');
+
+                    if (data.update_available || updateCount > 0) {
+                        const updateContainer = document.getElementById('update-available-container');
+                        const updatePill = updateContainer.querySelector('.badge');
+                        updatePill.textContent = updateCount > 1 ? 'Updates Available' : 'Update Available';
+                        updateContainer.style.display = 'block';
                     }
                 })
                 .catch(err => console.error("Could not fetch component versions:", err));

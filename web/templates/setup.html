@@ -242,9 +242,13 @@
                     </label>
                 </div>
 
-                <div class="d-grid mt-4">
+                <div class="d-grid mt-4 gap-2">
                     <button class="btn btn-success btn-lg" id="supervisorBtn" onclick="confirmSupervisor()">
                         <i class="bi bi-check-circle-fill me-2"></i>Enable Supervisor
+                    </button>
+                    <button class="btn btn-outline-warning btn-lg d-none" id="restartImportBtn"
+                        onclick="restartImport()">
+                        <i class="bi bi-arrow-counterclockwise me-2"></i>Restart Import
                     </button>
                     <div id="supervisorStatusMessage" class="mt-2 text-center text-muted small"></div>
                 </div>
@@ -273,6 +277,28 @@
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No, let me try
                         again</button>
                     <button type="button" class="btn btn-success" onclick="advanceToStep2()">Yes, I saw it!</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import Config Modal -->
+    <div class="modal fade" id="importModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-box-arrow-in-down me-2"></i>Previous Configuration Found
+                    </h5>
+                </div>
+                <div class="modal-body">
+                    <p>We found configurations from a previous install (<code>configs.zip</code>).</p>
+                    <p>Do you want to import them?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="btnSkipImport">No, setup
+                        from scratch</button>
+                    <button type="button" class="btn btn-primary" onclick="startImport()">Yes, import configs</button>
                 </div>
             </div>
         </div>
@@ -341,6 +367,74 @@
             const statusMessage = document.getElementById('statusMessage');
 
             let currentState = 'CREATE'; // Object states: CREATE, RUN
+            let isImportedSession = false;
+
+            // Check for configs.zip on load
+            fetch('/api/onboard/check_import')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success && data.exists) {
+                        const importModal = new bootstrap.Modal(document.getElementById('importModal'));
+                        importModal.show();
+                    }
+                })
+                .catch(err => console.error("Error checking import:", err));
+
+            window.startImport = function () {
+                const modalEl = document.getElementById('importModal');
+                const modal = bootstrap.Modal.getInstance(modalEl);
+
+                // Change Modal content to loading state
+                modalEl.querySelector('.modal-header').style.display = 'none';
+                modalEl.querySelector('.modal-body').innerHTML = `
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;" role="status"></div>
+                        <h4 class="mb-3">Importing Configurations...</h4>
+                        <p class="text-muted" id="importStatusText">Extracting files from configs.zip...</p>
+                    </div>
+                `;
+                modalEl.querySelector('.modal-footer').style.display = 'none';
+
+                fetch('/api/onboard/run_import', { method: 'POST' })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            isImportedSession = true;
+                            modal.hide();
+
+                            // Modify Step 1 to immediately allow Matrix testing (skip command generation)
+                            currentState = 'RUN';
+                            actionBtn.innerHTML = '<i class="bi bi-play-fill me-2"></i>Test Matrix';
+                            actionBtn.classList.replace('btn-primary', 'btn-success');
+                            statusMessage.innerHTML = 'Configs imported successfully. Click Test Matrix to run it.';
+
+                            // Disable inputs in Step 1 as we are using imported command string
+                            matrixSizeSelect.disabled = true;
+                            gpioMappingSelect.disabled = true;
+                            boardCommandInput.disabled = true;
+                            advancedToggle.disabled = true;
+                        } else {
+                            modalEl.querySelector('.modal-body').innerHTML = `
+                                <div class="text-center py-4">
+                                    <i class="bi bi-x-circle text-danger mb-3" style="font-size: 3rem;"></i>
+                                    <h4 class="mb-3">Import Failed</h4>
+                                    <p class="text-danger">${data.message}</p>
+                                    <button type="button" class="btn btn-secondary mt-3" data-bs-dismiss="modal">Continue standard setup</button>
+                                </div>
+                            `;
+                        }
+                    })
+                    .catch(err => {
+                        modalEl.querySelector('.modal-body').innerHTML = `
+                            <div class="text-center py-4">
+                                <i class="bi bi-x-circle text-danger mb-3" style="font-size: 3rem;"></i>
+                                <h4 class="mb-3">Import Error</h4>
+                                <p class="text-danger">Failed to communicate with the server during import.</p>
+                                <button type="button" class="btn btn-secondary mt-3" data-bs-dismiss="modal">Continue standard setup</button>
+                            </div>
+                        `;
+                    });
+            };
 
             function updateBoardCommand() {
                 // Determine sizes
@@ -441,8 +535,28 @@
                 document.getElementById('step1-card').classList.add('opacity-50');
                 actionBtn.disabled = true;
 
-                // Unhide Step 2
-                document.getElementById('step2-card').classList.remove('d-none');
+                if (isImportedSession) {
+                    // Skip step 2 entirely by visually unhiding it but rendering it complete
+                    const step2Card = document.getElementById('step2-card');
+                    step2Card.classList.remove('d-none');
+                    step2Card.classList.add('opacity-50');
+                    document.getElementById('teamSelect').disabled = true;
+
+                    const configBtn = document.getElementById('createConfigBtn');
+                    configBtn.innerHTML = '<i class="bi bi-check me-2"></i>Imported';
+                    configBtn.classList.replace('btn-primary', 'btn-success');
+                    configBtn.disabled = true;
+
+                    document.getElementById('configStatusMessage').innerHTML = '<span class="text-success"><i class="bi bi-check-circle me-1"></i> Configuration imported from configs.zip successfully.</span>';
+
+                    // Unhide Step 3
+                    document.getElementById('step3-card').classList.remove('d-none');
+                    // Show the Restart Import button
+                    document.getElementById('restartImportBtn').classList.remove('d-none');
+                } else {
+                    // Unhide Step 2 normally
+                    document.getElementById('step2-card').classList.remove('d-none');
+                }
             };
 
             // Step 2: Configuration
@@ -486,6 +600,32 @@
             };
 
             // Step 3: Supervisor
+            window.restartImport = function () {
+                if (confirm("This will undo the current import, returning the configs.zip to its original place, and reload the setup page. Are you sure?")) {
+                    const btn = document.getElementById('restartImportBtn');
+                    const originalHtml = btn.innerHTML;
+                    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Restarting...';
+                    btn.disabled = true;
+
+                    fetch('/api/onboard/restart_import', { method: 'POST' })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.success) {
+                                window.location.reload();
+                            } else {
+                                alert("Failed to restart import: " + data.message);
+                                btn.innerHTML = originalHtml;
+                                btn.disabled = false;
+                            }
+                        })
+                        .catch(err => {
+                            alert("Failed to communicate with the server to restart import.");
+                            btn.innerHTML = originalHtml;
+                            btn.disabled = false;
+                        });
+                }
+            };
+
             window.confirmSupervisor = function () {
                 if (confirm("Enabling this will set the scoreboard to run automatically. Are you sure you're ready?")) {
                     enableSupervisor();
@@ -495,7 +635,7 @@
             function enableSupervisor() {
                 const supBtn = document.getElementById('supervisorBtn');
                 const supMsg = document.getElementById('supervisorStatusMessage');
-                const boardCmd = boardCommandInput.value;
+                const boardCmd = isImportedSession ? null : boardCommandInput.value;
                 const doUpdateCheck = document.getElementById('updateCheck').checked;
 
                 supBtn.disabled = true;

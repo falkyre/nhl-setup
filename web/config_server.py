@@ -917,6 +917,31 @@ def sync_plugins():
 # Onboarding Management API Endpoints
 # =============================================
 
+@app.route('/api/onboard/check_import', methods=['GET'])
+def api_onboard_check_import():
+    """Endpoint to check if configs.zip exists for import."""
+    exists = onboard.check_configs_zip()
+    return jsonify({'success': True, 'exists': exists})
+
+@app.route('/api/onboard/run_import', methods=['POST'])
+def api_onboard_run_import():
+    """Endpoint to run the import of configs.zip."""
+    version = get_version()
+    success, msg = onboard.import_configs_zip(version)
+    if not success:
+        app.logger.error(f"Import failed: {msg}")
+        return jsonify({'success': False, 'message': msg}), 500
+    
+    return jsonify({'success': True, 'message': msg})
+
+@app.route('/api/onboard/restart_import', methods=['POST'])
+def api_onboard_restart_import():
+    """Endpoint to move configs.zip back from config_backup to scoreboard folder."""
+    success, msg = onboard.restart_import()
+    if not success:
+        return jsonify({'success': False, 'message': msg}), 500
+    return jsonify({'success': True, 'message': msg})
+
 @app.route('/api/onboard/create_test', methods=['POST'])
 def api_onboard_create_test():
     """Endpoint for creating the test script."""
@@ -973,7 +998,8 @@ def api_onboard_enable_supervisor():
     board_command = data.get('board_command')
     update_check = data.get('update_check', False)
     
-    if not board_command:
+    if board_command is None and not onboard.is_imported_session():
+        # It's only required if we are not in an imported session where we already have a conf
         return jsonify({'success': False, 'message': 'Error: "board_command" is required.'}), 400
         
     # Update supervisor conf
