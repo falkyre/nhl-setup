@@ -30,7 +30,7 @@ import paramiko
 import atexit
 import onboard
 
-__version__ = "2026.02.2"
+__version__ = "2026.02.3"
 
 
 def is_frozen():
@@ -591,26 +591,21 @@ def api_versions():
 def api_boards():
     """Returns a list of available boards in the format [{"v": "id", "n": "Name"}]"""
     
-    # Hardcoded fallback list - kept for backwards compatibility
-    # If a board appears both here AND in scanned builtin boards, an error will be logged
-    base_boards_list = [
-        'wxalert', 'wxforecast', 'seriesticker',
-        'stanley_cup_champions', 'christmas'
+    # Legacy boards list that should be the default starting list
+    all_board_ids = [
+        'clock', 'weather', 'wxalert', 'wxforecast', 'scoreticker',
+        'seriesticker', 'standings', 'team_summary', 'stanley_cup_champions',
+        'christmas', 'season_countdown'
     ]
     
     # Get scanned boards
     builtin_boards = get_builtin_boards()
     plugin_boards = get_plugin_boards()
     
-    # Check for duplicates between hardcoded and scanned builtin boards
-    duplicates = set(base_boards_list) & set(builtin_boards)
-    if duplicates:
-        app.logger.warning(f"Duplicate boards found in hardcoded list and scanned builtin boards: {sorted(duplicates)}. "
-                        f"Remove these from base_boards_list as they are now auto-discovered.")
-    
-    # Combine all boards and deduplicate (set removes duplicates)
-    all_board_ids = list(set(base_boards_list + builtin_boards + plugin_boards))
-    all_board_ids.sort()  # Sort alphabetically for consistency
+    # Check if the scanned board doesn't exist in the list, then add it
+    for board in builtin_boards + plugin_boards:
+        if board not in all_board_ids:
+            all_board_ids.append(board)
     
     # Convert to format expected by frontend: [{"v": "id", "n": "Name"}]
     boards = [{"v": board_id, "n": board_id.replace('_', ' ').title()} for board_id in all_board_ids]
