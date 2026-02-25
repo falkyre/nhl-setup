@@ -1,24 +1,24 @@
 Package: nls-controlhub
 Version: 2026.02.2
-Architecture: arm64
+Architecture: armhf
 Maintainer: Sean Ostermann <falkyre@gmail.com>
-Filename: ./nls-controlhub-deb-linux-arm64.deb
-Size: 27859068
-MD5sum: 25a31276b156c1ef1ae6170885dfae61
-SHA1: 91910fc3697a56a8bf84f897f91740cfedc27084
-SHA256: 3ec840a5dee2df159a3a0f8b2bf55c984da37452791b841eec2f3b99eb2d07b2
+Filename: ./nls-controlhub-deb-linux-armv7.deb
+Size: 30516816
+MD5sum: 4ef217bb03ca9a2a7322912b349800d9
+SHA1: 32792b46ac809b894b60eb883e594491d95f25dc
+SHA256: d9716f00d6e2eee14a2458be4eab974ad38e8ba618223f2acc91492bf59aae53
 Description: NHL LED Scoreboard Control Hub.
  A web-based control panel for the NHL LED Scoreboard.
 
 Package: nls-controlhub
 Version: 2026.02.2
-Architecture: armhf
+Architecture: arm64
 Maintainer: Sean Ostermann <falkyre@gmail.com>
-Filename: ./nls-controlhub-deb-linux-armv7.deb
-Size: 30516806
-MD5sum: 0de48c4771c81ce6cc30a23d2d9bcee9
-SHA1: 3546f595d256ce985c0f06be54b5a9e4bbe58d4b
-SHA256: 1bd32fc0e31da4805ef9b288c2e9a998c952d0c9703de8208d811ff8118497fe
+Filename: ./nls-controlhub-deb-linux-arm64.deb
+Size: 27861280
+MD5sum: e07885290c5b138c59d30893e591eefb
+SHA1: bc059e8fe485cabfd33fd19d3d1dc548a4e48636
+SHA256: b76f148c22ae294d3fda4a6e6a2c341762d650cec2e25849c9a87bf13a9d126a
 Description: NHL LED Scoreboard Control Hub.
  A web-based control panel for the NHL LED Scoreboard.
 
