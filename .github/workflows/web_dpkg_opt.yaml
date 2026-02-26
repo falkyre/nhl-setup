@@ -138,10 +138,17 @@ jobs:
           mkdir -p debian/etc/default
           mkdir -p debian/usr/local/bin
 
-      - name: Get version from VERSION file
+      - name: Get version from GitHub Tag
         if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.target == 'all' || github.event.inputs.target == matrix.suffix }}
         id: version
-        run: echo "version=$(cat web/VERSION)" >> $GITHUB_OUTPUT
+        run: |
+          if [[ "${{ github.event_name }}" == 'release' ]]; then
+            # Strip 'web-v', 'web-', 'v', 'V' from the tag name
+            RAW_VERSION=$(echo "${{ github.event.release.tag_name }}" | sed -E 's/^(web-)?v?//i')
+            echo "version=$RAW_VERSION" >> $GITHUB_OUTPUT
+          else
+            echo "version=$(cat web/VERSION)" >> $GITHUB_OUTPUT
+          fi
 
       - name: Create control file
         if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.target == 'all' || github.event.inputs.target == matrix.suffix }}
