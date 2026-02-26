@@ -4,40 +4,40 @@ Hash: SHA512
 Architectures: armhf arm64 all
 Codename: nls-controlhub
 Components: main
-Date: Thu, 26 Feb 2026 00:31:15 +0000
+Date: Thu, 26 Feb 2026 01:02:38 +0000
 Description: NHL LED Scoreboard Control Hub Repository
 Label: nls-controlhub
 Origin: nls-controlhub
 Suite: stable
 MD5Sum:
- 6ac4528284cbe067d7b523f70b7dd16f             1365 Packages
- 0ec700019dd45801cf52dfbd28f81523              646 Packages.gz
- fdc3c16a32fbff1d100d23e81e202424              225 Release
+ 8ba7edfe504e98c806e2b95a7628be86             1365 Packages
+ 3bbe3ca097f7a542572a15a7954bcdac              648 Packages.gz
+ a19a4d6252c47c296f7e0dcb0afd3327              225 Release
 SHA1:
- 5d8ba169be90a1157a294c3df3ecdcc54e46cc8e             1365 Packages
- a8ff53a6d3f019fbc7149cf4a785a5ae3f873db3              646 Packages.gz
- ce806abcd857e9a828bd8564b4c88366a04099f4              225 Release
+ 1741a490e926bab00614af655daaeda775053c54             1365 Packages
+ 29562f0a33bb4bdb3b077215ac10a71ef1a95f29              648 Packages.gz
+ 8be544e4c955739f6900d8e7533d8079227418fe              225 Release
 SHA256:
- 5deaae9fe030a964f588e4debfdf072f871ea510fc197f35cd8625fc89107eaa             1365 Packages
- 6d2fb32612aa06e95d89d88a71c368f8819ea6b4f49076d3435ec3c21ed25244              646 Packages.gz
- e6d588ca3ceacc7f0aa8c66f1e87504eac9a5527546343c81aab5e8931357d90              225 Release
+ b9edadd8f86baeb3b9561ce7ab55772833ad5d5877905acb0515b28885a46575             1365 Packages
+ ea14f368aa643e267dd30b8725f47e3383f72a197bc623d7b7b438b93e08d8c2              648 Packages.gz
+ 4dd6cf97dedbb79da24ce61117f6fad95c03cd92fc46846681980cb48af3b7b9              225 Release
 SHA512:
- a4bb0acd0a7f2edc0be9f698dc10098c8a0fade57deaefba71e00a66e5397422770e4ebf0cd78df7dd0911cbbfb264b04af94ab2e4e8ecfed924e2c58c3c694a             1365 Packages
- b1b509ad9055da752c70fd757adfc053e10b1e5adbeeef38a4db921c07de2e621c8f32d65ec161a0d3d5da50469bdd58ab6a4d9d8f971ae64e71703276638f3c              646 Packages.gz
- dd6a3763a9b935a4260c66bd1d8c14a9f42aeed137202c0db59d4509afd9390baa83a7c7be39688c17660b65a83d27056a1642718218ae869f933eb0a7111f36              225 Release
+ fa5736e1ce2c32b55e95b41a06aa8d8d69be5f1c469106ae70a6a594534d6ce48dcc5898c80d61d551fc5ea414a0bd48547cae5dccfd16b6c06776bc562e6125             1365 Packages
+ 51f16ace74f688aaffcd635c06f0febbd38ad2592703bcaed2f5c537cbbae20ead01ff605a888322b92971c2cf1ac76cc18534240879019f4b5ea2f817ec8755              648 Packages.gz
+ 349a681e9867856490fea0f79acba36716f9d90826a10db82aa23975a9769348c6dd77b15c6a59392eb944e9305529c0cfd338cfbf766cdfccdf48cdaa278ae4              225 Release
 -----BEGIN PGP SIGNATURE-----
 
-iQIzBAEBCgAdFiEEd9/maY4HhvlVHGPQYjOytkgwAHgFAmmflFMACgkQYjOytkgw
-AHgLBg//fFWdyugCP3L7dcoItEvwtEwkEx4LbDta2NJ0uECUSUVM2FBpvP70k8If
-dLcrVnC3HsiQaMMt80QMdpR6R8slvVRIdIs2b3fNtjuadMhB+bCYdI1dpBX8LtYc
-tXbewEGt9/7cnJkhlW1ULC8masAkdXproKAiM423TJg+Ti7KJcQSuHyCHk0k8ypA
-WtqYnIkODFsp5uNUFVtfxEXopwobviUDYQiQQgFlai5fI4+rcuXP6vgHDe/Kcs1V
-lkJYkpJueM5yUAwSiGjdMx5Pq5JEf+os7VSVX9pnf6wouP6Zt4ZiYf7MUg67tlQu
-/e9BbI3BjEhbYzKXIpJ2XkSPpderRrHd5UMJYBIM6+PDEUCjdSZswAaKQETiLkPF
-zd13srnE1gpC0T2MpbRbXDKgv8/aNXc+6lVJ5RozGk8jOrjMTdWvbxPj/cXJ1q0u
-Pt7t5BxyXqymxzAXYkXcmavuN1Fqn2+X/ZK5EOapO+TFikgwrq/SQ2Cnf7YBU1SI
-leaqBI7jREQUKlABivpFvz8cCyvrSpFSZLYUOB785spGJ/M+EsiPRi5LyyxG9qU+
-EGcKW6oLI6Ovz1gWcJUtMY9JLK9murjxpzYA6OblWeq/MUhlQypV5EwLU8ARsApd
-G9a8tOZYpeMb+PW/B1/y2IxpKpdDscSbV0I++LfPo4IfVAHfAUM=
-=KaA2
+iQIzBAEBCgAdFiEEd9/maY4HhvlVHGPQYjOytkgwAHgFAmmfm64ACgkQYjOytkgw
+AHhe9RAAoxmcA7oL3B4ANfyHpZsCsHGyabxVDq+zKOR7ShaZaFH6XYq2TDrk3/51
+mo/URqMeAPZPKatcJISym+x6D0pqRO0Lm0W2CrVOnTopAYzm0YaeQ6HCyk2mR0oY
+1VCeZ+3Ye0M1MzkaFUm1YfaF6nK9xcLWLn5PbB70bE4/NAHxWbHJ9lPgjQwLARw3
+lBpdOBmWd8smvgMZmYaqspxLWSO7Y2aqn9OAgeIY0aRXK5oEpoXuMCk+6kjfMbgU
+EClwUO40NwICi1RQPz+f892e8a8pd6maBs4JJ7rN7VontWa0Lz4twmf74xPO9fb+
+ABkIwXWqELeNmolvFlN5IKjvlx2P4LzfJJI8cx89CERalkA+Mf84cEF5Ej2V7uLa
+46Xi350/R6lkjXxXicX9dT9Wg1ZGgFENxyW7JFR1xv9hrhEl4ZYUC2tBeRYGag8S
+a61rk2OX/9Bjyq8ngoKk85v6YKBT1veUbBqSFCUwhWvosCdIKq6oBoEL4nCMhM+r
+Hds2AgGvQ56Yd7rzkRO7OXIbSXv8VFpfA3bTkwJmvVzrbCADv/9V4ysYh4yElwKq
+s5eG9905tI3V3ltN6S/vgOP7IlKL+k5Ud/krLJjMaonXQgqKztBtvv+ENeIO6jG3
+191QBclNLunh23an3Xtht+tQ12L+dkrqQNB4RLm+nxVSMp5S63A=
+=9W1T
 -----END PGP SIGNATURE-----
