@@ -471,15 +471,31 @@ def parse_plugin_list_output(output):
 
 # --- Version Fetching Logic ---
 
-def get_latest_github_release(repo_name):
-    """Fetches the latest release tag from a GitHub repository."""
-    url = f"https://api.github.com/repos/{repo_name}/releases/latest"
+def get_latest_github_release(repo_name, prefix=None):
+    """Fetches the latest release tag from a GitHub repository.
+    If a prefix is provided, it searches the recent releases for the first one matching the prefix.
+    """
+    if prefix:
+        url = f"https://api.github.com/repos/{repo_name}/releases?per_page=10"
+    else:
+        url = f"https://api.github.com/repos/{repo_name}/releases/latest"
+        
     try:
         req = urllib.request.Request(url, headers={'User-Agent': 'NHL-Control-Hub'})
         with urllib.request.urlopen(req, timeout=5) as response:
             data = json.loads(response.read().decode())
-            # Usually starts with 'v', we return exactly what GitHub gives
-            return data.get('tag_name', 'Unknown').lstrip('vV')
+            
+            if prefix and isinstance(data, list):
+                for release in data:
+                    tag_name = release.get('tag_name', '')
+                    if tag_name.startswith(prefix) and not tag_name.startswith('latest-'):
+                        # Strip the prefix and any leading 'v' or 'V' to get just the version number
+                        clean_version = tag_name[len(prefix):].lstrip('vV')
+                        return clean_version
+                return "Unknown"
+            else:
+                # Usually starts with 'v', we return exactly what GitHub gives
+                return data.get('tag_name', 'Unknown').lstrip('vV')
     except Exception as e:
         app.logger.warning(f"Failed to fetch latest release for {repo_name}: {e}")
         return "Unknown"
@@ -565,8 +581,8 @@ def api_versions():
         # In a high-traffic app this would be backgrounded, but here it's fine.
         remote_versions = {
             'scoreboard': get_latest_github_release('falkyre/nhl-led-scoreboard'),
-            'web_hub': get_latest_github_release('falkyre/nhl-setup'), # Same repo for CLI & Web
-            'cli_setup': get_latest_github_release('falkyre/nhl-setup'),
+            'web_hub': get_latest_github_release('falkyre/nhl-setup', prefix='web-'), # Web starts with web-
+            'cli_setup': get_latest_github_release('falkyre/nhl-setup', prefix='V'), # CLI starts with V
             'os_image': get_latest_github_release('falkyre/nhl-led-scoreboard-img')
         }
         
